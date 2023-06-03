@@ -79,7 +79,7 @@ private fun TagWithOptions(
     var open by remember { mutableStateOf(false) }
     val label = text + ": " + selection.name
     TagWithPopup(selection.isEnabled, label, open, { open = it }) {
-        Card {
+        Card(Modifier.width(400.dp)) {
             LazyColumn {
                 items(items) { item ->
                     SimpleListItem(item.name) {
@@ -141,7 +141,7 @@ fun SongListOptionsController(
             }
         }
         val albumsFilters = libForAlbums.albums.associateWith { album ->
-            SortOption(album.title(options.artistFilter == null), true) {
+            SortOption(album.title(options.artistFilter == null && options.artistSorter != ArtistSorter.NONE), true) {
                 it.withAlbumFilter(album)
             }
         }

@@ -16,7 +16,7 @@ data class SongListOptions(
         }
     val isInArtistMode: Boolean
         get() {
-            return !isInAlbumMode && artistFilter == null && artistSorter != ArtistSorter.NONE
+            return !isInAlbumMode && (artistSorter != ArtistSorter.NONE || artistFilter != null)
         }
 
     fun withArtistFilter(artistFilter: Artist?): SongListOptions {

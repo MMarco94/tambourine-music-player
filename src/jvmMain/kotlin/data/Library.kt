@@ -7,11 +7,13 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import noopComparator
 import java.io.File
+import kotlin.time.Duration
+
 
 data class Artist(
     val name: String,
+    val stats: SongCollectionStats,
 ) {
-
     fun matches(artist: Artist?): Boolean {
         return (artist == null || this == artist)
     }
@@ -20,6 +22,7 @@ data class Artist(
 data class Album(
     val title: String,
     val artist: Artist,
+    val stats: SongCollectionStats,
 ) {
     fun title(withArtist: Boolean): String {
         return if (withArtist) "${artist.name} - $title"
@@ -37,7 +40,8 @@ data class Song(
     val title: String,
     val album: Album,
     val cover: ImageBitmap?,
-) {
+    override val length: Duration,
+) : BaseSong {
 
     val artist get() = album.artist
 
@@ -59,6 +63,8 @@ data class Library(
     val songsByArtist: Map<Artist, List<Song>> = songs.groupBy { it.artist },
     val songsByAlbum: Map<Album, List<Song>> = songs.groupBy { it.album },
 ) {
+
+    val statistics = SongCollectionStats.of(songs)
 
     fun filter(artist: Artist?, album: Album?): Library {
         return Library(
@@ -95,9 +101,28 @@ data class Library(
 
     companion object {
 
+        private fun buildArtists(metadata: Collection<RawMetadataSong>): Map<String, Artist> {
+            return metadata
+                .groupBy { it.nnAlbumArtist }
+                .mapValues { (artist, songs) ->
+                    Artist(artist, SongCollectionStats.of(songs))
+                }
+        }
+
+        private fun buildAlbums(
+            metadata: Collection<RawMetadataSong>,
+            artists: Map<String, Artist>,
+        ): Map<Pair<Artist, String>, Album> {
+            return metadata
+                .groupBy { artists.getValue(it.nnAlbumArtist) to it.nnAlbum }
+                .mapValues { (album, songs) ->
+                    Album(album.second, album.first, SongCollectionStats.of(songs))
+                }
+        }
+
         suspend fun from(metadata: Collection<RawMetadataSong>): Library = coroutineScope {
-            val artists = mutableMapOf<String, Artist>()
-            val albums = mutableMapOf<Pair<Artist, String>, Album>()
+            val artists = buildArtists(metadata)
+            val albums = buildAlbums(metadata, artists)
             val covers: Map<RawImage, ImageBitmap> = metadata
                 .mapNotNull { it.cover }
                 .distinct()
@@ -110,13 +135,9 @@ data class Library(
                 .associate { it }
 
             val songs = metadata.map { song ->
-                val albumArtist = artists.getOrPut(song.nnAlbumArtist) {
-                    Artist(song.nnAlbumArtist)
-                }
-                val album = albums.getOrPut(albumArtist to song.nnAlbum) {
-                    Album(song.nnAlbum, albumArtist)
-                }
-                Song(song.file, song.track, song.nnTitle, album, covers[song.cover])
+                val albumArtist = artists.getValue(song.nnAlbumArtist)
+                val album = albums.getValue(albumArtist to song.nnAlbum)
+                Song(song.file, song.track, song.nnTitle, album, covers[song.cover], song.length)
             }
             Library(
                 songs,

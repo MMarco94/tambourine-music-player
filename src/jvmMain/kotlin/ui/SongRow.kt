@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import data.Song
+import onSurfaceSecondary
 
 @Composable
 fun SongRow(
@@ -25,8 +26,7 @@ fun SongRow(
                 onSongSelected()
                 //TODO song.play()
             }
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-        , verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically
     ) {
         if (!inAlbumContext) {
             // Album cover
@@ -40,7 +40,7 @@ fun SongRow(
                 Text(
                     song.track?.toString().orEmpty().padStart(3, ' '),
                     fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.4f),
+                    color = MaterialTheme.colors.onSurfaceSecondary,
                 )
                 Spacer(Modifier.width(8.dp))
             }
