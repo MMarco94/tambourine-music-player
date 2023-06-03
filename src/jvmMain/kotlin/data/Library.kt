@@ -1,12 +1,11 @@
-package audio
+package data
 
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.toComposeImageBitmap
 import javazoom.jl.player.Player
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import org.jetbrains.skia.Image
+import noopComparator
 import java.io.File
 
 data class Artist(
@@ -16,7 +15,12 @@ data class Artist(
 data class Album(
     val title: String,
     val artist: Artist,
-)
+) {
+    fun title(withArtist: Boolean): String {
+        return if (withArtist) "${artist.name} - $title"
+        else title
+    }
+}
 
 data class Song(
     val file: File,
@@ -26,17 +30,52 @@ data class Song(
     val cover: ImageBitmap?,
 ) {
 
+    val artist get() = album.artist
+
     fun play() {
         val p = Player(file.inputStream())
         p.play()
     }
 }
 
+
 data class Library(
-    val songs: Set<Song>,
+    val songs: List<Song>,
+    val albums: List<Album>,
+    val artists: List<Artist>,
 ) {
-    val albums: Map<Album, Set<Song>> = songs.groupBy { it.album }.mapValues { it.value.toSet() }
-    val artists: Map<Artist, Set<Album>> = albums.keys.groupBy { it.artist }.mapValues { it.value.toSet() }
+    val songsByArtist: Map<Artist, List<Song>> = songs.groupBy { it.artist }
+    val songsByAlbum: Map<Album, List<Song>> = songs.groupBy { it.album }
+    val albumsByArtist: Map<Artist, List<Album>> = albums.groupBy { it.artist }
+
+    fun filter(artist: Artist?, album: Album?): Library {
+        return Library(
+            songs = songs.filter { (artist == null || it.artist == artist) && (album == null || it.album == album) },
+            albums = albums.filter { (artist == null || it.artist == artist) && (album == null || it == album) },
+            artists = artists.filter { artist == null || it == artist },
+        )
+    }
+
+    fun sort(
+        artist: Comparator<Artist>,
+        album: Comparator<Album>,
+        song: Comparator<Song>,
+    ): Library {
+        return Library(
+            songs = songs.sortedWith(
+                noopComparator<Song>()
+                    .thenBy(artist) { it.artist }
+                    .thenBy(album) { it.album }
+                    .then(song)
+            ),
+            albums = albums.sortedWith(
+                noopComparator<Album>()
+                    .thenBy(artist) { it.artist }
+                    .then(album)
+            ),
+            artists = artists.sortedWith(artist),
+        )
+    }
 
     companion object {
 
@@ -54,16 +93,20 @@ data class Library(
                 .awaitAll()
                 .associate { it }
 
-            val songs = metadata.mapTo(mutableSetOf()) { song ->
-                val artist = artists.getOrPut(song.nnArtist) {
-                    Artist(song.nnArtist)
+            val songs = metadata.map { song ->
+                val albumArtist = artists.getOrPut(song.nnAlbumArtist) {
+                    Artist(song.nnAlbumArtist)
                 }
-                val album = albums.getOrPut(artist to song.nnAlbum) {
-                    Album(song.nnAlbum, artist)
+                val album = albums.getOrPut(albumArtist to song.nnAlbum) {
+                    Album(song.nnAlbum, albumArtist)
                 }
                 Song(song.file, song.track, song.nnTitle, album, covers[song.cover])
             }
-            Library(songs)
+            Library(
+                songs,
+                albums.values.toList(),
+                artists.values.toList(),
+            )
         }
 
         suspend fun fromFolder(folder: File): Library = coroutineScope {

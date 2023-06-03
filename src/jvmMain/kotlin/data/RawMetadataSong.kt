@@ -1,4 +1,4 @@
-package audio
+package data
 
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.mpatric.mp3agic.Mp3File
@@ -26,6 +26,7 @@ data class RawMetadataSong(
     val album: String?,
     val artist: String?,
     val albumArtist: String?,
+    // TODO: make it so they're not all in memory
     val cover: RawImage?,
 ) {
     val nnTitle get() = title ?: file.nameWithoutExtension

@@ -11,12 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import data.Album
+import data.Artist
 import data.Song
 
 @Composable
-fun AlbumRow(album: Album, songs: List<Song>, onSongSelected: (Song) -> Unit) {
-    val cover = songs.firstOrNull { it.cover != null }?.cover
-
+fun ArtistRow(artist: Artist, songs: List<Song>, onSongSelected: (Song) -> Unit) {
     Column {
         Row(Modifier) {
             Column(
@@ -27,17 +26,11 @@ fun AlbumRow(album: Album, songs: List<Song>, onSongSelected: (Song) -> Unit) {
                 ),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                key(album) {
-                    AlbumCover(cover, 128.dp, MaterialTheme.shapes.medium)
-                }
-                Spacer(Modifier.height(16.dp))
-                Text(album.title, textAlign = TextAlign.Center)
-                Spacer(Modifier.height(8.dp))
-                Text(album.artist.name, textAlign = TextAlign.Center)
+                Text(artist.name, textAlign = TextAlign.Center)
             }
             Column {
                 songs.forEach { song ->
-                    SongRow(song, inAlbumContext = true, onSongSelected = { onSongSelected(song) })
+                    SongRow(song, inAlbumContext = false, onSongSelected = { onSongSelected(song) })
                 }
             }
         }
