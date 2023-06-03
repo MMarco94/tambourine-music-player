@@ -29,6 +29,7 @@ data class RawMetadataSong(
     val album: String?,
     val artist: String?,
     val albumArtist: String?,
+    override  val year: Int?,
     // TODO: make it so they're not all in memory
     val cover: RawImage?,
 ) : BaseSong {
@@ -52,6 +53,7 @@ data class RawMetadataSong(
                     id3v2Tag.album,
                     id3v2Tag.artist,
                     id3v2Tag.albumArtist,
+                    id3v2Tag.year?.toIntOrNull(),
                     id3v2Tag.albumImage?.let { RawImage(it) },
                 )
             } else if (id3v1Tag != null) {
@@ -63,6 +65,7 @@ data class RawMetadataSong(
                     id3v1Tag.album,
                     id3v1Tag.artist,
                     null,
+                    id3v1Tag.year?.toIntOrNull(),
                     null,
                 )
             } else {
@@ -70,6 +73,7 @@ data class RawMetadataSong(
                     file,
                     null,
                     duration,
+                    null,
                     null,
                     null,
                     null,

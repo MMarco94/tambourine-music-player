@@ -41,6 +41,7 @@ data class Song(
     val album: Album,
     val cover: ImageBitmap?,
     override val length: Duration,
+    override val year: Int?,
 ) : BaseSong {
 
     val artist get() = album.artist
@@ -137,7 +138,15 @@ data class Library(
             val songs = metadata.map { song ->
                 val albumArtist = artists.getValue(song.nnAlbumArtist)
                 val album = albums.getValue(albumArtist to song.nnAlbum)
-                Song(song.file, song.track, song.nnTitle, album, covers[song.cover], song.length)
+                Song(
+                    file = song.file,
+                    track = song.track,
+                    title = song.nnTitle,
+                    album = album,
+                    cover = covers[song.cover],
+                    length = song.length,
+                    year = song.year,
+                )
             }
             Library(
                 songs,

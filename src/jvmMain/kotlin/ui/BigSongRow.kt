@@ -75,7 +75,9 @@ private fun SidePanel(
             } else constraints
         )
 
-        val offset = sideOffset.coerceAtMost(mainPlaceable.height - sidePlaceable.height)
+        val offset = sideOffset
+            .coerceAtMost(mainPlaceable.height - sidePlaceable.height)
+            .coerceAtLeast(0)
         layout(
             sidePlaceable.width + mainPlaceable.width,
             maxOf(sidePlaceable.height, mainPlaceable.height)

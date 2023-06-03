@@ -19,4 +19,11 @@ fun SongCollectionStatsComposable(stats: SongCollectionStats) {
     )
     Text("${stats.songsCount} songs", style = style)
     Text(stats.totalLength.rounded().toString(), style = style)
+    if (stats.year != null) {
+        if (stats.year.first == stats.year.last) {
+            Text(stats.year.first.toString(), style = style)
+        } else {
+            Text("${stats.year.first}-${stats.year.last}", style = style)
+        }
+    }
 }
