@@ -5,10 +5,20 @@ import orNoop
 data class SongListOptions(
     val artistSorter: ArtistSorter = ArtistSorter.ALPHABETICAL,
     val albumSorter: AlbumSorter = AlbumSorter.ALPHABETICAL,
-    val songSorter: Comparator<Song>? = compareBy { it.title },
+    val songSorter: SongSorter = SongSorter.ALPHABETICAL,
+    val songSorterInAlbum: SongSorter = SongSorter.TRACK,
     val artistFilter: Artist? = null,
     val albumFilter: Album? = null,
 ) {
+    val isInAlbumMode: Boolean
+        get() {
+            return albumSorter != AlbumSorter.NONE || albumFilter != null
+        }
+    val isInArtistMode: Boolean
+        get() {
+            return !isInAlbumMode && artistFilter == null && artistSorter != ArtistSorter.NONE
+        }
+
     fun withArtistFilter(artistFilter: Artist?): SongListOptions {
         return if (artistFilter == null) {
             copy(artistFilter = null, albumFilter = null)
@@ -25,6 +35,13 @@ data class SongListOptions(
         } else copy(
             artistFilter = albumFilter.artist,
             albumFilter = albumFilter
+        )
+    }
+
+    fun withSongSorter(sorter: SongSorter): SongListOptions {
+        return copy(
+            songSorter = if (sorter.inAlbumOnly) songSorter else sorter,
+            songSorterInAlbum = sorter,
         )
     }
 }
@@ -46,29 +63,27 @@ fun generateSongList(
         .sort(
             options.artistSorter.comparator.orNoop(),
             options.albumSorter.comparator.orNoop(),
-            options.songSorter.orNoop(),
+            options.songSorter.comparator.orNoop(),
+            options.songSorterInAlbum.comparator.orNoop(),
         )
 
-    return if (options.albumSorter == AlbumSorter.NONE) {
-        if (options.artistFilter == null && options.artistSorter != ArtistSorter.NONE) {
-            lib.artists.map { artist ->
-                SongListItem.ArtistListItem(
-                    artist,
-                    lib.songsByArtist.getValue(artist),
-                )
-            }
-        } else {
-            lib.songs.map { song ->
-                SongListItem.SingleSongListItem(song)
-            }
-        }
-    } else {
+    return if (options.isInAlbumMode) {
         lib.albums.map { album ->
             SongListItem.AlbumListItem(
                 album,
-                // TODO: respect song sorting
-                lib.songsByAlbum.getValue(album).sortedWith(compareBy<Song> { it.track }),
+                lib.songsByAlbum.getValue(album),
             )
+        }
+    } else if (options.isInArtistMode) {
+        lib.artists.map { artist ->
+            SongListItem.ArtistListItem(
+                artist,
+                lib.songsByArtist.getValue(artist),
+            )
+        }
+    } else {
+        lib.songs.map { song ->
+            SongListItem.SingleSongListItem(song)
         }
     }
 }

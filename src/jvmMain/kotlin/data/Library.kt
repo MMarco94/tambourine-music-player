@@ -10,7 +10,12 @@ import java.io.File
 
 data class Artist(
     val name: String,
-)
+) {
+
+    fun matches(artist: Artist?): Boolean {
+        return (artist == null || this == artist)
+    }
+}
 
 data class Album(
     val title: String,
@@ -19,6 +24,10 @@ data class Album(
     fun title(withArtist: Boolean): String {
         return if (withArtist) "${artist.name} - $title"
         else title
+    }
+
+    fun matches(artist: Artist?, album: Album?): Boolean {
+        return (artist == null || this.artist == artist) && (album == null || this == album)
     }
 }
 
@@ -32,6 +41,10 @@ data class Song(
 
     val artist get() = album.artist
 
+    fun matches(artist: Artist?, album: Album?): Boolean {
+        return (artist == null || this.artist == artist) && (album == null || this.album == album)
+    }
+
     fun play() {
         val p = Player(file.inputStream())
         p.play()
@@ -43,16 +56,17 @@ data class Library(
     val songs: List<Song>,
     val albums: List<Album>,
     val artists: List<Artist>,
+    val songsByArtist: Map<Artist, List<Song>> = songs.groupBy { it.artist },
+    val songsByAlbum: Map<Album, List<Song>> = songs.groupBy { it.album },
 ) {
-    val songsByArtist: Map<Artist, List<Song>> = songs.groupBy { it.artist }
-    val songsByAlbum: Map<Album, List<Song>> = songs.groupBy { it.album }
-    val albumsByArtist: Map<Artist, List<Album>> = albums.groupBy { it.artist }
 
     fun filter(artist: Artist?, album: Album?): Library {
         return Library(
-            songs = songs.filter { (artist == null || it.artist == artist) && (album == null || it.album == album) },
-            albums = albums.filter { (artist == null || it.artist == artist) && (album == null || it == album) },
-            artists = artists.filter { artist == null || it == artist },
+            songs = songs.filter { it.matches(artist, album) },
+            albums = albums.filter { it.matches(artist, album) },
+            artists = artists.filter { it.matches(artist) },
+            songsByArtist = songsByArtist.filterKeys { it.matches(artist) },
+            songsByAlbum = songsByAlbum.filterKeys { it.matches(artist, album) },
         )
     }
 
@@ -60,20 +74,22 @@ data class Library(
         artist: Comparator<Artist>,
         album: Comparator<Album>,
         song: Comparator<Song>,
+        songInAlbum: Comparator<Song>,
     ): Library {
+        val baseSongComparator = noopComparator<Song>()
+            .thenBy(artist) { it.artist }
+            .thenBy(album) { it.album }
+        val songComparator = baseSongComparator.then(song)
+        val songComparatorInAlbum = baseSongComparator.then(songInAlbum)
         return Library(
-            songs = songs.sortedWith(
-                noopComparator<Song>()
-                    .thenBy(artist) { it.artist }
-                    .thenBy(album) { it.album }
-                    .then(song)
-            ),
-            albums = albums.sortedWith(
-                noopComparator<Album>()
-                    .thenBy(artist) { it.artist }
-                    .then(album)
+            songs = songs.sortedWith(songComparator),
+            albums = albums.sortedWith(noopComparator<Album>()
+                .thenBy(artist) { it.artist }
+                .then(album)
             ),
             artists = artists.sortedWith(artist),
+            songsByArtist = songsByArtist.mapValues { it.value.sortedWith(songComparator) },
+            songsByAlbum = songsByAlbum.mapValues { it.value.sortedWith(songComparatorInAlbum) },
         )
     }
 

@@ -11,10 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
-import data.AlbumSorter
-import data.ArtistSorter
-import data.Library
-import data.SongListOptions
+import data.*
 import noopComparator
 import orNoop
 
@@ -104,7 +101,7 @@ fun SongListOptionsController(
     FlowRow {
         val libForArtists = library.sort(
             options.artistSorter.comparator ?: compareBy { it.name },
-            noopComparator(), noopComparator(),
+            noopComparator(), noopComparator(), noopComparator(),
         )
         val artistsSorters = ArtistSorter.values().associateWith { sorter ->
             SortOption(sorter.allByThis, false) {
@@ -134,7 +131,7 @@ fun SongListOptionsController(
         val libForAlbums = library.sort(
             options.artistSorter.comparator.orNoop(),
             options.albumSorter.comparator ?: compareBy { it.title },
-            options.songSorter.orNoop()
+            noopComparator(), noopComparator(),
         ).filter(options.artistFilter, null)
         val albumsSorters = AlbumSorter.values().associateWith { sorter ->
             SortOption(sorter.allByThis, false) {
@@ -157,6 +154,26 @@ fun SongListOptionsController(
             },
             text = "Album",
             items = albumsSorters.values + albumsFilters.values,
+            setOptions = setOptions
+        )
+
+        val isGroupingByAlbum = options.isInAlbumMode
+        val songSorters = SongSorter.values()
+            .filter { !it.inAlbumOnly || isGroupingByAlbum }
+            .associateWith { sorter ->
+                SortOption(sorter.byThis, false) {
+                    it.withSongSorter(sorter)
+                }
+            }
+        TagWithOptions(
+            options,
+            if (isGroupingByAlbum) {
+                songSorters.getValue(options.songSorterInAlbum)
+            } else {
+                songSorters.getValue(options.songSorter)
+            },
+            text = "Songs",
+            items = songSorters.values.toList(),
             setOptions = setOptions
         )
     }
