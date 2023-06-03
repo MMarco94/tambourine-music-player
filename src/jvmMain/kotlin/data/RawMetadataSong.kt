@@ -3,6 +3,7 @@ package data
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.mpatric.mp3agic.Mp3File
 import org.jetbrains.skia.Image
+import recordingYear
 import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -29,7 +30,7 @@ data class RawMetadataSong(
     val album: String?,
     val artist: String?,
     val albumArtist: String?,
-    override  val year: Int?,
+    override val year: Int?,
     // TODO: make it so they're not all in memory
     val cover: RawImage?,
 ) : BaseSong {
@@ -53,7 +54,7 @@ data class RawMetadataSong(
                     id3v2Tag.album,
                     id3v2Tag.artist,
                     id3v2Tag.albumArtist,
-                    id3v2Tag.year?.toIntOrNull(),
+                    id3v2Tag.recordingYear()?.toIntOrNull(),
                     id3v2Tag.albumImage?.let { RawImage(it) },
                 )
             } else if (id3v1Tag != null) {

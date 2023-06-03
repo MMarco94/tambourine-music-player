@@ -4,7 +4,7 @@ import orNoop
 
 data class SongListOptions(
     val artistSorter: ArtistSorter = ArtistSorter.ALPHABETICAL,
-    val albumSorter: AlbumSorter = AlbumSorter.ALPHABETICAL,
+    val albumSorter: AlbumSorter = AlbumSorter.NEWER,
     val songSorter: SongSorter = SongSorter.ALPHABETICAL,
     val songSorterInAlbum: SongSorter = SongSorter.TRACK,
     val artistFilter: Artist? = null,

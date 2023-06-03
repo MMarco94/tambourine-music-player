@@ -1,4 +1,6 @@
 import androidx.compose.material.Colors
+import com.mpatric.mp3agic.ID3v2
+import com.mpatric.mp3agic.ID3v24Tag
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -27,4 +29,12 @@ fun <T> Collection<T>.rangeOfOrNull(f: (T) -> Int?): IntRange? {
 
 fun Duration.rounded(): Duration {
     return this.inWholeSeconds.seconds
+}
+
+fun ID3v2.recordingYear(): String? {
+    return if (this is ID3v24Tag){
+        year ?: recordingTime
+    }else {
+        year
+    }
 }

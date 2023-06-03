@@ -23,6 +23,8 @@ enum class AlbumSorter(
     NONE(null, null),
     ALPHABETICAL("title", compareBy { it.title }),
     ALPHABETICAL_DESC("title Z->A", compareByDescending { it.title }),
+    NEWER("newer first", compareByDescending { it.stats.year?.last ?: Int.MIN_VALUE }),
+    OLDER("older first", compareBy { it.stats.year?.first ?: Int.MAX_VALUE }),
 }
 
 enum class SongSorter(
@@ -33,6 +35,8 @@ enum class SongSorter(
     TRACK("track", compareBy { it.track }, true),
     ALPHABETICAL("title", compareBy { it.title }),
     ALPHABETICAL_DESC("title Z->A", compareByDescending { it.title }),
+    NEWER("newer first", compareByDescending<Song> { it.year ?: Int.MIN_VALUE }.thenByDescending { it.track }),
+    OLDER("older first", compareBy<Song> { it.year ?: Int.MAX_VALUE }.thenBy { it.track }),
     ;
 
     val byThis get():String = "by $label"
