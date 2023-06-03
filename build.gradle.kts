@@ -24,6 +24,7 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                api(compose.materialIconsExtended)
 
                 implementation("com.mpatric:mp3agic:0.9.1")
                 implementation("com.github.umjammer:jlayer:1.0.2")

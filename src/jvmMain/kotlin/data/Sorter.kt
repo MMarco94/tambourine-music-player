@@ -3,8 +3,6 @@ package data
 interface Sorter<T> {
     val label: String?
     val comparator: Comparator<T>?
-
-    val allByThis get():String = label?.let { "all by $it" } ?: "all"
 }
 
 enum class ArtistSorter(
@@ -12,8 +10,8 @@ enum class ArtistSorter(
     override val comparator: Comparator<Artist>?,
 ) : Sorter<Artist> {
     NONE(null, null),
-    ALPHABETICAL("name", compareBy { it.name }),
-    ALPHABETICAL_DESC("name Z->A", compareByDescending { it.name }),
+    ALPHABETICAL("Name", compareBy { it.name }),
+    ALPHABETICAL_DESC("Name Z->A", compareByDescending { it.name }),
 }
 
 enum class AlbumSorter(
@@ -21,10 +19,10 @@ enum class AlbumSorter(
     override val comparator: Comparator<Album>?,
 ) : Sorter<Album> {
     NONE(null, null),
-    ALPHABETICAL("title", compareBy { it.title }),
-    ALPHABETICAL_DESC("title Z->A", compareByDescending { it.title }),
-    NEWER("newer first", compareByDescending { it.stats.year?.last ?: Int.MIN_VALUE }),
-    OLDER("older first", compareBy { it.stats.year?.first ?: Int.MAX_VALUE }),
+    ALPHABETICAL("Title", compareBy { it.title }),
+    ALPHABETICAL_DESC("Title Z->A", compareByDescending { it.title }),
+    YEAR("Year", compareByDescending { it.stats.year?.last ?: Int.MIN_VALUE }),
+    YEAR_DESC("Year (older first)", compareBy { it.stats.year?.first ?: Int.MAX_VALUE }),
 }
 
 enum class SongSorter(
@@ -32,12 +30,10 @@ enum class SongSorter(
     override val comparator: Comparator<Song>,
     val inAlbumOnly: Boolean = false,
 ) : Sorter<Song> {
-    TRACK("track", compareBy { it.track }, true),
-    ALPHABETICAL("title", compareBy { it.title }),
-    ALPHABETICAL_DESC("title Z->A", compareByDescending { it.title }),
-    NEWER("newer first", compareByDescending<Song> { it.year ?: Int.MIN_VALUE }.thenByDescending { it.track }),
-    OLDER("older first", compareBy<Song> { it.year ?: Int.MAX_VALUE }.thenBy { it.track }),
+    TRACK("Track", compareBy { it.track }, true),
+    ALPHABETICAL("Title", compareBy { it.title }),
+    ALPHABETICAL_DESC("Title Z->A", compareByDescending { it.title }),
+    YEAR("Year", compareByDescending<Song> { it.year ?: Int.MIN_VALUE }.thenByDescending { it.track }),
+    YEAR_DESC("Year (older first)", compareBy<Song> { it.year ?: Int.MAX_VALUE }.thenBy { it.track }),
     ;
-
-    val byThis get():String = "by $label"
 }

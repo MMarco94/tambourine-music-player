@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.darkColors
@@ -14,8 +15,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import data.*
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +55,7 @@ fun App() {
                     ) {
                         Column {
                             SongListOptionsController(library, listOptions) { listOptions = it }
+                            Divider()
                             SongList(items) {
                                 currentSong = it
                             }
@@ -103,7 +107,9 @@ private fun SongList(
 }
 
 fun main() = application {
-    Window(onCloseRequest = ::exitApplication) {
+    Window(onCloseRequest = ::exitApplication, state = remember {
+        WindowState(size = DpSize(1280.dp, 720.dp))
+    }) {
         App()
     }
 }

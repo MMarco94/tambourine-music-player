@@ -13,11 +13,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import data.Song
 import onSurfaceSecondary
+import rounded
 
 @Composable
 fun SongRow(
     song: Song,
     inAlbumContext: Boolean = false,
+    showAlbum: Boolean = !inAlbumContext,
     onSongSelected: () -> Unit,
 ) {
     Row(
@@ -28,7 +30,15 @@ fun SongRow(
             }
             .padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically
     ) {
-        if (!inAlbumContext) {
+        if (inAlbumContext) { // Track number
+            Text(
+                song.track?.toString().orEmpty().padStart(3, ' '),
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colors.onSurfaceSecondary,
+            )
+            Spacer(Modifier.width(8.dp))
+        }
+        if (showAlbum) {
             // Album cover
             key(song) {
                 AlbumCover(song.cover, 40.dp, MaterialTheme.shapes.small)
@@ -36,15 +46,12 @@ fun SongRow(
             }
         }
         Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (inAlbumContext) { // Track number
-                Text(
-                    song.track?.toString().orEmpty().padStart(3, ' '),
-                    fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colors.onSurfaceSecondary,
-                )
-                Spacer(Modifier.width(8.dp))
-            }
-            Text(song.title)
+            Text(song.title,Modifier.weight(1f))
+            Text(
+                song.length.rounded().toString(),
+                color = MaterialTheme.colors.onSurfaceSecondary,
+                style = MaterialTheme.typography.subtitle2,
+            )
         }
     }
 }
