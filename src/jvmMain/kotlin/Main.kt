@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material.MaterialTheme
@@ -75,14 +76,15 @@ private fun SongList(
     Box {
         val state = rememberLazyListState()
         LazyColumn(state = state, modifier = Modifier.fillMaxSize()) {
-            items(items) { item ->
+            itemsIndexed(items) { index, item ->
+                val offset = if (index == state.firstVisibleItemIndex) state.firstVisibleItemScrollOffset else 0
                 when (item) {
                     is SongListItem.ArtistListItem -> {
-                        ArtistRow(item.artist, item.songs, onSongSelected)
+                        ArtistRow(item.artist, item.songs, offset, onSongSelected)
                     }
 
                     is SongListItem.AlbumListItem -> {
-                        AlbumRow(item.album, item.songs, onSongSelected)
+                        AlbumRow(item.album, item.songs, offset, onSongSelected)
                     }
 
                     is SongListItem.SingleSongListItem -> {

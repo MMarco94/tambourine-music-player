@@ -13,8 +13,8 @@ import data.Album
 import data.Song
 
 @Composable
-fun AlbumRow(album: Album, songs: List<Song>, onSongSelected: (Song) -> Unit) {
-    BigSongRow(true, songs, onSongSelected) {
+fun AlbumRow(album: Album, songs: List<Song>, sideOffset: Int, onSongSelected: (Song) -> Unit) {
+    BigSongRow(true, songs, sideOffset, onSongSelected) {
         val cover = songs.firstOrNull { it.cover != null }?.cover
         key(album) {
             AlbumCover(cover, 128.dp, MaterialTheme.shapes.medium)
