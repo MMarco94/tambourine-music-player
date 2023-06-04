@@ -32,9 +32,14 @@ fun Duration.rounded(): Duration {
 }
 
 fun ID3v2.recordingYear(): String? {
-    return if (this is ID3v24Tag){
+    return if (this is ID3v24Tag) {
         year ?: recordingTime
-    }else {
+    } else {
         year
     }
+}
+
+fun <T> Collection<T>.mostCommonOrNull(): T? {
+    val numbersByElement = groupingBy { it }.eachCount()
+    return numbersByElement.maxByOrNull { it.value }?.key
 }

@@ -17,6 +17,7 @@ fun SongCollectionStatsComposable(stats: SongCollectionStats) {
             textAlign = TextAlign.Center,
         )
     )
+    // TODO: plurals
     Text("${stats.songsCount} songs", style = style)
     Text(stats.totalLength.rounded().toString(), style = style)
     if (stats.year != null) {

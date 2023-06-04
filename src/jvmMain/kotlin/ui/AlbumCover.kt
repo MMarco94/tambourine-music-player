@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.FilterQuality
@@ -20,16 +21,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun AlbumCover(cover: ImageBitmap?, size: Dp, shape: Shape = RectangleShape) {
-    Surface(Modifier.size(size).aspectRatio(1f), shape = shape) {
+fun AlbumCover(cover: ImageBitmap?, modifier: Modifier, shape: Shape = RectangleShape) {
+    Surface(modifier.aspectRatio(1f), shape = shape) {
         if (cover != null) {
-            Image(
-                cover,
-                null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-                filterQuality = FilterQuality.High,
-            )
+            key(cover) {
+                Image(
+                    cover,
+                    null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    filterQuality = FilterQuality.High,
+                )
+            }
         }
     }
 }

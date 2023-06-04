@@ -5,13 +5,14 @@ package ui
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -19,7 +20,11 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import data.*
@@ -81,25 +86,45 @@ private fun TagWithPopup(
     }
 }
 
-private data class SortFilterOption(
-    val name: String,
-    val isEnabled: Boolean,
-    val transform: (SongListOptions) -> SongListOptions,
-)
+private sealed interface SortFilterOption {
+    val name: String
+    val description: String get() = name
+    val transform: (SongListOptions) -> SongListOptions
+
+    data class Sort(
+        val sorter: Sorter<*>,
+        override val transform: (SongListOptions) -> SongListOptions,
+    ) : SortFilterOption {
+        override val name get() = sorter.label ?: "Do not sort"
+        override val description get() = sorter.fullDescription ?: "Do not sort"
+        val icon: ImageVector? = when (sorter.isInverse) {
+            true -> Icons.Filled.ArrowUpward
+            false -> Icons.Filled.ArrowDownward
+            else -> null
+        }
+    }
+
+    data class Filter<T>(
+        override val name: String,
+        val element: T,
+        override val transform: (SongListOptions) -> SongListOptions,
+    ) : SortFilterOption
+}
 
 @Composable
 private fun TagWithOptions(
     selected: SortFilterOption,
     icon: ImageVector,
+    description: String,
     reset: SongListOptions?,
-    optionsComposable: @Composable (dismiss: () -> Unit) -> Unit,
+    optionsComposable: @Composable BoxScope.(dismiss: () -> Unit) -> Unit,
     setOptions: (SongListOptions) -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
 
     Box(Modifier.padding(2.dp)) {
         TagWithPopup(
-            selected.isEnabled,
+            selected is SortFilterOption.Filter<*>,
             open = open,
             setOpen = { open = it },
             content = {
@@ -107,24 +132,39 @@ private fun TagWithOptions(
                     Modifier.height(IntrinsicSize.Max).heightIn(min = 40.dp).animateContentSize(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(Modifier.padding(8.dp)) {
-                        Icon(icon, null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(selected.name)
+                    Icon(icon, description, Modifier.padding(8.dp))
+                    Column(Modifier.padding(8.dp)) {
+                        if (selected is SortFilterOption.Sort) {
+                            Text(description, style = MaterialTheme.typography.subtitle1)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(selected.name, style = MaterialTheme.typography.subtitle2)
+                                if (selected.icon != null) {
+                                    Spacer(Modifier.width(4.dp))
+                                    Icon(selected.icon, null, Modifier.size(16.dp))
+                                }
+                            }
+                        } else {
+                            Text(selected.name)
+                        }
                     }
                     if (reset != null) {
                         IconButton({
                             setOptions(reset)
-                        }, Modifier.size(40.dp).fillMaxHeight()) {
+                        }, Modifier.width(40.dp).fillMaxHeight()) {
                             Image(Icons.Filled.Close, "Reset", Modifier.padding(8.dp))
                         }
                     }
                 }
             },
             popup = {
-                Card(Modifier.width(400.dp)) {
-                    if (open) {
+                Card(Modifier.width(480.dp)) {
+                    Box(Modifier
+                        .clickable(remember { MutableInteractionSource() }, indication = null) { open = false }
+                    ) {
                         optionsComposable { open = false }
+                        IconButton({ open = false }, Modifier.align(Alignment.TopEnd).size(40.dp)) {
+                            Icon(Icons.Filled.Close, "Close")
+                        }
                     }
                 }
             },
@@ -132,34 +172,92 @@ private fun TagWithOptions(
     }
 }
 
+private class FilterSortPopupRenderer(
+    val listOptions: SongListOptions,
+    val selected: SortFilterOption,
+    val dismissPopup: () -> Unit,
+    val setOptions: (SongListOptions) -> Unit,
+) {
+    @Composable
+    fun CategorySeparatorSort() = CategorySeparator(Icons.Filled.Sort, "Sort")
+
+    @Composable
+    fun CategorySeparatorFilter() = CategorySeparator(Icons.Filled.FilterList, "Filter")
+
+    @Composable
+    fun Row(item: SortFilterOption) {
+        SimpleListItem(item.description, item)
+    }
+
+    @Composable
+    fun BoxScope.ScrollBar(state: LazyListState) {
+        ScrollBar(rememberScrollbarAdapter(state))
+    }
+
+    @Composable
+    fun BoxScope.ScrollBar(state: LazyGridState) {
+        ScrollBar(rememberScrollbarAdapter(state))
+    }
+
+    @Composable
+    private fun BoxScope.ScrollBar(adapter: androidx.compose.foundation.v2.ScrollbarAdapter) {
+        Box(Modifier.matchParentSize()) {
+            VerticalScrollbar(
+                modifier = Modifier.align(Alignment.CenterEnd),
+                adapter = adapter
+            )
+        }
+    }
+
+    fun onClick(item: SortFilterOption) {
+        dismissPopup()
+        setOptions(item.transform(listOptions))
+    }
+
+    @Composable
+    fun background(item: SortFilterOption): State<Color> {
+        return animateColorAsState(
+            if (item == selected) {
+                MaterialTheme.colors.primary
+            } else {
+                MaterialTheme.colors.primary.copy(alpha = 0f)
+            }
+        )
+    }
+
+    inline fun render(f: FilterSortPopupRenderer.() -> Unit) {
+        f()
+    }
+}
+
 @Composable
-private fun FilterSortPopup(
+private fun <T> BoxScope.FilterSortPopup(
     listOptions: SongListOptions,
     selected: SortFilterOption,
-    sortOptions: List<SortFilterOption>,
-    filterOptions: List<SortFilterOption>,
+    sortOptions: List<SortFilterOption.Sort>,
+    filterOptions: List<SortFilterOption.Filter<T>>,
     dismissPopup: () -> Unit,
     setOptions: (SongListOptions) -> Unit,
 ) {
-    LazyColumn {
-        if (sortOptions.isNotEmpty()) {
-            item { CategorySeparatorSort() }
-        }
-        items(sortOptions) { item ->
-            SimpleListItem(item.name, item == selected) {
-                dismissPopup()
-                setOptions(item.transform(listOptions))
+    FilterSortPopupRenderer(
+        listOptions, selected, dismissPopup, setOptions
+    ).render {
+        val state = rememberLazyListState()
+        LazyColumn(state = state) {
+            if (sortOptions.isNotEmpty()) {
+                item { CategorySeparatorSort() }
+            }
+            items(sortOptions) { item ->
+                Row(item)
+            }
+            if (filterOptions.isNotEmpty()) {
+                item { CategorySeparatorFilter() }
+            }
+            items(filterOptions) { item ->
+                Row(item)
             }
         }
-        if (filterOptions.isNotEmpty()) {
-            item { CategorySeparatorFilter() }
-        }
-        items(filterOptions) { item ->
-            SimpleListItem(item.name, item == selected) {
-                dismissPopup()
-                setOptions(item.transform(listOptions))
-            }
-        }
+        ScrollBar(state)
     }
 }
 
@@ -169,18 +267,18 @@ fun SongListOptionsController(
     options: SongListOptions,
     setOptions: (SongListOptions) -> Unit,
 ) {
-    FlowRow(Modifier.padding(2.dp)) {
+    FlowRow(Modifier.padding(2.dp), verticalAlignment = Alignment.CenterVertically) {
         val libForArtists = library.sort(
             options.artistSorter.comparator ?: compareBy { it.name },
             noopComparator(), noopComparator(), noopComparator(),
         )
         val artistsSorters = ArtistSorter.values().associateWith { sorter ->
-            SortFilterOption(sorter.label ?: "Do not sort", false) {
+            SortFilterOption.Sort(sorter) {
                 it.withArtistFilter(null).copy(artistSorter = sorter)
             }
         }
         val artistsFilters = libForArtists.artists.associateWith { artist ->
-            SortFilterOption(artist.name, true) {
+            SortFilterOption.Filter(artist.name, artist) {
                 it.withArtistFilter(artist)
             }
         }
@@ -189,18 +287,24 @@ fun SongListOptionsController(
         } else {
             artistsFilters.getValue(options.artistFilter)
         }
-        TagWithOptions(selectedArtistOption, icon = Icons.Filled.Groups, reset = if (options.artistFilter != null) {
-            options.withArtistFilter(null)
-        } else null, setOptions = setOptions, optionsComposable = { dismissPopup ->
-            FilterSortPopup(
-                options,
-                selectedArtistOption,
-                artistsSorters.values.toList(),
-                artistsFilters.values.toList(),
-                dismissPopup,
-                setOptions
-            )
-        })
+        TagWithOptions(
+            selectedArtistOption,
+            description = "Artists",
+            icon = Icons.Filled.Groups,
+            reset = if (options.artistFilter != null) {
+                options.withArtistFilter(null)
+            } else null,
+            setOptions = setOptions,
+            optionsComposable = { dismissPopup ->
+                FilterSortPopup(
+                    options,
+                    selectedArtistOption,
+                    artistsSorters.values.toList(),
+                    artistsFilters.values.toList(),
+                    dismissPopup,
+                    setOptions
+                )
+            })
 
 
         val libForAlbums = library.sort(
@@ -209,13 +313,14 @@ fun SongListOptionsController(
             noopComparator(), noopComparator(),
         ).filter(options.artistFilter, null)
         val albumsSorters = AlbumSorter.values().associateWith { sorter ->
-            SortFilterOption(sorter.label ?: "Do not sort", false) {
+            SortFilterOption.Sort(sorter) {
                 it.withAlbumFilter(null).copy(albumSorter = sorter)
             }
         }
         val albumsFilters = libForAlbums.albums.associateWith { album ->
-            SortFilterOption(
-                album.title(options.artistFilter == null && options.artistSorter != ArtistSorter.NONE), true
+            SortFilterOption.Filter(
+                album.title(options.artistFilter == null && options.artistSorter != ArtistSorter.NONE),
+                album
             ) {
                 it.withAlbumFilter(album)
             }
@@ -225,31 +330,41 @@ fun SongListOptionsController(
         } else {
             albumsFilters.getValue(options.albumFilter)
         }
-        TagWithOptions(selectedAlbumOptions, icon = Icons.Filled.Album, reset = if (options.albumFilter != null) {
-            options.withAlbumFilter(null)
-        } else null, setOptions = setOptions, optionsComposable = { dismissPopup ->
-            LazyVerticalGrid(GridCells.Adaptive(128.dp)) {
-                val fullSpan: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxCurrentLineSpan) }
-                item(span = fullSpan, content = { CategorySeparatorSort() })
-                items(albumsSorters.values.toList(), span = { fullSpan() }) { item ->
-                    SimpleListItem(item.name, item == selectedAlbumOptions) {
-                        dismissPopup()
-                        setOptions(item.transform(options))
+        TagWithOptions(
+            selectedAlbumOptions,
+            description = "Albums",
+            icon = Icons.Filled.Album,
+            reset = if (options.albumFilter != null) {
+                options.withAlbumFilter(null)
+            } else null,
+            setOptions = setOptions,
+            optionsComposable = { dismissPopup ->
+                FilterSortPopupRenderer(
+                    options,
+                    selectedAlbumOptions,
+                    dismissPopup,
+                    setOptions
+                ).render {
+                    val state = rememberLazyGridState()
+                    LazyVerticalGrid(GridCells.Adaptive(160.dp), state = state) {
+                        val fullSpan: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxCurrentLineSpan) }
+                        item(span = fullSpan, content = { CategorySeparatorSort() })
+                        items(albumsSorters.values.toList(), span = { fullSpan() }) { item ->
+                            Row(item)
+                        }
+                        item(span = fullSpan, content = { CategorySeparatorFilter() })
+                        items(albumsFilters.values.toList()) { item ->
+                            AlbumGridItem(item)
+                        }
                     }
-                }
-                item(span = fullSpan, content = { CategorySeparatorFilter() })
-                items(albumsFilters.values.toList()) { item ->
-                    SimpleListItem(item.name, item == selectedAlbumOptions) {
-                        dismissPopup()
-                        setOptions(item.transform(options))
-                    }
+                    ScrollBar(state)
                 }
             }
-        })
+        )
 
         val isGroupingByAlbum = options.isInAlbumMode
         val songSorters = SongSorter.values().filter { !it.inAlbumOnly || isGroupingByAlbum }.associateWith { sorter ->
-            SortFilterOption(sorter.label, false) {
+            SortFilterOption.Sort(sorter) {
                 it.withSongSorter(sorter)
             }
         }
@@ -259,23 +374,23 @@ fun SongListOptionsController(
             songSorters.getValue(options.songSorter)
         }
         TagWithOptions(selectedSongOption,
+            description = "Songs",
             icon = Icons.Filled.MusicNote,
             reset = null,
             setOptions = setOptions,
             optionsComposable = { dismissPopup ->
-                FilterSortPopup(
-                    options, selectedSongOption, songSorters.values.toList(), emptyList(), dismissPopup, setOptions
+                FilterSortPopup<Nothing>(
+                    options,
+                    selectedSongOption,
+                    songSorters.values.toList(),
+                    emptyList(),
+                    dismissPopup,
+                    setOptions
                 )
             })
     }
 }
 
-
-@Composable
-private fun CategorySeparatorSort() = CategorySeparator(Icons.Filled.Sort, "Sort")
-
-@Composable
-private fun CategorySeparatorFilter() = CategorySeparator(Icons.Filled.FilterList, "Filter")
 
 @Composable
 private fun CategorySeparator(
@@ -290,19 +405,42 @@ private fun CategorySeparator(
 }
 
 @Composable
-private fun SimpleListItem(
+private fun FilterSortPopupRenderer.SimpleListItem(
     text: String,
-    selected: Boolean,
-    onClick: () -> Unit,
+    item: SortFilterOption,
 ) {
-    val targetBg by animateColorAsState(
-        if (selected) {
-            MaterialTheme.colors.primary
-        } else {
-            MaterialTheme.colors.primary.copy(alpha = 0f)
-        }
-    )
-    Row(Modifier.selectable(selected) { onClick() }.background(targetBg).fillMaxWidth().padding(8.dp)) {
+    val bg: Color by background(item)
+    Row(Modifier.selectable(item == selected) { onClick(item) }.background(bg).fillMaxWidth().padding(8.dp)) {
         Text(text)
+    }
+}
+
+@Composable
+private fun FilterSortPopupRenderer.AlbumGridItem(item: SortFilterOption.Filter<Album>) {
+    val bg: Color by background(item)
+    Column(
+        Modifier
+            .selectable(item == selected) { onClick(item) }
+            .background(bg)
+            .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(Modifier.padding(8.dp)) {
+            AlbumCover(item.element.cover, Modifier.fillMaxSize(), MaterialTheme.shapes.medium)
+        }
+        Text(
+            item.element.title,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.subtitle2,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            item.element.artist.name,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.subtitle2,
+            textAlign = TextAlign.Center
+        )
     }
 }

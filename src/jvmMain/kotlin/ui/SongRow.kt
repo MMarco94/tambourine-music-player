@@ -28,7 +28,9 @@ fun SongRow(
                 onSongSelected()
                 //TODO song.play()
             }
-            .padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(end = 8.dp) // Space for scrollbar
+        , verticalAlignment = Alignment.CenterVertically
     ) {
         if (inAlbumContext) { // Track number
             Text(
@@ -40,13 +42,11 @@ fun SongRow(
         }
         if (showAlbum) {
             // Album cover
-            key(song) {
-                AlbumCover(song.cover, 40.dp, MaterialTheme.shapes.small)
-                Spacer(Modifier.width(8.dp))
-            }
+            AlbumCover(song.cover, Modifier.size(40.dp), MaterialTheme.shapes.small)
+            Spacer(Modifier.width(8.dp))
         }
         Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(song.title,Modifier.weight(1f))
+            Text(song.title, Modifier.weight(1f))
             Text(
                 song.length.rounded().toString(),
                 color = MaterialTheme.colors.onSurfaceSecondary,

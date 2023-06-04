@@ -5,6 +5,7 @@ import javazoom.jl.player.Player
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import mostCommonOrNull
 import noopComparator
 import java.io.File
 import kotlin.time.Duration
@@ -22,6 +23,7 @@ data class Artist(
 data class Album(
     val title: String,
     val artist: Artist,
+    val cover: ImageBitmap?,
     val stats: SongCollectionStats,
 ) {
     fun title(withArtist: Boolean): String {
@@ -113,17 +115,17 @@ data class Library(
         private fun buildAlbums(
             metadata: Collection<RawMetadataSong>,
             artists: Map<String, Artist>,
+            covers: Map<RawImage, ImageBitmap>,
         ): Map<Pair<Artist, String>, Album> {
             return metadata
                 .groupBy { artists.getValue(it.nnAlbumArtist) to it.nnAlbum }
                 .mapValues { (album, songs) ->
-                    Album(album.second, album.first, SongCollectionStats.of(songs))
+                    val cover = songs.mapNotNull { it.cover }.mostCommonOrNull()
+                    Album(album.second, album.first, covers[cover], SongCollectionStats.of(songs))
                 }
         }
 
         suspend fun from(metadata: Collection<RawMetadataSong>): Library = coroutineScope {
-            val artists = buildArtists(metadata)
-            val albums = buildAlbums(metadata, artists)
             val covers: Map<RawImage, ImageBitmap> = metadata
                 .mapNotNull { it.cover }
                 .distinct()
@@ -134,6 +136,8 @@ data class Library(
                 }
                 .awaitAll()
                 .associate { it }
+            val artists = buildArtists(metadata)
+            val albums = buildAlbums(metadata, artists, covers)
 
             val songs = metadata.map { song ->
                 val albumArtist = artists.getValue(song.nnAlbumArtist)

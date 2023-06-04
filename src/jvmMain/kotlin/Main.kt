@@ -7,10 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.darkColors
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,7 +43,10 @@ fun App() {
         listOptions,
     )
 
-    MaterialTheme(colors = darkColors()) {
+    MaterialTheme(
+        colors = darkColors(),
+        shapes = Shapes(RoundedCornerShape(4.dp), RoundedCornerShape(8.dp), RoundedCornerShape(12.dp))
+    ) {
         Surface {
             Box {
                 BlurredFadeAlbumCover(currentSong?.cover, Modifier.fillMaxSize())
@@ -108,7 +109,7 @@ private fun SongList(
 
 fun main() = application {
     Window(onCloseRequest = ::exitApplication, state = remember {
-        WindowState(size = DpSize(1280.dp, 720.dp))
+        WindowState(size = DpSize(1280.dp, 800.dp))
     }) {
         App()
     }
