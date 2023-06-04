@@ -67,12 +67,12 @@ object MusicPlayerTheme {
             body1 = TextStyle(
                 fontWeight = FontWeight.Normal,
                 fontSize = 15.sp, //16.sp,
-                letterSpacing = 0.5.sp
+                letterSpacing = 0.25.sp
             ),
             body2 = TextStyle(
                 fontWeight = FontWeight.Normal,
                 fontSize = 13.sp,//14.sp,
-                letterSpacing = 0.25.sp
+                letterSpacing = 0.2.sp
             ),
             button = TextStyle(
                 fontWeight = FontWeight.Medium,

@@ -132,19 +132,22 @@ private fun TagWithOptions(
                     Modifier.height(IntrinsicSize.Max).heightIn(min = 40.dp).animateContentSize(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(icon, description, Modifier.padding(8.dp))
-                    Column(Modifier.padding(8.dp)) {
+                    Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(icon, description)
+                        Spacer(Modifier.width(8.dp))
                         if (selected is SortFilterOption.Sort) {
-                            Text(description, style = MaterialTheme.typography.subtitle1)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(selected.name, style = MaterialTheme.typography.subtitle2)
-                                if (selected.icon != null) {
-                                    Spacer(Modifier.width(4.dp))
-                                    Icon(selected.icon, null, Modifier.size(16.dp))
+                            Column {
+                                SingleLineText(description)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    SingleLineText(selected.name, style = MaterialTheme.typography.subtitle2)
+                                    if (selected.icon != null) {
+                                        Spacer(Modifier.width(2.dp))
+                                        Icon(selected.icon, null, Modifier.size(16.dp))
+                                    }
                                 }
                             }
                         } else {
-                            Text(selected.name)
+                            SingleLineText(selected.name)
                         }
                     }
                     if (reset != null) {
@@ -267,7 +270,10 @@ fun SongListOptionsController(
     options: SongListOptions,
     setOptions: (SongListOptions) -> Unit,
 ) {
-    FlowRow(Modifier.padding(2.dp), verticalAlignment = Alignment.CenterVertically) {
+    FlowRow(
+        Modifier.padding(2.dp).fillMaxWidth().animateContentSize(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         val libForArtists = library.sort(
             options.artistSorter.comparator ?: compareBy { it.name },
             noopComparator(), noopComparator(), noopComparator(),
@@ -400,7 +406,7 @@ private fun CategorySeparator(
     Row(Modifier.padding(8.dp)) {
         Icon(icon, name)
         Spacer(Modifier.padding(8.dp))
-        Text(name)
+        SingleLineText(name)
     }
 }
 
@@ -411,7 +417,7 @@ private fun FilterSortPopupRenderer.SimpleListItem(
 ) {
     val bg: Color by background(item)
     Row(Modifier.selectable(item == selected) { onClick(item) }.background(bg).fillMaxWidth().padding(8.dp)) {
-        Text(text)
+        SingleLineText(text)
     }
 }
 
@@ -428,17 +434,13 @@ private fun FilterSortPopupRenderer.AlbumGridItem(item: SortFilterOption.Filter<
         Box(Modifier.padding(8.dp)) {
             AlbumCover(item.element.cover, Modifier.fillMaxSize(), MaterialTheme.shapes.medium)
         }
-        Text(
+        SingleLineText(
             item.element.title,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.subtitle1,
             textAlign = TextAlign.Center
         )
-        Text(
+        SingleLineText(
             item.element.artist.name,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.subtitle2,
             textAlign = TextAlign.Center
         )

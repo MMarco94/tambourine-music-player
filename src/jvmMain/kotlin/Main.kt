@@ -6,8 +6,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material.Divider
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import ui.*
 import java.io.File
+
 
 val musicDirectory = File("/home/marco/Music")
 //val musicDirectory = File("/home/marco/Music/Coldplay - Mylo Xyloto")
@@ -46,24 +48,22 @@ fun App() {
         shapes = MusicPlayerTheme.shapes,
     ) {
         Surface {
-            Box {
-                BlurredFadeAlbumCover(currentSong?.cover, Modifier.fillMaxSize())
-                Row {
-                    Box(
-                        Modifier.weight(1f).background(Color.Black.copy(alpha = 0.1f))
-                    ) {
-                        Column {
-                            SongListOptionsController(library, listOptions) { listOptions = it }
-                            Divider()
-                            SongList(lib, items) {
-                                currentSong = it
-                            }
+            BlurredFadeAlbumCover(currentSong?.cover, Modifier.fillMaxSize())
+            Row {
+                Box(
+                    Modifier.weight(1f).background(Color.Black.copy(alpha = 0.1f))
+                ) {
+                    Column {
+                        SongListOptionsController(library, listOptions) { listOptions = it }
+                        Divider()
+                        SongList(lib, items) {
+                            currentSong = it
                         }
                     }
-                    if (currentSong != null) {
-                        Box(Modifier.weight(1f)) {
-                            PlayerUI(currentSong!!)
-                        }
+                }
+                if (currentSong != null) {
+                    Box(Modifier.weight(1f)) {
+                        PlayerUI(currentSong!!)
                     }
                 }
             }
@@ -109,7 +109,6 @@ private fun SongList(
 fun main() = application {
     Window(
         title = "Music Player",
-        undecorated = true,
         onCloseRequest = ::exitApplication,
         state = remember {
             WindowState(size = DpSize(1280.dp, 800.dp))

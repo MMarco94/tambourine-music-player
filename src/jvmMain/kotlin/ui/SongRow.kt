@@ -27,7 +27,6 @@ fun SongRow(
 ) {
     Surface(
         modifier = Modifier
-            .padding(vertical = 4.dp)
             .padding(end = 4.dp), // Space for scrollbar
         shape = MaterialTheme.shapes.small,
         color = Color.Transparent,
@@ -38,7 +37,7 @@ fun SongRow(
         ) {
             if (inAlbumContext) { // Track number
                 val maxDigits = maxTrackNumber?.digits() ?: 0
-                Text(
+                SingleLineText(
                     song.track?.toString().orEmpty().padStart(maxDigits, ' '),
                     fontFamily = FontFamily.Monospace,
                     color = MaterialTheme.colors.onSurfaceSecondary,
@@ -52,7 +51,7 @@ fun SongRow(
             }
             Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(song.title, Modifier.weight(1f))
-                Text(
+                SingleLineText(
                     song.length.rounded().toString(),
                     color = MaterialTheme.colors.onSurfaceSecondary,
                     style = MaterialTheme.typography.subtitle2,
