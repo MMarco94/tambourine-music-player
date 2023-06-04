@@ -14,7 +14,11 @@ enum class ArtistSorter(
     override val comparator: Comparator<Artist>?,
 ) : Sorter<Artist> {
     NONE(null, null, null, null),
-    ALPHABETICAL("Name", "By name", false, compareBy { it.name }),
+    ALPHABETICAL(
+        "Name",
+        "By name",
+        false,
+        compareBy { it.name }),
     ALPHABETICAL_DESC("Name", "By name (inverse)", true, compareByDescending { it.name }),
 }
 
@@ -24,10 +28,16 @@ enum class AlbumSorter(
     override val isInverse: Boolean?,
     override val comparator: Comparator<Album>?,
 ) : Sorter<Album> {
-    NONE(null, null, null, null),
-    ALPHABETICAL("Title", "By title", false, compareBy { it.title }),
+    NONE(null, null, null, null), ALPHABETICAL(
+        "Title",
+        "By title",
+        false,
+        compareBy { it.title }),
     ALPHABETICAL_DESC("Title", "By title (inverse)", true, compareByDescending { it.title }),
-    YEAR("Year", "By year (newest first)", false, compareByDescending { it.stats.year?.last ?: Int.MIN_VALUE }),
+    YEAR("Year",
+        "By year (newest first)",
+        false,
+        compareByDescending { it.stats.year?.last ?: Int.MIN_VALUE }),
     YEAR_DESC("Year", "By year (oldest first)", true, compareBy { it.stats.year?.first ?: Int.MAX_VALUE }),
 }
 
@@ -39,18 +49,25 @@ enum class SongSorter(
     val inAlbumOnly: Boolean = false,
 ) : Sorter<Song> {
     TRACK("Track", "By position in album", false, compareBy { it.track }, true),
-    TRACK_DESC("Track", "By position in album (inverse)", true, compareByDescending { it.track }, true),
+    TRACK_DESC(
+        "Track",
+        "By position in album (inverse)",
+        true,
+        compareByDescending { it.track },
+        true
+    ),
     ALPHABETICAL("Title", "By title", true, compareBy { it.title }),
-    ALPHABETICAL_DESC("Title", "By title (inverse)", false, compareByDescending { it.title }),
-    YEAR(
-        "Year",
+    ALPHABETICAL_DESC(
+        "Title",
+        "By title (inverse)",
+        false,
+        compareByDescending { it.title }),
+    YEAR("Year",
         "By year (newest first)",
         true,
         compareByDescending<Song> { it.year ?: Int.MIN_VALUE }.thenByDescending { it.track }),
-    YEAR_DESC(
-        "Year",
+    YEAR_DESC("Year",
         "By year (oldest first)",
         false,
-        compareBy<Song> { it.year ?: Int.MAX_VALUE }.thenBy { it.track }),
-    ;
+        compareBy<Song> { it.year ?: Int.MAX_VALUE }.thenBy { it.track }), ;
 }

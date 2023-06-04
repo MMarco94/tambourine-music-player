@@ -54,10 +54,10 @@ fun App() {
                     Modifier.weight(1f).background(Color.Black.copy(alpha = 0.1f))
                 ) {
                     Column {
-                        SongListOptionsController(library, listOptions) { listOptions = it }
-                        Divider()
-                        SongList(lib, items) {
-                            currentSong = it
+                        SongListOptionsController(library, listOptions,{ listOptions = it }) {
+                            SongList(lib, items) {
+                                currentSong = it
+                            }
                         }
                     }
                 }

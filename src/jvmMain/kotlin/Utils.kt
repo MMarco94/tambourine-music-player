@@ -1,4 +1,3 @@
-import androidx.compose.material.Colors
 import com.mpatric.mp3agic.ID3v2
 import com.mpatric.mp3agic.ID3v24Tag
 import kotlin.math.abs
@@ -8,8 +7,6 @@ import kotlin.time.Duration.Companion.seconds
 
 fun <T> noopComparator(): Comparator<T> = compareBy { 0 }
 fun <T> Comparator<T>?.orNoop(): Comparator<T> = this ?: noopComparator()
-
-val Colors.onSurfaceSecondary get() = onSurface.copy(alpha = 0.5f)
 
 fun <T> Collection<T>.rangeOfOrNull(f: (T) -> Int?): IntRange? {
     var min: Int? = null

@@ -11,6 +11,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+
+val Colors.onSurfaceSecondary get() = onSurface.copy(alpha = 0.5f)
+
+const val inactiveAlpha = .4f
+
 /**
  * Inspired by https://github.com/gtk-flutter/adwaita/blob/main/lib/src/theme.dart
  */
