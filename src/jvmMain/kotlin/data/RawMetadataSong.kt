@@ -24,7 +24,7 @@ class RawImage(
 
 data class RawMetadataSong(
     val file: File,
-    val track: Int?,
+    override val track: Int?,
     override val length: Duration,
     val title: String?,
     val album: String?,

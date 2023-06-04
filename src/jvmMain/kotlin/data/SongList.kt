@@ -54,35 +54,37 @@ sealed interface SongListItem {
     ) : SongListItem
 }
 
-fun generateSongList(
-    library: Library,
+fun Library.filterAndSort(
     options: SongListOptions,
-): List<SongListItem> {
-    val lib = library
-        .filter(options.artistFilter, options.albumFilter)
+): Library {
+    return filter(options.artistFilter, options.albumFilter)
         .sort(
             options.artistSorter.comparator.orNoop(),
             options.albumSorter.comparator.orNoop(),
             options.songSorter.comparator.orNoop(),
             options.songSorterInAlbum.comparator.orNoop(),
         )
+}
 
+fun Library.toListItems(
+    options: SongListOptions,
+): List<SongListItem> {
     return if (options.isInAlbumMode) {
-        lib.albums.map { album ->
+        albums.map { album ->
             SongListItem.AlbumListItem(
                 album,
-                lib.songsByAlbum.getValue(album),
+                songsByAlbum.getValue(album),
             )
         }
     } else if (options.isInArtistMode) {
-        lib.artists.map { artist ->
+        artists.map { artist ->
             SongListItem.ArtistListItem(
                 artist,
-                lib.songsByArtist.getValue(artist),
+                songsByArtist.getValue(artist),
             )
         }
     } else {
-        lib.songs.map { song ->
+        songs.map { song ->
             SongListItem.SingleSongListItem(song)
         }
     }

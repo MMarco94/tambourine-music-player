@@ -432,7 +432,7 @@ private fun FilterSortPopupRenderer.AlbumGridItem(item: SortFilterOption.Filter<
             item.element.title,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.subtitle2,
+            style = MaterialTheme.typography.subtitle1,
             textAlign = TextAlign.Center
         )
         Text(

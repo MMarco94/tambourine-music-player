@@ -1,6 +1,8 @@
 import androidx.compose.material.Colors
 import com.mpatric.mp3agic.ID3v2
 import com.mpatric.mp3agic.ID3v24Tag
+import kotlin.math.abs
+import kotlin.math.log10
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -25,6 +27,11 @@ fun <T> Collection<T>.rangeOfOrNull(f: (T) -> Int?): IntRange? {
     }
     return if (min != null) (min!!..max!!)
     else null
+}
+
+fun Int.digits() = when (this) {
+    0 -> 1
+    else -> log10(abs(toDouble())).toInt() + 1
 }
 
 fun Duration.rounded(): Duration {

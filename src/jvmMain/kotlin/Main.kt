@@ -3,7 +3,6 @@ import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
@@ -38,14 +37,13 @@ fun App() {
 
     var currentSong by remember { mutableStateOf(library.songs.firstOrNull()) }
     var listOptions by remember { mutableStateOf(SongListOptions()) }
-    val items = generateSongList(
-        library,
-        listOptions,
-    )
+    val lib = library.filterAndSort(listOptions)
+    val items = lib.toListItems(listOptions)
 
     MaterialTheme(
-        colors = darkColors(),
-        shapes = Shapes(RoundedCornerShape(4.dp), RoundedCornerShape(8.dp), RoundedCornerShape(12.dp))
+        typography = MusicPlayerTheme.typography,
+        colors = MusicPlayerTheme.colors,
+        shapes = MusicPlayerTheme.shapes,
     ) {
         Surface {
             Box {
@@ -57,7 +55,7 @@ fun App() {
                         Column {
                             SongListOptionsController(library, listOptions) { listOptions = it }
                             Divider()
-                            SongList(items) {
+                            SongList(lib, items) {
                                 currentSong = it
                             }
                         }
@@ -75,6 +73,7 @@ fun App() {
 
 @Composable
 private fun SongList(
+    lib: Library,
     items: List<SongListItem>,
     onSongSelected: (Song) -> Unit,
 ) {
@@ -85,15 +84,15 @@ private fun SongList(
                 val offset = if (index == state.firstVisibleItemIndex) state.firstVisibleItemScrollOffset else 0
                 when (item) {
                     is SongListItem.ArtistListItem -> {
-                        ArtistRow(item.artist, item.songs, offset, onSongSelected)
+                        ArtistRow(lib.stats.maxTrackNumber, item.artist, item.songs, offset, onSongSelected)
                     }
 
                     is SongListItem.AlbumListItem -> {
-                        AlbumRow(item.album, item.songs, offset, onSongSelected)
+                        AlbumRow(lib.stats.maxTrackNumber, item.album, item.songs, offset, onSongSelected)
                     }
 
                     is SongListItem.SingleSongListItem -> {
-                        SongRow(item.song) { onSongSelected(item.song) }
+                        SongRow(lib.stats.maxTrackNumber, item.song) { onSongSelected(item.song) }
                     }
                 }
             }
@@ -108,9 +107,14 @@ private fun SongList(
 }
 
 fun main() = application {
-    Window(onCloseRequest = ::exitApplication, state = remember {
-        WindowState(size = DpSize(1280.dp, 800.dp))
-    }) {
+    Window(
+        title = "Music Player",
+        undecorated = true,
+        onCloseRequest = ::exitApplication,
+        state = remember {
+            WindowState(size = DpSize(1280.dp, 800.dp))
+        }
+    ) {
         App()
     }
 }

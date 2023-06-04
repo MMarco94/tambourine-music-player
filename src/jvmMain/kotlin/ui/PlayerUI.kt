@@ -19,10 +19,10 @@ fun PlayerUI(song: Song) {
             AlbumCover(song.cover, Modifier.size(256.dp), MaterialTheme.shapes.large)
             Spacer(Modifier.height(16.dp))
 
-            Text(song.title, style = MaterialTheme.typography.h5)
+            Text(song.title, style = MaterialTheme.typography.h2)
             Spacer(Modifier.height(8.dp))
-            Text(song.album.title, style = MaterialTheme.typography.h6)
-            Text(song.album.artist.name, style = MaterialTheme.typography.h6)
+            Text(song.album.title, style = MaterialTheme.typography.h3)
+            Text(song.album.artist.name, style = MaterialTheme.typography.h3)
 
             Spacer(Modifier.weight(1f))
         }

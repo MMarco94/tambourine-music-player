@@ -13,6 +13,7 @@ import data.Song
 
 @Composable
 fun BigSongRow(
+    maxTrackNumber: Int?,
     inAlbumContext: Boolean,
     songs: List<Song>,
     sideOffset: Int,
@@ -41,6 +42,7 @@ fun BigSongRow(
                 Column {
                     songs.forEach { song ->
                         SongRow(
+                            maxTrackNumber,
                             song,
                             inAlbumContext = inAlbumContext,
                             onSongSelected = { onSongSelected(song) })

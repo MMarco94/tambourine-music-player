@@ -11,8 +11,11 @@ import data.Artist
 import data.Song
 
 @Composable
-fun ArtistRow(artist: Artist, songs: List<Song>, sideOffset: Int, onSongSelected: (Song) -> Unit) {
-    BigSongRow(false, songs, sideOffset, onSongSelected) {
+fun ArtistRow(
+    maxTrackNumber: Int?,
+    artist: Artist, songs: List<Song>, sideOffset: Int, onSongSelected: (Song) -> Unit
+) {
+    BigSongRow(maxTrackNumber, false, songs, sideOffset, onSongSelected) {
         Text(artist.name, textAlign = TextAlign.Center)
         Spacer(Modifier.height(8.dp))
         SongCollectionStatsComposable(artist.stats)

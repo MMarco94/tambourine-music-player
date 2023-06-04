@@ -38,7 +38,7 @@ data class Album(
 
 data class Song(
     val file: File,
-    val track: Int? = null,
+    override val track: Int?,
     val title: String,
     val album: Album,
     val cover: ImageBitmap?,
@@ -67,7 +67,7 @@ data class Library(
     val songsByAlbum: Map<Album, List<Song>> = songs.groupBy { it.album },
 ) {
 
-    val statistics = SongCollectionStats.of(songs)
+    val stats = SongCollectionStats.of(songs)
 
     fun filter(artist: Artist?, album: Album?): Library {
         return Library(
