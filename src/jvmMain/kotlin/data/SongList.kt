@@ -57,12 +57,16 @@ sealed interface SongListItem {
 fun Library.filterAndSort(
     options: SongListOptions,
 ): Library {
+    val ss = if(options.isInAlbumMode){
+        options.songSorterInAlbum
+    }else {
+        options.songSorter
+    }
     return filter(options.artistFilter, options.albumFilter)
         .sort(
             options.artistSorter.comparator.orNoop(),
             options.albumSorter.comparator.orNoop(),
-            options.songSorter.comparator.orNoop(),
-            options.songSorterInAlbum.comparator.orNoop(),
+            ss.comparator.orNoop(),
         )
 }
 

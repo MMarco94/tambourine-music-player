@@ -37,10 +37,11 @@ fun App() {
         }
     }
 
-    var currentSong by remember { mutableStateOf(library.songs.firstOrNull()) }
     var listOptions by remember { mutableStateOf(SongListOptions()) }
     val lib = library.filterAndSort(listOptions)
     val items = lib.toListItems(listOptions)
+    var currentSong by remember { mutableStateOf(lib.songs.firstOrNull()) }
+
 
     MaterialTheme(
         typography = MusicPlayerTheme.typography,

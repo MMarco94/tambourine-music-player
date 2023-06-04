@@ -18,7 +18,7 @@ fun AlbumRow(
     maxTrackNumber: Int?,
     album: Album, songs: List<Song>, sideOffset: Int, onSongSelected: (Song) -> Unit,
 ) {
-    BigSongRow(maxTrackNumber,true, songs, sideOffset, onSongSelected) {
+    BigSongRow(maxTrackNumber, true, songs, sideOffset, onSongSelected) {
         AlbumCover(album.cover, Modifier.size(128.dp), MaterialTheme.shapes.medium)
         Spacer(Modifier.height(8.dp))
 

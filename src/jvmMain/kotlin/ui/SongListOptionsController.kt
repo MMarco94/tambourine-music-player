@@ -373,7 +373,7 @@ private class ArtistOptionsRenderer(
     override val withoutFilter = options.withArtistFilter(null)
     private val libForArtists = library.sort(
         options.artistSorter.comparator ?: compareBy { it.name },
-        noopComparator(), noopComparator(), noopComparator(),
+        noopComparator(), noopComparator()
     )
     private val artistsSorters = ArtistSorter.values().associateWith { sorter ->
         SortFilterOption.Sort(sorter) {
@@ -416,7 +416,7 @@ private class AlbumOptionsRenderer(
     private val libForAlbums = library.sort(
         options.artistSorter.comparator.orNoop(),
         options.albumSorter.comparator ?: compareBy { it.title },
-        noopComparator(), noopComparator(),
+        noopComparator()
     ).filter(options.artistFilter, null)
     private val albumsSorters = AlbumSorter.values().associateWith { sorter ->
         SortFilterOption.Sort(sorter) {
