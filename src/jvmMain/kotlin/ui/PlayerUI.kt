@@ -10,12 +10,14 @@ import androidx.compose.ui.unit.dp
 import data.Song
 
 @Composable
-fun PlayerUI(song: Song?) {
-    if (song == null) {
-        Text("Select a song")
-    } else {
-        Box {
-            //BlurredAlbumCover(song.cover)
+fun PlayerUI(
+    modifier: Modifier,
+    song: Song?,
+) {
+    Box(modifier) {
+        if (song == null) {
+            Text("Select a song")
+        } else {
             Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(Modifier.weight(1f))
 

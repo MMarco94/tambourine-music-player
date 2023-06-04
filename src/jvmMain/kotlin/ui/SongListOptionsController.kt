@@ -219,6 +219,7 @@ private enum class Tab {
 
 @Composable
 fun SongListOptionsController(
+    modifier: Modifier,
     library: Library,
     options: SongListOptions,
     setOptions: (SongListOptions) -> Unit,
@@ -230,7 +231,7 @@ fun SongListOptionsController(
     val albumRenderer = AlbumOptionsRenderer(ALBUM, library, options, setOptions)
     val songRenderer = SongOptionsRenderer(SONG, options, setOptions)
 
-    Column {
+    Column(modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             FlowRow(
                 Modifier.padding(2.dp).weight(1f).animateContentSize(),

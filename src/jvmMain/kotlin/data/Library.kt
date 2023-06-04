@@ -82,16 +82,24 @@ data class Library(
         album: Comparator<Album>,
         song: Comparator<Song>,
     ): Library {
-        return Library(
-            songs = songs.sortedWith(noopComparator<Song>()
-                .thenBy(artist) { it.artist }
-                .thenBy(album) { it.album }
-                .then(song)),
-            albums = albums.sortedWith(noopComparator<Album>()
-                .thenBy(artist) { it.artist }
+        val newArtists = artists.sortedWith(artist)
+        val artistIndices = newArtists.withIndex().associate { it.value to it.index }
+
+        val newAlbums = albums.sortedWith(
+            compareBy<Album> { artistIndices.getValue(it.artist) }
                 .then(album)
-            ),
-            artists = artists.sortedWith(artist),
+        )
+        val albumIndices = newAlbums.withIndex().associate { it.value to it.index }
+
+        val newSongs = songs.sortedWith(
+            compareBy<Song> { albumIndices.getValue(it.album) }
+                .then(song)
+        )
+
+        return Library(
+            songs = newSongs,
+            albums = newAlbums,
+            artists = newArtists,
         )
     }
 

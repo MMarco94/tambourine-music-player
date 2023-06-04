@@ -3,7 +3,6 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -54,7 +53,7 @@ fun App() {
     var listOptions by remember { mutableStateOf(SongListOptions()) }
     val lib = library.filterAndSort(listOptions)
     val items = lib.toListItems(listOptions)
-    var currentSong by remember { mutableStateOf(lib.songs.firstOrNull()) }
+    var currentSong: Song? by remember { mutableStateOf(null) }
 
     var selectedPanel by remember { mutableStateOf(LIBRARY) }
 
@@ -67,27 +66,21 @@ fun App() {
             BlurredFadeAlbumCover(currentSong?.cover, Modifier.fillMaxSize())
             BoxWithConstraints {
                 val w = constraints.maxWidth
-                val panels = if (w >= with(LocalDensity.current) { (BIG_SONG_ROW_DESIRED_WIDTH*2).toPx() }) {
-                    listOf(selectedPanel, PLAYER).distinct()
-                } else {
-                    listOf(selectedPanel)
-                }
+                val large = w >= with(LocalDensity.current) { (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPx() }
                 Column {
-                    PanelContainer(Modifier.fillMaxWidth().weight(1f), panels) { panel ->
-                        when (panel) {
-                            LIBRARY -> SongListOptionsController(library, listOptions, { listOptions = it }) {
-                                SongListUI(lib.stats.maxTrackNumber, items) {
-                                    queue = SongQueue(lib.songs)
-                                    currentSong = it
-                                }
-                            }
-
-                            QUEUE -> SongQueueUI(queue) {
-                                currentSong = it
-                            }
-
-                            PLAYER -> PlayerUI(currentSong)
-                        }
+                    SingleOrDualPanelContainer(
+                        Modifier.fillMaxWidth().weight(1f),
+                        large,
+                        selectedPanel,
+                        PLAYER,
+                    ) { panel ->
+                        RenderPanel(
+                            Modifier.fillMaxSize(),
+                            panel, library, listOptions, lib, items, queue, currentSong,
+                            { listOptions = it },
+                            { currentSong = it },
+                            { queue = it },
+                        )
                     }
                     Row(
                         Modifier
@@ -97,9 +90,13 @@ fun App() {
                     ) {
                         Panels.values().forEach { panel ->
                             Surface(
-                                modifier = Modifier.padding(horizontal = 4.dp).padding(top = 4.dp).weight(1f).fillMaxHeight(),
+                                modifier = Modifier.padding(horizontal = 4.dp).padding(top = 4.dp).weight(1f)
+                                    .fillMaxHeight(),
                                 color = if (panel == selectedPanel) MaterialTheme.colors.primary else Color.Transparent,
-                                shape = MaterialTheme.shapes.medium.copy(bottomEnd = ZeroCornerSize, bottomStart = ZeroCornerSize)
+                                shape = MaterialTheme.shapes.medium.copy(
+                                    bottomEnd = ZeroCornerSize,
+                                    bottomStart = ZeroCornerSize
+                                )
                             ) {
                                 Column(
                                     Modifier
@@ -117,6 +114,36 @@ fun App() {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RenderPanel(
+    modifier: Modifier,
+    panel: Panels,
+    library: Library,
+    listOptions: SongListOptions,
+    lib: Library,
+    items: List<SongListItem>,
+    queue: SongQueue,
+    currentSong: Song?,
+    setOptions: (SongListOptions) -> Unit,
+    setSong: (Song?) -> Unit,
+    setQueue: (SongQueue) -> Unit,
+) {
+    when (panel) {
+        LIBRARY -> SongListOptionsController(modifier, library, listOptions, setOptions) {
+            SongListUI(lib.stats.maxTrackNumber, items) {
+                setQueue(SongQueue(lib.songs))
+                setSong(it)
+            }
+        }
+
+        QUEUE -> SongQueueUI(modifier, queue) {
+            setSong(it)
+        }
+
+        PLAYER -> PlayerUI(modifier, currentSong)
     }
 }
 
