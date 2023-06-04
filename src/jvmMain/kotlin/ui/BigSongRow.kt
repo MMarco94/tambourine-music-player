@@ -11,6 +11,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import data.Song
 
+val BIG_SONG_ROW_DESIRED_WIDTH = 480.dp
+
 @Composable
 fun BigSongRow(
     maxTrackNumber: Int?,
@@ -98,5 +100,5 @@ private fun SidePanel(
 }
 
 private fun showSidePanel(constraints: Constraints): Boolean {
-    return !constraints.hasBoundedWidth || constraints.maxWidth.dp >= 480.dp
+    return !constraints.hasBoundedWidth || constraints.maxWidth.dp >= BIG_SONG_ROW_DESIRED_WIDTH
 }

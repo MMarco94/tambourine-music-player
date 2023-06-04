@@ -1,18 +1,22 @@
+import Panels.*
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.ZeroCornerSize
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.PlayCircleFilled
+import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -28,9 +32,19 @@ import java.io.File
 val musicDirectory = File("/home/marco/Music")
 //val musicDirectory = File("/home/marco/Music/Coldplay - Mylo Xyloto")
 
+private enum class Panels(
+    val icon: ImageVector,
+    val label: String,
+) {
+    LIBRARY(Icons.Filled.LibraryMusic, "Library"),
+    QUEUE(Icons.Filled.QueueMusic, "Queue"),
+    PLAYER(Icons.Filled.PlayCircleFilled, "Player"),
+}
+
 @Composable
 @Preview
 fun App() {
+    var queue by remember { mutableStateOf(SongQueue(emptyList())) }
     val library = remember {
         runBlocking(Dispatchers.IO) {
             Library.fromFolder(musicDirectory)
@@ -42,6 +56,7 @@ fun App() {
     val items = lib.toListItems(listOptions)
     var currentSong by remember { mutableStateOf(lib.songs.firstOrNull()) }
 
+    var selectedPanel by remember { mutableStateOf(LIBRARY) }
 
     MaterialTheme(
         typography = MusicPlayerTheme.typography,
@@ -50,60 +65,58 @@ fun App() {
     ) {
         Surface {
             BlurredFadeAlbumCover(currentSong?.cover, Modifier.fillMaxSize())
-            Row {
-                Box(
-                    Modifier.weight(1f).background(Color.Black.copy(alpha = 0.1f))
-                ) {
-                    Column {
-                        SongListOptionsController(library, listOptions,{ listOptions = it }) {
-                            SongList(lib, items) {
+            BoxWithConstraints {
+                val w = constraints.maxWidth
+                val panels = if (w >= with(LocalDensity.current) { (BIG_SONG_ROW_DESIRED_WIDTH*2).toPx() }) {
+                    listOf(selectedPanel, PLAYER).distinct()
+                } else {
+                    listOf(selectedPanel)
+                }
+                Column {
+                    PanelContainer(Modifier.fillMaxWidth().weight(1f), panels) { panel ->
+                        when (panel) {
+                            LIBRARY -> SongListOptionsController(library, listOptions, { listOptions = it }) {
+                                SongListUI(lib.stats.maxTrackNumber, items) {
+                                    queue = SongQueue(lib.songs)
+                                    currentSong = it
+                                }
+                            }
+
+                            QUEUE -> SongQueueUI(queue) {
                                 currentSong = it
+                            }
+
+                            PLAYER -> PlayerUI(currentSong)
+                        }
+                    }
+                    Row(
+                        Modifier
+                            .background(Color.Black.copy(alpha = 0.5f))
+                            .height(IntrinsicSize.Max)
+                            .padding(horizontal = 4.dp).padding(top = 4.dp)
+                    ) {
+                        Panels.values().forEach { panel ->
+                            Surface(
+                                modifier = Modifier.padding(horizontal = 4.dp).padding(top = 4.dp).weight(1f).fillMaxHeight(),
+                                color = if (panel == selectedPanel) MaterialTheme.colors.primary else Color.Transparent,
+                                shape = MaterialTheme.shapes.medium.copy(bottomEnd = ZeroCornerSize, bottomStart = ZeroCornerSize)
+                            ) {
+                                Column(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .clickable { selectedPanel = panel }
+                                        .padding(8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(panel.icon, null)
+                                    SingleLineText(panel.label, textAlign = TextAlign.Center)
+                                }
                             }
                         }
                     }
                 }
-                if (currentSong != null) {
-                    Box(Modifier.weight(1f)) {
-                        PlayerUI(currentSong!!)
-                    }
-                }
             }
         }
-    }
-}
-
-@Composable
-private fun SongList(
-    lib: Library,
-    items: List<SongListItem>,
-    onSongSelected: (Song) -> Unit,
-) {
-    Box {
-        val state = rememberLazyListState()
-        LazyColumn(state = state, modifier = Modifier.fillMaxSize()) {
-            itemsIndexed(items) { index, item ->
-                val offset = if (index == state.firstVisibleItemIndex) state.firstVisibleItemScrollOffset else 0
-                when (item) {
-                    is SongListItem.ArtistListItem -> {
-                        ArtistRow(lib.stats.maxTrackNumber, item.artist, item.songs, offset, onSongSelected)
-                    }
-
-                    is SongListItem.AlbumListItem -> {
-                        AlbumRow(lib.stats.maxTrackNumber, item.album, item.songs, offset, onSongSelected)
-                    }
-
-                    is SongListItem.SingleSongListItem -> {
-                        SongRow(lib.stats.maxTrackNumber, item.song) { onSongSelected(item.song) }
-                    }
-                }
-            }
-        }
-        VerticalScrollbar(
-            modifier = Modifier.Companion.align(Alignment.CenterEnd).fillMaxHeight(),
-            adapter = rememberScrollbarAdapter(
-                scrollState = state
-            )
-        )
     }
 }
 
