@@ -1,19 +1,28 @@
 package ui
 
+import PlayerCommand
+import PlayerController
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import data.Song
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun PlayerUI(
     modifier: Modifier,
     song: Song?,
 ) {
+    val cs = rememberCoroutineScope()
     Box(modifier) {
         if (song == null) {
             Text("Select a song")
@@ -28,6 +37,33 @@ fun PlayerUI(
                 Spacer(Modifier.height(8.dp))
                 Text(song.album.title, style = MaterialTheme.typography.h3)
                 Text(song.album.artist.name, style = MaterialTheme.typography.h3)
+
+                Slider(
+                    value = PlayerController.position.inWholeMilliseconds.toFloat(),
+                    valueRange = 0f..song.length.inWholeMilliseconds.toFloat(),
+                    onValueChange = {
+                        cs.launch {
+                            PlayerController.channel.send(PlayerCommand.Play(song, it.roundToInt().milliseconds))
+                        }
+                    }
+                )
+
+                Button({
+                    cs.launch {
+                        PlayerController.channel.send(PlayerCommand.Resume)
+                    }
+                }){
+                    Text("Resume")
+                }
+                Button({
+                    cs.launch {
+                        PlayerController.channel.send(PlayerCommand.Pause)
+                    }
+                }){
+                    Text("Pause")
+                }
+
+                Text(PlayerController.position.toString())
 
                 Spacer(Modifier.weight(1f))
             }

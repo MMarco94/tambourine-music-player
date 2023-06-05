@@ -1,12 +1,11 @@
 package data
 
 import androidx.compose.ui.graphics.ImageBitmap
-import javazoom.jl.player.Player
+import Player
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import mostCommonOrNull
-import noopComparator
 import java.io.File
 import kotlin.time.Duration
 

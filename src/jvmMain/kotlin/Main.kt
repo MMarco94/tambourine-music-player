@@ -28,6 +28,7 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import data.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import ui.*
 import java.io.File
@@ -54,7 +55,7 @@ fun App() {
             Library.fromFolder(musicDirectory)
         }
     }
-
+    val cs = rememberCoroutineScope()
     var listOptions by remember { mutableStateOf(SongListOptions()) }
     val lib = library.filterAndSort(listOptions)
     val items = lib.toListItems(listOptions)
@@ -87,7 +88,12 @@ fun App() {
                             Modifier.fillMaxSize(),
                             panel, library, listOptions, lib, items, queue, currentSong,
                             { listOptions = it },
-                            { currentSong = it },
+                            { song ->
+                                currentSong = song
+                                if (song != null) {
+                                    cs.launch { PlayerController.channel.send(PlayerCommand.Play(song)) }
+                                }
+                            },
                             { queue = it },
                         )
                     }
