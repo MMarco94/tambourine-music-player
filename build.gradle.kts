@@ -28,7 +28,6 @@ kotlin {
 
                 implementation("com.tagtraum:ffsampledsp-complete:0.9.50")
                 implementation("com.mpatric:mp3agic:0.9.1")
-                //implementation("com.github.umjammer:jlayer:1.0.2")
             }
         }
         val jvmTest by getting
