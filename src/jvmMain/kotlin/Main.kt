@@ -68,11 +68,14 @@ fun App() {
                 val w = constraints.maxWidth
                 val large = w >= with(LocalDensity.current) { (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPx() }
                 Column {
-                    SingleOrDualPanelContainer(
+                    PanelContainer(
                         Modifier.fillMaxWidth().weight(1f),
-                        large,
-                        selectedPanel,
-                        PLAYER,
+                        Panels.values().toSet(),
+                        if (large) {
+                            listOf(selectedPanel, PLAYER).distinct()
+                        } else {
+                            listOf(selectedPanel)
+                        }
                     ) { panel ->
                         RenderPanel(
                             Modifier.fillMaxSize(),

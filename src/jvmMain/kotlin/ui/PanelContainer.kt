@@ -1,90 +1,69 @@
-@file:OptIn(ExperimentalAnimationApi::class)
-
 package ui
 
-import androidx.compose.animation.*
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.Layout
+import animateOrSnapFloatAsState
+import kotlin.math.pow
+
+private class PanelInfo(
+    var startWeight: Int,
+    var endWeight: Int,
+    var visible: Boolean,
+    var bgAlpha: Float,
+)
 
 @Composable
-fun <T> SingleOrDualPanelContainer(
+fun <T> PanelContainer(
     modifier: Modifier,
-    dualPane: Boolean,
-    mainPanel: T,
-    secondPanel: T,
+    allPanels: Set<T>,
+    panels: List<T>,
     render: @Composable (T) -> Unit,
 ) {
-    if (dualPane) {
-        DualPanelContainer(
-            modifier,
-            if (mainPanel != secondPanel) mainPanel else null,
-            secondPanel,
-            render,
-        )
-    } else {
-        SinglePanelContainer(
-            modifier,
-            mainPanel,
-            render,
-        )
+
+    val panelsData: MutableMap<T, PanelInfo> = remember(allPanels) {
+        allPanels
+            .associateWith { PanelInfo(0, 0, false, 0f) }
+            .toMutableMap()
     }
+    panelsData.values.forEach { it.visible = false }
+    panels.forEachIndexed { index, t ->
+        panelsData.getValue(t).apply {
+            startWeight = index
+            endWeight = panels.size - index - 1
+            visible = true
+            bgAlpha = 1 - 0.9f.pow(endWeight)
+        }
+    }
+    Box(modifier) {
+        allPanels.forEach { panel ->
+            key(panel) {
+                val info = panelsData.getValue(panel)
+                val alpha by animateFloatAsState(if (info.visible) 1f else 0f)
+                val bgAlpha by animateFloatAsState(info.bgAlpha)
 
-}
-
-@Composable
-fun <T> DualPanelContainer(
-    modifier: Modifier,
-    firstPanel: T?,
-    secondPanel: T,
-    render: @Composable (T) -> Unit,
-) {
-    Row(modifier) {
-        AnimatedContent(firstPanel, transitionSpec = {
-            fadeIn() with fadeOut() using SizeTransform()
-        }) { p ->
-            if (p != null) {
-                halfSize {
-                    Box(Modifier.fillMaxHeight().background(Color.Black.copy(alpha = 0.1f))) {
-                        render(p)
+                val sw = animateOrSnapFloatAsState((alpha == 0f) to info.startWeight.toFloat())
+                val ew = animateOrSnapFloatAsState((alpha == 0f) to info.endWeight.toFloat())
+                if (alpha > 0) {
+                    Row(Modifier.matchParentSize().alpha(alpha)) {
+                        if (sw.value > 0) Spacer(Modifier.weight(sw.value))
+                        Box(Modifier.weight(1f).fillMaxHeight().background(Color.Black.copy(alpha = bgAlpha))) {
+                            render(panel)
+                        }
+                        if (ew.value > 0) Spacer(Modifier.weight(ew.value))
                     }
                 }
-            } else {
-                Spacer(Modifier.fillMaxHeight())
             }
-        }
-        Box(
-            Modifier
-                .weight(1f)
-                .fillMaxHeight()
-        ) {
-            Crossfade(secondPanel) { p ->
-                render(p)
-            }
-        }
-    }
-}
-
-@Composable
-fun <T> SinglePanelContainer(
-    modifier: Modifier,
-    panel: T,
-    render: @Composable (T) -> Unit,
-) {
-    Crossfade(panel, modifier) { p ->
-        render(p)
-    }
-}
-
-@Composable
-private fun halfSize(f: @Composable () -> Unit) {
-    Layout(f) { m, constraints ->
-        val p = m.single().measure(constraints.copy(maxWidth = constraints.maxWidth / 2))
-        layout(p.width, p.height) {
-            p.place(0, 0)
         }
     }
 }
