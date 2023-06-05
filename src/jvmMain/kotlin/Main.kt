@@ -28,10 +28,15 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import data.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import ui.*
 import java.io.File
+import javax.sound.sampled.AudioFormat
+import javax.sound.sampled.AudioInputStream
+import javax.sound.sampled.AudioSystem
+import kotlin.time.Duration
 
 
 val musicDirectory = File("/home/marco/Music")
@@ -67,7 +72,7 @@ fun App() {
         shapes = MusicPlayerTheme.shapes,
     ) {
         Surface {
-            BlurredFadeAlbumCover(SongQueue.currentSong?.cover, Modifier.fillMaxSize())
+            BlurredFadeAlbumCover(PlayerController.queue?.currentSong?.cover, Modifier.fillMaxSize())
             BoxWithConstraints {
                 val w = constraints.maxWidth
                 val large = w >= with(LocalDensity.current) { (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPx() }
@@ -86,9 +91,10 @@ fun App() {
                             Modifier.fillMaxSize(),
                             panel, library, listOptions, lib, items,
                             { listOptions = it },
-                            { song ->
-                                if (song != null) {
-                                    cs.launch { PlayerController.channel.send(PlayerCommand.Play(song)) }
+                            { queue ->
+                                cs.launch {
+                                    PlayerController.channel.send(PlayerCommand.ChangeQueue(queue, Duration.ZERO))
+                                    PlayerController.channel.send(PlayerCommand.Play)
                                 }
                             },
                         )
@@ -135,21 +141,18 @@ private fun RenderPanel(
     lib: Library,
     items: List<SongListItem>,
     setOptions: (SongListOptions) -> Unit,
-    setSong: (Song?) -> Unit,
+    play: (SongQueue?) -> Unit,
 ) {
     when (panel) {
         LIBRARY -> SongListOptionsController(modifier, library, listOptions, setOptions) {
             SongListUI(lib.stats.maxTrackNumber, items) {
-                SongQueue.setSongs(lib.songs, it)
-                setSong(it)
+                play(
+                    SongQueue(lib.songs, lib.songs.indexOf(it))
+                )
             }
         }
 
-        QUEUE -> SongQueueUI(modifier) {
-            SongQueue.skipTo(it)
-            setSong(it)
-        }
-
+        QUEUE -> SongQueueUI(modifier, play)
         PLAYER -> PlayerUI(modifier)
     }
 }

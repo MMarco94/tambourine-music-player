@@ -1,28 +1,29 @@
 package ui
 
+import PlayerController
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import data.Song
 import data.SongListItem
 import data.SongQueue
 
 @Composable
 fun SongQueueUI(
     modifier: Modifier,
-    onSongSelected: (Song) -> Unit,
+    play: (SongQueue) -> Unit,
 ) {
-    val songs = SongQueue.songs
+    val queue = PlayerController.queue
     Box(modifier) {
-        if (songs.isEmpty()) {
+        if (queue == null) {
             Text("Empty queue")
         } else {
             SongListUI(
                 0,
-                songs.map { SongListItem.SingleSongListItem(it) },
-                onSongSelected
-            )
+                queue.songs.map { SongListItem.SingleSongListItem(it) }
+            ) {
+                play(queue.skipTo(it))
+            }
         }
     }
 }

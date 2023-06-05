@@ -1,33 +1,24 @@
 package data
 
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+data class SongQueue(
+    val songs: List<Song>,
+    val position: Int,
+) {
+    val currentSong get() = songs[position]
 
-object SongQueue {
-    private var index by mutableStateOf(0)
-    private var _songs = mutableStateOf(emptyList<Song>())
-    val songs by _songs
-    val currentSong by derivedStateOf {
-        songs.getOrNull(index)
+    init {
+        require(position in songs.indices)
+        require(songs.isNotEmpty())
     }
 
-    fun setSongs(songs: List<Song>, current: Song) {
-        val iof = songs.indexOf(current)
-        require(iof >= 0)
-        index = iof
-        _songs.value = songs
+    fun next(): SongQueue? {
+        // TODO: repeat options go here
+        return copy(position = (position + 1).mod(songs.size))
     }
 
-    fun popNext(): Song? {
-        return songs.getOrNull(++index)
-    }
-
-    fun skipTo(song: Song) {
+    fun skipTo(song: Song): SongQueue {
         val iof = songs.indexOf(song)
-        if (iof != -1) {
-            index = iof
-        }
+        require(iof >= 0)
+        return copy(position = iof)
     }
 }

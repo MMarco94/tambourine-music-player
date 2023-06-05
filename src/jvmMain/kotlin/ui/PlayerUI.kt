@@ -12,7 +12,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import data.Song
 import data.SongQueue
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -23,7 +22,8 @@ fun PlayerUI(
     modifier: Modifier,
 ) {
     val cs = rememberCoroutineScope()
-    val song = SongQueue.currentSong
+    val queue = PlayerController.queue
+    val song = queue?.currentSong
     Box(modifier) {
         if (song == null) {
             Text("Select a song")
@@ -44,14 +44,16 @@ fun PlayerUI(
                     valueRange = 0f..song.length.inWholeMilliseconds.toFloat(),
                     onValueChange = {
                         cs.launch {
-                            PlayerController.channel.send(PlayerCommand.Play(song, it.roundToInt().milliseconds))
+                            PlayerController.channel.send(
+                                PlayerCommand.ChangeQueue(queue, it.roundToInt().milliseconds)
+                            )
                         }
                     }
                 )
 
                 Button({
                     cs.launch {
-                        PlayerController.channel.send(PlayerCommand.Resume)
+                        PlayerController.channel.send(PlayerCommand.Play)
                     }
                 }){
                     Text("Resume")
