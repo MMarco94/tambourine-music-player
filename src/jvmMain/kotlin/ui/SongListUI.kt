@@ -2,6 +2,7 @@ package ui
 
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,6 +12,7 @@ import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import data.Song
 import data.SongListItem
 
@@ -22,7 +24,11 @@ fun SongListUI(
 ) {
     Box {
         val state = rememberLazyListState()
-        LazyColumn(state = state, modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = state,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 64.dp)
+        ) {
             itemsIndexed(items) { index, item ->
                 val offset = if (index == state.firstVisibleItemIndex) state.firstVisibleItemScrollOffset else 0
                 when (item) {

@@ -1,10 +1,14 @@
 import Panels.*
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.ZeroCornerSize
-import androidx.compose.material.*
+import androidx.compose.material.Divider
+import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.PlayCircleFilled
@@ -12,6 +16,7 @@ import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
@@ -67,15 +72,16 @@ fun App() {
             BoxWithConstraints {
                 val w = constraints.maxWidth
                 val large = w >= with(LocalDensity.current) { (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPx() }
+                val visiblePanels = if (large) {
+                    listOf(selectedPanel, PLAYER).distinct()
+                } else {
+                    listOf(selectedPanel)
+                }
                 Column {
                     PanelContainer(
                         Modifier.fillMaxWidth().weight(1f),
                         Panels.values().toSet(),
-                        if (large) {
-                            listOf(selectedPanel, PLAYER).distinct()
-                        } else {
-                            listOf(selectedPanel)
-                        }
+                        visiblePanels
                     ) { panel ->
                         RenderPanel(
                             Modifier.fillMaxSize(),
@@ -85,26 +91,24 @@ fun App() {
                             { queue = it },
                         )
                     }
-                    Row(
-                        Modifier
-                            .background(Color.Black.copy(alpha = 0.5f))
-                            .height(IntrinsicSize.Max)
-                            .padding(horizontal = 4.dp).padding(top = 4.dp)
-                    ) {
+                    Divider()
+                    val doFancy = large && selectedPanel != PLAYER
+                    Row(Modifier.height(IntrinsicSize.Max)) {
                         Panels.values().forEach { panel ->
-                            Surface(
-                                modifier = Modifier.padding(horizontal = 4.dp).padding(top = 4.dp).weight(1f)
-                                    .fillMaxHeight(),
-                                color = if (panel == selectedPanel) MaterialTheme.colors.primary else Color.Transparent,
-                                shape = MaterialTheme.shapes.medium.copy(
-                                    bottomEnd = ZeroCornerSize,
-                                    bottomStart = ZeroCornerSize
-                                )
-                            ) {
+                            key(panel) {
+                                val isSelected = panel in visiblePanels
+                                val alpha by animateFloatAsState(if (isSelected) 1f else inactiveAlpha)
+                                val bg by animateColorAsState(Color.Black.copy(alpha = if (panel != PLAYER && doFancy) 0.3f else 0.2f))
+                                val weight by animateFloatAsState(if (panel == PLAYER && doFancy) 2f else 1f)
                                 Column(
                                     Modifier
-                                        .fillMaxSize()
-                                        .clickable { selectedPanel = panel }
+                                        .weight(weight)
+                                        .background(bg)
+                                        .fillMaxHeight()
+                                        .clickable {
+                                            selectedPanel = if (large && selectedPanel == panel) PLAYER else panel
+                                        }
+                                        .alpha(alpha)
                                         .padding(8.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
