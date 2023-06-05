@@ -11,16 +11,16 @@ import data.SongQueue
 @Composable
 fun SongQueueUI(
     modifier: Modifier,
-    queue: SongQueue,
     onSongSelected: (Song) -> Unit,
 ) {
+    val songs = SongQueue.songs
     Box(modifier) {
-        if (queue.songs.isEmpty()) {
+        if (songs.isEmpty()) {
             Text("Empty queue")
         } else {
             SongListUI(
                 0,
-                queue.songs.map { SongListItem.SingleSongListItem(it) },
+                songs.map { SongListItem.SingleSongListItem(it) },
                 onSongSelected
             )
         }

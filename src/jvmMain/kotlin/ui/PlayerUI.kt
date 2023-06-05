@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import data.Song
+import data.SongQueue
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
@@ -20,9 +21,9 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun PlayerUI(
     modifier: Modifier,
-    song: Song?,
 ) {
     val cs = rememberCoroutineScope()
+    val song = SongQueue.currentSong
     Box(modifier) {
         if (song == null) {
             Text("Select a song")

@@ -50,11 +50,6 @@ data class Song(
     fun matches(artist: Artist?, album: Album?): Boolean {
         return (artist == null || this.artist == artist) && (album == null || this.album == album)
     }
-
-    fun play() {
-        val p = Player(file.inputStream())
-        p.play()
-    }
 }
 
 

@@ -2,8 +2,8 @@ import PlayerCommand.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import data.Song
+import data.SongQueue
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
@@ -30,22 +30,32 @@ object PlayerController {
     init {
         thread {
             runBlocking {
-                launch {
-                    while (true) {
-                        if (currentPlayer != null) {
-                            println("${currentPlayer?.devicePosition} - ${currentPlayer?.decodedPosition} - ${currentPlayer?.frameLength}")
-                            delay(100)
-                        }else yield()
-                    }
-                }
+//                launch {
+//                    while (true) {
+//                        if (currentPlayer != null) {
+//                            println("${currentPlayer?.devicePosition} - ${currentPlayer?.decodedPosition} - ${currentPlayer?.frameLength}")
+//                            delay(100)
+//                        }else yield()
+//                    }
+//                }
                 launch {
                     while (true) {
                         // This is to avoid sending too many bytes to the audio device. That would cause pausing to be slow
-                        if (!pause && currentPlayer != null && currentPlayer!!.deviceLag <= currentPlayer!!.frameLength * 2) {
-                            pause = !currentPlayer!!.play(1)
+                        val player = currentPlayer
+                        if (!pause && player != null && player.deviceLag <= player.frameLength * 2) {
+                            if (!player.playFrame()) {
+                                val next = SongQueue.popNext()
+                                if (next != null) {
+                                    play(next, null)
+                                } else {
+                                    player.close()
+                                    currentPlayer = null
+                                    pause = true
+                                }
+                            }
                         }
-                        if (currentPlayer != null) {
-                            _position.value = currentPlayer!!.decodedPosition
+                        if (player != null) {
+                            _position.value = player.decodedPosition
                         }
                         yield()
                     }
@@ -54,14 +64,7 @@ object PlayerController {
                     for (command in channel) {
                         when (command) {
                             is Play -> {
-                                currentPlayer?.close()
-                                val player = Player(command.song.file.inputStream())
-                                if (command.position != null) {
-                                    // TODO: stop if other incoming messages are "Play"
-                                    player.seek(command.position)
-                                }
-                                currentPlayer = player
-                                pause = false
+                                play(command.song, command.position)
                             }
 
                             Pause -> pause = true
@@ -71,5 +74,16 @@ object PlayerController {
                 }
             }
         }
+    }
+
+    private fun play(song: Song, position: Duration?) {
+        currentPlayer?.close()
+        val player = Player(song.file.inputStream())
+        if (position != null) {
+            // TODO: stop if other incoming messages are "Play"
+            player.seek(position)
+        }
+        currentPlayer = player
+        pause = false
     }
 }

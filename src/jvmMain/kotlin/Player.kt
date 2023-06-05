@@ -35,28 +35,10 @@ class Player(
         device.open(decoder)
     }
 
-
-    fun play() {
-        play(Int.MAX_VALUE)
-    }
-
     fun seek(position: Duration) {
         while (decodedPosition < position) {
             skipFrame() ?: return
         }
-    }
-
-    fun play(frames: Int): Boolean {
-        var frames = frames
-        var ret = true
-        while (frames-- > 0 && ret) {
-            ret = playFrame()
-        }
-        if (!ret) {
-            device.flush()
-            close()
-        }
-        return ret
     }
 
     fun close() {
