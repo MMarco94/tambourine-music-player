@@ -45,8 +45,8 @@ fun SongRow(
                 AlbumCover(song.cover, Modifier.size(40.dp), MaterialTheme.shapes.small)
                 Spacer(Modifier.width(8.dp))
             }
-            Text(song.title)
-            Spacer(Modifier.width(8.dp).weight(1f))
+            Text(song.title,Modifier.weight(1f))
+            Spacer(Modifier.width(8.dp))
             SingleLineText(
                 song.length.rounded().toString(),
                 color = MaterialTheme.colors.onSurfaceSecondary,
