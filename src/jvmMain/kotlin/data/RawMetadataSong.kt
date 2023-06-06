@@ -48,7 +48,7 @@ data class RawMetadataSong(
             return if (id3v2Tag != null) {
                 RawMetadataSong(
                     file,
-                    id3v2Tag.track.toIntOrNull(),
+                    id3v2Tag.track?.toIntOrNull(),
                     duration,
                     id3v2Tag.title,
                     id3v2Tag.album,
@@ -60,7 +60,7 @@ data class RawMetadataSong(
             } else if (id3v1Tag != null) {
                 RawMetadataSong(
                     file,
-                    id3v1Tag.track.toIntOrNull(),
+                    id3v1Tag.track?.toIntOrNull(),
                     duration,
                     id3v1Tag.title,
                     id3v1Tag.album,

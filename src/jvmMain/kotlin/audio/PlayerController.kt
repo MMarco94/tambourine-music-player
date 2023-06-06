@@ -72,7 +72,7 @@ object PlayerController {
                 launch {
                     for (command in channel) {
                         when (command) {
-                            is ChangeQueue -> changeQueue(command.queue, command.position)
+                            is ChangeQueue ->  changeQueue(command.queue, command.position)
                             Pause -> _pause.value = true
                             Play -> _pause.value = false
                         }

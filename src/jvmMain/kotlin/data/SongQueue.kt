@@ -26,4 +26,13 @@ data class SongQueue(
         require(iof >= 0)
         return copy(position = iof)
     }
+
+    companion object {
+        fun of(library: Library, song: Song): SongQueue {
+            return SongQueue(
+                library.songs,
+                library.songs.indexOf(song)
+            )
+        }
+    }
 }

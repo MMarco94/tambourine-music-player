@@ -2,7 +2,11 @@ package ui
 
 import audio.PlayerController
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayCircleFilled
+import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import data.SongListItem
@@ -16,7 +20,12 @@ fun SongQueueUI(
     val queue = PlayerController.queue
     Box(modifier) {
         if (queue == null) {
-            Text("Empty queue")
+            BigMessage(
+                Modifier.fillMaxSize(),
+                Icons.Filled.QueueMusic,
+                "Empty queue",
+                "To begin, select a song from your library",
+            )
         } else {
             SongListUI(
                 0,

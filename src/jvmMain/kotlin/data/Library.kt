@@ -173,18 +173,16 @@ data class Library(
 
         suspend fun fromFolder(folder: File): Library = coroutineScope {
             val songs = folder.walk()
-                .filter { it.isFile }
+                .filter { it.isFile && it.extension.equals("mp3", true) }
                 .map { file ->
                     async {
-                        if (file.extension.equals("mp3", true)) {
-                            try {
-                                RawMetadataSong.fromMp3(file)
-                            } catch (e: Exception) {
-                                // TODO: better log
-                                e.printStackTrace()
-                                null
-                            }
-                        } else null
+                        try {
+                            RawMetadataSong.fromMp3(file)
+                        } catch (e: Exception) {
+                            // TODO: better log
+                            e.printStackTrace()
+                            null
+                        }
                     }
                 }
                 .toList()

@@ -43,7 +43,6 @@ class Player private constructor(
         source.seekToStart()
     }
     fun seekTo(position: Duration) {
-        println("Pos = $position")
         source.resetTo(format.durationToFrames(position))
     }
 

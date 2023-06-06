@@ -3,7 +3,9 @@
 package ui
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -26,11 +28,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Window
+import com.darkrockstudios.libraries.mpfilepicker.DirectoryPicker
 import data.*
+import musicLibraryDirectory
 import noopComparator
 import orNoop
 import ui.Tab.*
+import java.io.File
 import kotlin.math.roundToInt
+
 
 @Composable
 private fun Tag(
@@ -218,15 +225,15 @@ private enum class Tab {
 }
 
 @Composable
-fun SongListOptionsController(
+fun LibraryHeader(
     modifier: Modifier,
     library: Library,
     options: SongListOptions,
     setOptions: (SongListOptions) -> Unit,
+    openSettings:()->Unit,
     content: @Composable () -> Unit,
 ) {
     var tab: Tab? by remember { mutableStateOf(null) }
-
     val artistRenderer = ArtistOptionsRenderer(ARTIST, library, options, setOptions)
     val albumRenderer = AlbumOptionsRenderer(ALBUM, library, options, setOptions)
     val songRenderer = SongOptionsRenderer(SONG, options, setOptions)
@@ -241,10 +248,16 @@ fun SongListOptionsController(
                 albumRenderer.Tag(tab) { tab = it }
                 songRenderer.Tag(tab) { tab = it }
             }
-            Box(Modifier.size(48.dp)){
-                if(tab!=null) {
-                    IconButton({ tab = null }, Modifier.fillMaxSize()) {
-                        Icon(Icons.Filled.Close, "Close")
+            Box(Modifier.size(48.dp)) {
+                Crossfade(tab != null) {
+                    if (it) {
+                        IconButton({ tab = null }, Modifier.fillMaxSize()) {
+                            Icon(Icons.Filled.Close, "Close")
+                        }
+                    } else {
+                        IconButton({ openSettings() }, Modifier.fillMaxSize()) {
+                            Icon(Icons.Filled.Settings, "Settings")
+                        }
                     }
                 }
             }

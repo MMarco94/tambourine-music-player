@@ -5,10 +5,7 @@ import audio.PlayerController
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -30,7 +27,12 @@ fun PlayerUI(
     val song = queue?.currentSong
     Box(modifier.padding(horizontal = 16.dp)) {
         if (song == null) {
-            Text("Select a song")
+            BigMessage(
+                Modifier.fillMaxSize(),
+                Icons.Filled.PlayCircleFilled,
+                "Play a song",
+                "To begin, select a song from your library",
+            )
         } else {
             Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(Modifier.weight(1f))
