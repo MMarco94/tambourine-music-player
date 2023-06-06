@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import audio.Position
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
@@ -44,7 +45,7 @@ fun PlayerUI(
                     onValueChange = {
                         cs.launch {
                             PlayerController.channel.send(
-                                PlayerCommand.ChangeQueue(queue, it.roundToInt().milliseconds)
+                                PlayerCommand.ChangeQueue(queue, Position.Specific(it.roundToInt().milliseconds))
                             )
                         }
                     }

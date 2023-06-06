@@ -28,6 +28,7 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import audio.PlayerCommand
 import audio.PlayerController
+import audio.Position
 import data.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -91,7 +92,7 @@ fun App() {
                             { listOptions = it },
                             { queue ->
                                 cs.launch {
-                                    PlayerController.channel.send(PlayerCommand.ChangeQueue(queue, Duration.ZERO))
+                                    PlayerController.channel.send(PlayerCommand.ChangeQueue(queue, Position.Beginning))
                                     PlayerController.channel.send(PlayerCommand.Play)
                                 }
                             },

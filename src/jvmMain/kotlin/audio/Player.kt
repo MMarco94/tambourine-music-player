@@ -1,36 +1,24 @@
 package audio
 
+import durationToFrames
 import javax.sound.sampled.AudioInputStream
+import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.SourceDataLine
 import kotlin.math.roundToInt
-import kotlin.math.roundToLong
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.ZERO
-import kotlin.time.Duration.Companion.microseconds
-import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
 
-class Player(
-    var source: AudioInputStream,
+class Player private constructor(
+    source: AudioInputStream,
     val output: SourceDataLine,
-    bufferLength: Duration,
+    val buffer: ByteArray,
 ) {
-    private val bufferedSource = CachedAudioInputStream(source)
+    private val source = CachedAudioInputStream(source)
     private val format = source.format
-    private val bps: Float = format.frameRate * format.frameSize
+    val position get() = source.readTime
 
-    private var posOffset: Duration = Duration.ZERO
-    val position get() = posOffset + output.microsecondPosition.microseconds
-
-    private val buffer =
-        ByteArray((bps * (bufferLength / 1.seconds)).roundToInt())
-
-    init {
-        output.open(format, buffer.size)
-    }
-
-    fun start() {
-        output.start()
+    fun flush() {
+        output.drain()
     }
 
     fun stop() {
@@ -40,39 +28,51 @@ class Player(
     fun playFrame(): Boolean {
         val available = output.available()
         if (available > 0) {
-            val s = bufferedSource.read(buffer, 0, available)
+            val s = source.read(buffer, 0, available)
             return if (s >= 0) {
                 output.write(buffer, 0, s)
                 true
             } else {
-                output.drain()
-                stop()
                 false
             }
         }
         return true
     }
 
-    fun reset() {
-        output.drain()
-        posOffset = -output.microsecondPosition.microseconds
-        bufferedSource.reset()
+    fun seekToStart() {
+        source.seekToStart()
     }
-
     fun seekTo(position: Duration) {
-        if (position >= this.position) {
-            skip(position - this.position)
-        } else {
-            reset()
-            skip(position)
-        }
+        source.resetTo(format.durationToFrames(position))
     }
 
-    fun skip(amount: Duration) {
-        require(amount >= ZERO)
-        val p = ((amount / 1.seconds) * format.frameRate).roundToLong() * format.frameSize
-        val skipped = bufferedSource.skip(p)
-        val skippedLength = (skipped * 1000_000_000 / bps).roundToLong().nanoseconds
-        posOffset += skippedLength
+    companion object {
+        fun create(
+            source: AudioInputStream,
+            older: Player?,
+            bufferLength: Duration,
+        ): Player {
+            return if (
+                older != null &&
+                older.format.encoding == source.format.encoding &&
+                older.format.sampleRate == source.format.sampleRate &&
+                older.format.frameRate == source.format.frameRate &&
+                older.format.frameSize == source.format.frameSize &&
+                older.format.channels == source.format.channels &&
+                older.format.isBigEndian == source.format.isBigEndian
+            ) {
+                Player(source, older.output, older.buffer)
+            } else {
+                older?.flush()
+                older?.stop()
+                val bps: Float = source.format.frameRate * source.format.frameSize
+                val buffer = ByteArray((bps * (bufferLength / 1.seconds)).roundToInt())
+                val line: SourceDataLine = AudioSystem.getSourceDataLine(source.format)
+                line.open(source.format, buffer.size)
+                line.start()
+                Player(source, line, buffer)
+            }
+
+        }
     }
 }

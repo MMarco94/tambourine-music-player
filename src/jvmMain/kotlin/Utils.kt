@@ -4,13 +4,30 @@ import com.mpatric.mp3agic.ID3v2
 import com.mpatric.mp3agic.ID3v24Tag
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import javax.sound.sampled.AudioFormat
 import kotlin.math.abs
 import kotlin.math.log10
+import kotlin.math.roundToLong
+import kotlin.system.measureTimeMillis
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
 
 fun <T> noopComparator(): Comparator<T> = compareBy { 0 }
 fun <T> Comparator<T>?.orNoop(): Comparator<T> = this ?: noopComparator()
+
+inline fun <T> debugElapsed(tag: String, f: () -> T): T {
+    val ret: T
+    val took = measureTimeMillis {
+        ret = f()
+    }
+    println("$tag took ${took.milliseconds}")
+    return ret
+}
+
+fun AudioFormat.framesToDuration(frames:Long) = (frames / frameRate * 1000000000L).roundToLong().nanoseconds
+fun AudioFormat.durationToFrames(duration: Duration) = ((duration / 1.seconds) * frameRate).roundToLong()
 
 fun <T> Collection<T>.rangeOfOrNull(f: (T) -> Int?): IntRange? {
     var min: Int? = null
