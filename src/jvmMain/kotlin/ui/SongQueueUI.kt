@@ -1,6 +1,6 @@
 package ui
 
-import PlayerController
+import audio.PlayerController
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable

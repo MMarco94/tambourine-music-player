@@ -6,6 +6,9 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import mostCommonOrNull
 import java.io.File
+import javax.sound.sampled.AudioFormat
+import javax.sound.sampled.AudioInputStream
+import javax.sound.sampled.AudioSystem
 import kotlin.time.Duration
 
 
@@ -48,6 +51,21 @@ data class Song(
 
     fun matches(artist: Artist?, album: Album?): Boolean {
         return (artist == null || this.artist == artist) && (album == null || this.album == album)
+    }
+
+    fun audioStream(): AudioInputStream {
+        val mp3In: AudioInputStream = AudioSystem.getAudioInputStream(file)
+        val mp3Format: AudioFormat = mp3In.format
+        val pcmFormat = AudioFormat(
+            AudioFormat.Encoding.PCM_SIGNED,
+            mp3Format.sampleRate,
+            16,
+            mp3Format.channels,
+            2 * mp3Format.channels,
+            mp3Format.sampleRate,
+            mp3Format.isBigEndian,
+        )
+        return AudioSystem.getAudioInputStream(pcmFormat, mp3In)
     }
 }
 

@@ -1,4 +1,6 @@
-import PlayerCommand.*
+package audio
+
+import audio.PlayerCommand.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import data.SongQueue
@@ -6,8 +8,11 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import javax.sound.sampled.AudioSystem
+import javax.sound.sampled.SourceDataLine
 import kotlin.concurrent.thread
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 
 sealed interface PlayerCommand {
@@ -45,7 +50,7 @@ object PlayerController {
                         if (p != null) {
                             if (!pause) {
                                 if (!p.playFrame()) {
-                                    changeQueue(queue?.next(), Duration.ZERO)
+                                    changeQueue(queue?.next(), ZERO)
                                 }
                             }
                             _position.value = p.position
@@ -67,16 +72,27 @@ object PlayerController {
     }
 
     private fun changeQueue(queue: SongQueue?, position: Duration?) {
-        this.player?.stop()
         if (queue == null) {
-            this.player = null
-            this._queue.value = null
-            this.pause = true
+            player?.stop()
+            player = null
+            _queue.value = null
+            pause = true
             return
         }
-        this.player = Player.forMp3(queue.currentSong.file, position ?: Duration.ZERO, buffer)
-        this.player!!.start()
-        this._queue.value = queue
+        val old = PlayerController.queue?.currentSong
+        val new = queue.currentSong
+        _queue.value = queue
+
+        if (old == new) {
+            if (position != null) player!!.seekTo(position)
+        } else {
+            val stream = queue.currentSong.audioStream()
+            val line: SourceDataLine = AudioSystem.getSourceDataLine(stream.format)
+            player = Player(stream, line, buffer).apply {
+                skip(position ?: ZERO)
+                start()
+            }
+        }
         return
     }
 }
