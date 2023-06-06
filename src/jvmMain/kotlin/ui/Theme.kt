@@ -5,6 +5,7 @@ import androidx.compose.material.Colors
 import androidx.compose.material.Shapes
 import androidx.compose.material.Typography
 import androidx.compose.material.darkColors
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -25,7 +26,9 @@ object MusicPlayerTheme {
         medium = RoundedCornerShape(8.dp),
         large = RoundedCornerShape(12.dp)
     )
-    val colors: Colors = darkColors()
+    val colors: Colors = darkColors(
+        surface = Color(0xFF242424)
+    )
     val typography
         get() = Typography(
             defaultFontFamily = FontFamily.Default,

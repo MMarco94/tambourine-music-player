@@ -30,9 +30,7 @@ import audio.Position
 import data.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import ui.*
 import java.io.File
@@ -67,7 +65,7 @@ fun App() {
         colors = MusicPlayerTheme.colors,
         shapes = MusicPlayerTheme.shapes,
     ) {
-        Surface(Modifier.fillMaxSize()) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colors.background) {
             BlurredFadeAlbumCover(PlayerController.queue?.currentSong?.cover, Modifier.fillMaxSize())
             BoxWithConstraints {
                 val w = constraints.maxWidth
