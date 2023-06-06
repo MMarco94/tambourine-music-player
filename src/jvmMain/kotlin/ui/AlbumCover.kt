@@ -21,8 +21,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun AlbumCover(cover: ImageBitmap?, modifier: Modifier, shape: Shape = RectangleShape) {
-    Surface(modifier.aspectRatio(1f), shape = shape) {
+fun AlbumCover(
+    cover: ImageBitmap?,
+    modifier: Modifier,
+    shape: Shape = RectangleShape,
+    elevation: Dp = 0.dp,
+) {
+    Surface(modifier.aspectRatio(1f), shape = shape, elevation = elevation) {
         if (cover != null) {
             key(cover) {
                 Image(

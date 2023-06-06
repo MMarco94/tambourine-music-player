@@ -230,7 +230,7 @@ fun LibraryHeader(
     library: Library,
     options: SongListOptions,
     setOptions: (SongListOptions) -> Unit,
-    openSettings:()->Unit,
+    openSettings: () -> Unit,
     content: @Composable () -> Unit,
 ) {
     var tab: Tab? by remember { mutableStateOf(null) }
@@ -357,7 +357,7 @@ private interface OptionsRenderer {
             listOptions, selected, dismissPopup, setOptions
         ).render {
             val state = rememberLazyListState()
-            LazyColumn(state = state) {
+            LazyColumn(state = state, contentPadding = PaddingValues(bottom = 16.dp)) {
                 if (sortOptions.isNotEmpty()) {
                     item { CategorySeparatorSort() }
                 }
@@ -456,7 +456,11 @@ private class AlbumOptionsRenderer(
             options, selectedOption, close, setOptions
         ).render {
             val state = rememberLazyGridState()
-            LazyVerticalGrid(GridCells.Adaptive(160.dp), state = state) {
+            LazyVerticalGrid(
+                GridCells.Adaptive(160.dp),
+                state = state,
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
                 val fullSpan: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxCurrentLineSpan) }
                 item(span = fullSpan, content = { CategorySeparatorSort() })
                 items(albumsSorters.values.toList(), span = { fullSpan() }) { item ->
@@ -542,21 +546,32 @@ private fun FilterSortPopupRenderer.SimpleListItem(
 private fun FilterSortPopupRenderer.AlbumGridItem(item: SortFilterOption.Filter<Album>) {
     val bg: Color by background(item)
     val content: Color by contentColor(item)
-    Surface(
-        color = bg,
-        contentColor = content,
-        modifier = Modifier.selectable(item == selected) { onClick(item) }.padding(8.dp),
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.padding(8.dp)) {
-                AlbumCover(item.element.cover, Modifier.fillMaxSize(), MaterialTheme.shapes.medium)
+    Box(Modifier.padding(horizontal = 8.dp)) {
+        Surface(
+            color = bg,
+            contentColor = content,
+            shape = MaterialTheme.shapes.large,
+        ) {
+            Column(
+                modifier = Modifier.selectable(item == selected) { onClick(item) }
+                    .padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(Modifier.padding(8.dp)) {
+                    AlbumCover(
+                        item.element.cover,
+                        Modifier.fillMaxSize(),
+                        MaterialTheme.shapes.medium,
+                        elevation = 8.dp
+                    )
+                }
+                SingleLineText(
+                    item.element.title, style = MaterialTheme.typography.subtitle1, textAlign = TextAlign.Center
+                )
+                SingleLineText(
+                    item.element.artist.name, style = MaterialTheme.typography.subtitle2, textAlign = TextAlign.Center
+                )
             }
-            SingleLineText(
-                item.element.title, style = MaterialTheme.typography.subtitle1, textAlign = TextAlign.Center
-            )
-            SingleLineText(
-                item.element.artist.name, style = MaterialTheme.typography.subtitle2, textAlign = TextAlign.Center
-            )
         }
     }
 }

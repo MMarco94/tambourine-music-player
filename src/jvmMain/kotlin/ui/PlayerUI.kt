@@ -37,8 +37,8 @@ fun PlayerUI(
             Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(Modifier.weight(1f))
 
-                AlbumCover(song.cover, Modifier.size(256.dp), MaterialTheme.shapes.large)
-                Spacer(Modifier.height(16.dp))
+                AlbumCover(song.cover, Modifier.size(256.dp), MaterialTheme.shapes.large, elevation = 16.dp)
+                Spacer(Modifier.height(24.dp))
 
                 Text(song.title, style = MaterialTheme.typography.h2)
                 Spacer(Modifier.height(8.dp))

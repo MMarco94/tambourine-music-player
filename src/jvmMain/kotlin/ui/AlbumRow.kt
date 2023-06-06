@@ -19,7 +19,7 @@ fun AlbumRow(
     album: Album, songs: List<Song>, sideOffset: Int, onSongSelected: (Song) -> Unit,
 ) {
     BigSongRow(maxTrackNumber, true, songs, sideOffset, onSongSelected) {
-        AlbumCover(album.cover, Modifier.size(128.dp), MaterialTheme.shapes.medium)
+        AlbumCover(album.cover, Modifier.size(128.dp), MaterialTheme.shapes.medium, elevation = 8.dp)
         Spacer(Modifier.height(8.dp))
 
         Text(album.title, textAlign = TextAlign.Center, style = MaterialTheme.typography.subtitle1)
