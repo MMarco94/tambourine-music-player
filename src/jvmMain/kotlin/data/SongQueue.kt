@@ -11,6 +11,11 @@ data class SongQueue(
         require(songs.isNotEmpty())
     }
 
+    fun previous(): SongQueue? {
+        // TODO: repeat options go here
+        return copy(position = (position - 1).mod(songs.size))
+    }
+
     fun next(): SongQueue? {
         // TODO: repeat options go here
         return copy(position = (position + 1).mod(songs.size))

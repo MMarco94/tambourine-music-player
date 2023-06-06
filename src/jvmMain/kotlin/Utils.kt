@@ -6,6 +6,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import javax.sound.sampled.AudioFormat
 import kotlin.math.abs
+import kotlin.math.absoluteValue
 import kotlin.math.log10
 import kotlin.math.roundToLong
 import kotlin.system.measureTimeMillis
@@ -26,8 +27,19 @@ inline fun <T> debugElapsed(tag: String, f: () -> T): T {
     return ret
 }
 
-fun AudioFormat.framesToDuration(frames:Long) = (frames / frameRate * 1000000000L).roundToLong().nanoseconds
+fun AudioFormat.framesToDuration(frames: Long) = (frames / frameRate * 1000000000L).roundToLong().nanoseconds
 fun AudioFormat.durationToFrames(duration: Duration) = ((duration / 1.seconds) * frameRate).roundToLong()
+
+fun Long.chunked(chunk: Int, f: (chunk: Int) -> Unit) {
+    require(this >= 0)
+    require(chunk >= 0)
+    var done = 0L
+    while (done < this) {
+        val c = minOf(chunk.toLong(), this - done).toInt()
+        f(c)
+        done += c
+    }
+}
 
 fun <T> Collection<T>.rangeOfOrNull(f: (T) -> Int?): IntRange? {
     var min: Int? = null
@@ -53,7 +65,16 @@ fun Int.digits() = when (this) {
 }
 
 fun Duration.rounded(): Duration {
-    return this.inWholeSeconds.seconds
+    val sec = this.inWholeSeconds
+    return if (sec.absoluteValue < 1) {
+        this.inWholeMilliseconds.milliseconds
+    } else if (sec.absoluteValue < 10) {
+        (this.inWholeMilliseconds * 10 / 1000 * 100).milliseconds
+    } else if (sec.absoluteValue < 3600) {
+        sec.seconds
+    } else {
+        (sec / 60 * 60).seconds
+    }
 }
 
 fun ID3v2.recordingYear(): String? {

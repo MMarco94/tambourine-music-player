@@ -1,9 +1,12 @@
 package audio
 
+import chunked
 import framesToDuration
 import javax.sound.sampled.AudioInputStream
 import kotlin.time.Duration
 
+
+private val skipBuffer = ByteArray(1.shl(18))
 
 class CachedAudioInputStream(
     input: AudioInputStream
@@ -48,9 +51,12 @@ class CachedAudioInputStream(
         return read
     }
 
-    private fun skipFrames(frames: Long): Long {
-        val skipped = buffered.skip(frames * format.frameSize)
-        readFrames += skipped / format.frameSize
-        return skipped
+    private fun skipFrames(frames: Long) {
+        require(frames >= 0L)
+        if (frames == 0L) return
+        // Unfortunately `skip` is not reliable. Reading instead
+        (frames * format.frameSize).chunked(skipBuffer.size) { s ->
+            read(skipBuffer, 0, s)
+        }
     }
 }
