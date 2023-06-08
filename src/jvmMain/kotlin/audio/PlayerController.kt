@@ -6,12 +6,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import data.SongQueue
-import debugElapsed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import utils.debugElapsed
 import kotlin.concurrent.thread
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
@@ -31,6 +31,8 @@ sealed interface PlayerCommand {
 
     object Play : PlayerCommand
     object Pause : PlayerCommand
+    object Seeking : PlayerCommand
+    object SeekDone : PlayerCommand
 }
 
 private val buffer = 32.milliseconds
@@ -49,12 +51,14 @@ object PlayerController {
         private set
 
     private var player: Player? = null
+    private var seeking = false
     var pause by mutableStateOf(true)
         private set
 
     fun seek(coroutineScope: CoroutineScope, queue: SongQueue?, position: Duration) {
         pendingSeek = position
         coroutineScope.launch {
+            channel.send(Seeking)
             channel.send(ChangeQueue(queue, Position.Specific(position)))
         }
     }
@@ -75,6 +79,8 @@ object PlayerController {
                             is ChangeQueue -> changeQueue(command.queue, command.position)
                             Pause -> pause = true
                             Play -> pause = false
+                            Seeking -> seeking = true
+                            SeekDone -> seeking = false
                         }
                     }
                 }
@@ -87,7 +93,7 @@ object PlayerController {
         if (p != null) {
             if (!pause) {
                 val done = !p.playFrame()
-                if (done) {
+                if (done && !seeking) {
                     val next = queue?.nextInQueue()
                     if (next == null) {
                         p.seekToStart()

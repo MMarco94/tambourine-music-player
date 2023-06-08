@@ -1,6 +1,6 @@
 package audio
 
-import durationToFrames
+import utils.durationToFrames
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.SourceDataLine
@@ -43,7 +43,7 @@ class Player private constructor(
         source.seekToStart()
     }
     fun seekTo(position: Duration) {
-        source.resetTo(format.durationToFrames(position))
+        source.seekTo(format.durationToFrames(position))
     }
 
     companion object {

@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import data.SongCollectionStats
-import rounded
+import utils.rounded
 
 @Composable
 fun SongCollectionStatsComposable(stats: SongCollectionStats) {

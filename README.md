@@ -25,5 +25,4 @@ TBD
    - [ ] Media controls
    - [ ] Background API?
  - Keyboard shortcuts (e.g. space to play/pause)
- - Seamless track transition
  - Save on disk the library location

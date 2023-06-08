@@ -1,10 +1,10 @@
 package audio
 
-import chunked
-import framesToDuration
 import mu.KotlinLogging
+import utils.chunked
+import utils.countZeros
+import utils.framesToDuration
 import javax.sound.sampled.AudioInputStream
-import kotlin.time.Duration
 
 private val logger = KotlinLogging.logger {}
 private val skipBuffer = ByteArray(1.shl(18))
@@ -18,31 +18,18 @@ class CachedAudioInputStream(
     val readTime get() = format.framesToDuration(readFrames)
 
     private val skippedFrames: Long
-    val startDelay: Duration
 
     init {
-        val buffer = ByteArray(format.frameSize)
         buffered.mark(Int.MAX_VALUE)
-        var zeros = 0L
-        while (buffered.read(buffer) == format.frameSize && buffer.all { it == 0.toByte() }) {
-            zeros++
-        }
-        skippedFrames = zeros
-        if (skippedFrames > 0) {
-            logger.debug {
-                "Skipping ${format.framesToDuration(skippedFrames)} of silent frames"
-            }
-        }
-        readFrames = skippedFrames
-        startDelay = format.framesToDuration(zeros)
-        seekToStart()
+        skipZeros()
+        skippedFrames = readFrames
     }
 
     fun seekToStart() {
-        resetTo(skippedFrames)
+        seekTo(skippedFrames)
     }
 
-    fun resetTo(frames: Long) {
+    fun seekTo(frames: Long) {
         buffered.reset()
         readFrames = 0
         skipFrames(frames)
@@ -56,10 +43,34 @@ class CachedAudioInputStream(
 
     private fun skipFrames(frames: Long) {
         require(frames >= 0L)
-        if (frames == 0L) return
+        var bytesToSkip = frames * format.frameSize
+
+        if (bytesToSkip == 0L) return
+        val skipped = buffered.skip(bytesToSkip)
+        readFrames += skipped / format.frameSize
+        bytesToSkip -= skipped
+
         // Unfortunately `skip` is not reliable. Reading instead
-        (frames * format.frameSize).chunked(skipBuffer.size) { s ->
+        if (bytesToSkip == 0L) return
+        logger.debug("Skip didn't read all frames, skipping by reading the stream")
+        bytesToSkip.chunked(skipBuffer.size) { s ->
             read(skipBuffer, 0, s)
         }
+    }
+
+    private fun skipZeros() {
+        val currentPosition = readFrames
+        var totalZerosFrames = 0L
+        do {
+            val readBytes = read(skipBuffer, 0, skipBuffer.size / format.frameSize * format.frameSize)
+            val zeroBytes = skipBuffer.countZeros(0, readBytes)
+            totalZerosFrames += zeroBytes / format.frameSize
+        } while (readBytes > 0 && zeroBytes == readBytes)
+        if (totalZerosFrames > 0) {
+            logger.debug {
+                "Skipping ${format.framesToDuration(totalZerosFrames)} of silent frames"
+            }
+        }
+        seekTo(currentPosition + totalZerosFrames)
     }
 }

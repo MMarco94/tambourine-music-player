@@ -1,6 +1,6 @@
 package data
 
-import orNoop
+import utils.orNoop
 
 data class SongListOptions(
     val artistSorter: ArtistSorter = ArtistSorter.ALPHABETICAL,

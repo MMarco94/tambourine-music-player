@@ -1,6 +1,6 @@
 package data
 
-import rangeOfOrNull
+import utils.rangeOfOrNull
 import kotlin.time.Duration
 
 data class SongCollectionStats(

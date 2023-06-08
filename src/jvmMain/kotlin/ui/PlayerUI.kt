@@ -20,7 +20,7 @@ import audio.Position
 import data.RepeatMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import rounded
+import utils.rounded
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -99,7 +99,8 @@ fun PlayerUI(
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                Slider(value = PlayerController.position.inWholeMilliseconds.toFloat(),
+                Slider(
+                    value = PlayerController.position.inWholeMilliseconds.toFloat(),
                     valueRange = 0f..song.length.inWholeMilliseconds.toFloat(),
                     colors = SliderDefaults.colors(
                         thumbColor = Color.White,
@@ -107,7 +108,11 @@ fun PlayerUI(
                     ),
                     onValueChange = {
                         PlayerController.seek(cs, queue, it.roundToInt().milliseconds)
-                    })
+                    },
+                    onValueChangeFinished = {
+                        cs.launch { PlayerController.channel.send(PlayerCommand.SeekDone) }
+                    }
+                )
                 Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(PlayerController.position.rounded().toString())
                     Spacer(Modifier.weight(1f))
