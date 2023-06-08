@@ -2,10 +2,11 @@ package audio
 
 import chunked
 import framesToDuration
+import mu.KotlinLogging
 import javax.sound.sampled.AudioInputStream
 import kotlin.time.Duration
 
-
+private val logger = KotlinLogging.logger {}
 private val skipBuffer = ByteArray(1.shl(18))
 
 class CachedAudioInputStream(
@@ -28,7 +29,9 @@ class CachedAudioInputStream(
         }
         skippedFrames = zeros
         if (skippedFrames > 0) {
-            println("Skipping $skippedFrames silent frames")
+            logger.debug {
+                "Skipping ${format.framesToDuration(skippedFrames)} of silent frames"
+            }
         }
         readFrames = skippedFrames
         startDelay = format.framesToDuration(zeros)

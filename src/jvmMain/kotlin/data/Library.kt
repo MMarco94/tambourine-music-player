@@ -6,12 +6,14 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import mostCommonOrNull
+import mu.KotlinLogging
 import java.io.File
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 import kotlin.time.Duration
 
+private val logger = KotlinLogging.logger {}
 
 data class Artist(
     val name: String,
@@ -147,8 +149,7 @@ data class Library(
                         try {
                             img to img.decode()
                         } catch (e: Exception) {
-                            // TODO: better log
-                            println(e.message)
+                            logger.error("Error while decoding artwork: ${e.message}")
                             img to null
                         }
                     }
@@ -187,8 +188,7 @@ data class Library(
                             try {
                                 RawMetadataSong.fromMusicFile(file)
                             } catch (e: Exception) {
-                                // TODO: better log
-                                e.printStackTrace()
+                                logger.error("Error while parsing music file: ${e.message}")
                                 null
                             }
                         }

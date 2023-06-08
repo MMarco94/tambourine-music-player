@@ -32,6 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import org.slf4j.bridge.SLF4JBridgeHandler
 import ui.*
 import java.io.File
 
@@ -182,14 +183,18 @@ private fun LibraryContainer(library: Library?, f: @Composable (Library) -> Unit
     }
 }
 
-fun main() = application {
-    Window(
-        title = "Music Player",
-        onCloseRequest = ::exitApplication,
-        state = remember {
-            WindowState(size = DpSize(1280.dp, 800.dp))
+fun main() {
+    SLF4JBridgeHandler.removeHandlersForRootLogger()
+    SLF4JBridgeHandler.install()
+    application {
+        Window(
+            title = "Music Player",
+            onCloseRequest = ::exitApplication,
+            state = remember {
+                WindowState(size = DpSize(1280.dp, 800.dp))
+            }
+        ) {
+            App()
         }
-    ) {
-        App()
     }
 }

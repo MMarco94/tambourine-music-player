@@ -31,9 +31,13 @@ kotlin {
                 // music metadata reader
                 implementation("net.jthink:jaudiotagger:3.0.1")
 
-
                 // File picker
                 implementation("com.darkrockstudios:mpfilepicker:1.1.0")
+
+                // Logging
+                implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
+                implementation("ch.qos.logback:logback-classic:1.4.7")
+                implementation("org.slf4j:jul-to-slf4j:2.0.7")
             }
         }
         val jvmTest by getting

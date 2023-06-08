@@ -27,3 +27,4 @@ TBD
  - Keyboard shortcuts (e.g. space to play/pause)
  - Seamless track transition
  - Shuffle/repeat options
+ - Save on disk the library location

@@ -2,6 +2,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.runtime.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import mu.KotlinLogging
 import javax.sound.sampled.AudioFormat
 import kotlin.math.abs
 import kotlin.math.absoluteValue
@@ -16,12 +17,15 @@ import kotlin.time.Duration.Companion.seconds
 fun <T> noopComparator(): Comparator<T> = compareBy { 0 }
 fun <T> Comparator<T>?.orNoop(): Comparator<T> = this ?: noopComparator()
 
+@PublishedApi
+internal val logger = KotlinLogging.logger {}
+
 inline fun <T> debugElapsed(tag: String, f: () -> T): T {
     val ret: T
     val took = measureTimeMillis {
         ret = f()
     }
-    println("$tag took ${took.milliseconds}")
+    logger.debug { "$tag took ${took.milliseconds}" }
     return ret
 }
 
