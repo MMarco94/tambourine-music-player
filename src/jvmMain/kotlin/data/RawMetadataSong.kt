@@ -1,12 +1,12 @@
 package data
 
 import androidx.compose.ui.graphics.toComposeImageBitmap
-import com.mpatric.mp3agic.Mp3File
+import org.jaudiotagger.audio.AudioFileIO
+import org.jaudiotagger.tag.FieldKey
 import org.jetbrains.skia.Image
-import recordingYear
 import java.io.File
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class RawImage(
     val bytes: ByteArray,
@@ -39,49 +39,24 @@ data class RawMetadataSong(
     val nnArtist get() = artist ?: "Unknown"
     val nnAlbumArtist get() = albumArtist ?: nnArtist
 
-    companion object {
-        fun fromMp3(file: File): RawMetadataSong {
-            val mp3 = Mp3File(file)
-            val id3v2Tag = mp3.id3v2Tag
-            val id3v1Tag = mp3.id3v1Tag
-            val duration = mp3.lengthInMilliseconds.milliseconds
-            return if (id3v2Tag != null) {
-                RawMetadataSong(
-                    file,
-                    id3v2Tag.track?.toIntOrNull(),
-                    duration,
-                    id3v2Tag.title,
-                    id3v2Tag.album,
-                    id3v2Tag.artist,
-                    id3v2Tag.albumArtist,
-                    id3v2Tag.recordingYear()?.toIntOrNull(),
-                    id3v2Tag.albumImage?.let { RawImage(it) },
-                )
-            } else if (id3v1Tag != null) {
-                RawMetadataSong(
-                    file,
-                    id3v1Tag.track?.toIntOrNull(),
-                    duration,
-                    id3v1Tag.title,
-                    id3v1Tag.album,
-                    id3v1Tag.artist,
-                    null,
-                    id3v1Tag.year?.toIntOrNull(),
-                    null,
-                )
-            } else {
-                RawMetadataSong(
-                    file,
-                    null,
-                    duration,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                )
-            }
+    companion object{
+
+        fun fromMusicFile(file: File): RawMetadataSong {
+            val f = AudioFileIO.read(file)
+            val tag = f.tag
+            val header = f.audioHeader
+
+            return RawMetadataSong(
+                file = file,
+                track = tag.getFirst(FieldKey.TRACK)?.toIntOrNull(),
+                length = header.preciseTrackLength.seconds,
+                title = tag.getFirst(FieldKey.TITLE),
+                album = tag.getFirst(FieldKey.ALBUM),
+                artist = tag.getFirst(FieldKey.ARTIST),
+                albumArtist = tag.getFirst(FieldKey.ALBUM_ARTIST),
+                year = tag.getFirst(FieldKey.YEAR)?.toIntOrNull(),
+                cover = tag.firstArtwork?.binaryData?.let { RawImage(it) }
+            )
         }
     }
 }

@@ -55,18 +55,18 @@ data class Song(
     }
 
     fun audioStream(): AudioInputStream {
-        val mp3In: AudioInputStream = AudioSystem.getAudioInputStream(file)
-        val mp3Format: AudioFormat = mp3In.format
+        val audioStream: AudioInputStream = AudioSystem.getAudioInputStream(file)
+        val format: AudioFormat = audioStream.format
         val pcmFormat = AudioFormat(
             AudioFormat.Encoding.PCM_SIGNED,
-            mp3Format.sampleRate,
+            format.sampleRate,
             16,
-            mp3Format.channels,
-            2 * mp3Format.channels,
-            mp3Format.sampleRate,
-            mp3Format.isBigEndian,
+            format.channels,
+            2 * format.channels,
+            format.sampleRate,
+            format.isBigEndian,
         )
-        return AudioSystem.getAudioInputStream(pcmFormat, mp3In)
+        return AudioSystem.getAudioInputStream(pcmFormat, audioStream)
     }
 }
 
@@ -128,7 +128,7 @@ data class Library(
         private fun buildAlbums(
             metadata: Collection<RawMetadataSong>,
             artists: Map<String, Artist>,
-            covers: Map<RawImage, ImageBitmap>,
+            covers: Map<RawImage, ImageBitmap?>,
         ): Map<Pair<Artist, String>, Album> {
             return metadata
                 .groupBy { artists.getValue(it.nnAlbumArtist) to it.nnAlbum }
@@ -139,12 +139,18 @@ data class Library(
         }
 
         suspend fun from(metadata: Collection<RawMetadataSong>): Library = coroutineScope {
-            val covers: Map<RawImage, ImageBitmap> = metadata
+            val covers: Map<RawImage, ImageBitmap?> = metadata
                 .mapNotNull { it.cover }
                 .distinct()
                 .map { img ->
                     async {
-                        img to img.decode()
+                        try {
+                            img to img.decode()
+                        } catch (e: Exception) {
+                            // TODO: better log
+                            println(e.message)
+                            img to null
+                        }
                     }
                 }
                 .awaitAll()
@@ -175,11 +181,11 @@ data class Library(
         suspend fun fromFolder(folder: File): Library = coroutineScope {
             debugElapsed("Load library") {
                 val songs = folder.walk()
-                    .filter { it.isFile && it.extension.equals("mp3", true) }
+                    .filter { it.isFile }
                     .map { file ->
                         async {
                             try {
-                                RawMetadataSong.fromMp3(file)
+                                RawMetadataSong.fromMusicFile(file)
                             } catch (e: Exception) {
                                 // TODO: better log
                                 e.printStackTrace()

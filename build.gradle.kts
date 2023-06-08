@@ -26,9 +26,13 @@ kotlin {
                 implementation(compose.desktop.currentOs)
                 api(compose.materialIconsExtended)
 
+                // ffmpeg-based audio decoder
                 implementation("com.tagtraum:ffsampledsp-complete:0.9.50")
-                implementation("com.mpatric:mp3agic:0.9.1")
+                // music metadata reader
+                implementation("net.jthink:jaudiotagger:3.0.1")
 
+
+                // File picker
                 implementation("com.darkrockstudios:mpfilepicker:1.1.0")
             }
         }

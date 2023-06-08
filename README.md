@@ -14,9 +14,6 @@ TBD
 
 ## Roadmap
 
- - Support for multiple music formats
-   - [ ] FLAC
-   - [ ] ...
  - Search
  - Lyrics
  - Improve queue UI
@@ -29,3 +26,4 @@ TBD
    - [ ] Background API?
  - Keyboard shortcuts (e.g. space to play/pause)
  - Seamless track transition
+ - Shuffle/repeat options

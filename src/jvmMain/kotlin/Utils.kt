@@ -1,7 +1,5 @@
 import androidx.compose.animation.core.*
 import androidx.compose.runtime.*
-import com.mpatric.mp3agic.ID3v2
-import com.mpatric.mp3agic.ID3v24Tag
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import javax.sound.sampled.AudioFormat
@@ -74,14 +72,6 @@ fun Duration.rounded(): Duration {
         sec.seconds
     } else {
         (sec / 60 * 60).seconds
-    }
-}
-
-fun ID3v2.recordingYear(): String? {
-    return if (this is ID3v24Tag) {
-        year ?: recordingTime
-    } else {
-        year
     }
 }
 
