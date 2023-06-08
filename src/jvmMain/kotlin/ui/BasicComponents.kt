@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 
 @Composable
@@ -60,6 +61,7 @@ fun BigIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    rippleradius: Dp = Dp.Unspecified,
     content: @Composable () -> Unit
 ) {
     Box(
@@ -70,7 +72,7 @@ fun BigIconButton(
                 enabled = enabled,
                 role = Role.Button,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = rememberRipple(bounded = false)
+                indication = rememberRipple(bounded = false, radius = rippleradius)
             ),
         contentAlignment = Alignment.Center
     ) {

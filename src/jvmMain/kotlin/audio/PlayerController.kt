@@ -39,21 +39,21 @@ private val playLoopDelay = minOf(16.milliseconds, buffer / 2)
 object PlayerController {
     val channel = Channel<PlayerCommand>(Channel.UNLIMITED)
 
-    private var _pendingSeek by mutableStateOf<Duration?>(null)
-    private var _position by mutableStateOf(ZERO)
+    private var pendingSeek by mutableStateOf<Duration?>(null)
+    private var playerPosition by mutableStateOf(ZERO)
     val position by derivedStateOf {
-        _pendingSeek ?: _position
+        pendingSeek ?: playerPosition
     }
 
-    private var _queue = mutableStateOf<SongQueue?>(null)
-    val queue by _queue
+    var queue by mutableStateOf<SongQueue?>(null)
+        private set
 
     private var player: Player? = null
-    private var _pause = mutableStateOf(true)
-    val pause by _pause
+    var pause by mutableStateOf(true)
+        private set
 
     fun seek(coroutineScope: CoroutineScope, queue: SongQueue?, position: Duration) {
-        _pendingSeek = position
+        pendingSeek = position
         coroutineScope.launch {
             channel.send(ChangeQueue(queue, Position.Specific(position)))
         }
@@ -72,9 +72,9 @@ object PlayerController {
                 launch {
                     for (command in channel) {
                         when (command) {
-                            is ChangeQueue ->  changeQueue(command.queue, command.position)
-                            Pause -> _pause.value = true
-                            Play -> _pause.value = false
+                            is ChangeQueue -> changeQueue(command.queue, command.position)
+                            Pause -> pause = true
+                            Play -> pause = false
                         }
                     }
                 }
@@ -85,13 +85,19 @@ object PlayerController {
     private fun play() {
         val p = player
         if (p != null) {
-            if (!_pause.value) {
+            if (!pause) {
                 val done = !p.playFrame()
                 if (done) {
-                    changeQueue(queue?.next(), Position.Beginning)
+                    val next = queue?.nextInQueue()
+                    if (next == null) {
+                        p.seekToStart()
+                        pause = true
+                    } else {
+                        changeQueue(next, Position.Beginning)
+                    }
                 }
             }
-            _position = p.position
+            playerPosition = p.position
         }
     }
 
@@ -100,15 +106,15 @@ object PlayerController {
             player?.flush()
             player?.stop()
             player = null
-            _pendingSeek = null
-            _queue.value = null
-            _pause.value = true
+            pendingSeek = null
+            this.queue = null
+            pause = true
             return
         }
 
         val old = PlayerController.queue?.currentSong
         val new = queue.currentSong
-        _queue.value = queue
+        this.queue = queue
 
         if (old != new) {
             val stream = debugElapsed("Reading song ${queue.currentSong.title}") {
@@ -126,7 +132,7 @@ object PlayerController {
             }
         }
         play()
-        _pendingSeek = null
+        pendingSeek = null
 
         return
     }

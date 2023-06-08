@@ -1,8 +1,19 @@
 package data
 
+import data.RepeatMode.*
+
+enum class RepeatMode {
+    DO_NOT_REPEAT,
+    REPEAT_QUEUE,
+    REPEAT_SONG,
+}
+
 data class SongQueue(
+    val originalSongs: List<Song>,
     val songs: List<Song>,
     val position: Int,
+    val isShuffled: Boolean = false,
+    val repeatMode: RepeatMode = REPEAT_QUEUE,
 ) {
     val currentSong get() = songs[position]
 
@@ -11,14 +22,54 @@ data class SongQueue(
         require(songs.isNotEmpty())
     }
 
-    fun previous(): SongQueue? {
-        // TODO: repeat options go here
+    fun previous(): SongQueue {
         return copy(position = (position - 1).mod(songs.size))
     }
 
-    fun next(): SongQueue? {
-        // TODO: repeat options go here
+    fun next(): SongQueue {
         return copy(position = (position + 1).mod(songs.size))
+    }
+
+    fun nextInQueue(): SongQueue? {
+        return when (repeatMode) {
+            DO_NOT_REPEAT -> if (position == songs.size - 1) {
+                null
+            } else {
+                copy(position = position + 1)
+            }
+
+            REPEAT_QUEUE -> copy(position = (position + 1).mod(songs.size))
+            REPEAT_SONG -> this
+        }
+    }
+
+    fun toggleRepeat(): SongQueue {
+        return copy(
+            repeatMode = when (repeatMode) {
+                DO_NOT_REPEAT -> REPEAT_QUEUE
+                REPEAT_QUEUE -> REPEAT_SONG
+                REPEAT_SONG -> DO_NOT_REPEAT
+            }
+        )
+    }
+
+    fun shuffled(): SongQueue {
+        return copy(
+            songs = listOf(currentSong) + (songs.subList(0, position + 1) + songs.subList(
+                position + 1,
+                songs.size
+            )).shuffled(),
+            position = 0,
+            isShuffled = true,
+        )
+    }
+
+    fun unshuffled(): SongQueue {
+        return copy(
+            songs = originalSongs,
+            position = originalSongs.indexOf(currentSong),
+            isShuffled = false,
+        )
     }
 
     fun skipTo(song: Song): SongQueue {
@@ -30,6 +81,7 @@ data class SongQueue(
     companion object {
         fun of(library: Library, song: Song): SongQueue {
             return SongQueue(
+                library.songs,
                 library.songs,
                 library.songs.indexOf(song)
             )
