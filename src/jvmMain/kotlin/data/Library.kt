@@ -1,6 +1,7 @@
 package data
 
 import androidx.compose.ui.graphics.ImageBitmap
+import debugElapsed
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -172,23 +173,25 @@ data class Library(
         }
 
         suspend fun fromFolder(folder: File): Library = coroutineScope {
-            val songs = folder.walk()
-                .filter { it.isFile && it.extension.equals("mp3", true) }
-                .map { file ->
-                    async {
-                        try {
-                            RawMetadataSong.fromMp3(file)
-                        } catch (e: Exception) {
-                            // TODO: better log
-                            e.printStackTrace()
-                            null
+            debugElapsed("Load library") {
+                val songs = folder.walk()
+                    .filter { it.isFile && it.extension.equals("mp3", true) }
+                    .map { file ->
+                        async {
+                            try {
+                                RawMetadataSong.fromMp3(file)
+                            } catch (e: Exception) {
+                                // TODO: better log
+                                e.printStackTrace()
+                                null
+                            }
                         }
                     }
-                }
-                .toList()
-                .awaitAll()
-                .filterNotNull()
-            from(songs)
+                    .toList()
+                    .awaitAll()
+                    .filterNotNull()
+                from(songs)
+            }
         }
     }
 }
