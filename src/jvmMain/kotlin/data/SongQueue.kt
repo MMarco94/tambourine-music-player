@@ -53,6 +53,10 @@ data class SongQueue(
         )
     }
 
+    fun toggleShuffle(): SongQueue {
+        return if (isShuffled) unshuffled() else shuffled()
+    }
+
     fun shuffled(): SongQueue {
         return copy(
             songs = listOf(currentSong) + (songs.subList(0, position + 1) + songs.subList(

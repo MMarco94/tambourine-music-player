@@ -58,9 +58,7 @@ fun PlayerUI(
                         cs, Icons.Default.Shuffle, "Shuffle", active = queue.isShuffled
                     ) {
                         PlayerController.channel.send(
-                            PlayerCommand.ChangeQueue(
-                                if (queue.isShuffled) queue.unshuffled() else queue.shuffled(), Position.Current
-                            )
+                            PlayerCommand.ChangeQueue(queue.toggleShuffle())
                         )
                     }
                     Spacer(Modifier.width(16.dp))
@@ -94,7 +92,7 @@ fun PlayerUI(
                         active = queue.repeatMode != RepeatMode.DO_NOT_REPEAT
                     ) {
                         PlayerController.channel.send(
-                            PlayerCommand.ChangeQueue(queue.toggleRepeat(), Position.Current)
+                            PlayerCommand.ChangeQueue(queue.toggleRepeat())
                         )
                     }
                 }

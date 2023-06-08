@@ -24,5 +24,4 @@ TBD
  - Integration with the OS
    - [ ] Media controls
    - [ ] Background API?
- - Keyboard shortcuts (e.g. space to play/pause)
  - Save on disk the library location

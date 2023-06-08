@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalCoroutinesApi::class)
+@file:OptIn(ExperimentalCoroutinesApi::class, ExperimentalComposeUiApi::class)
 
 import Panel.*
 import androidx.compose.animation.animateColorAsState
@@ -13,10 +13,12 @@ import androidx.compose.material.icons.filled.PlayCircleFilled
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
@@ -56,10 +58,9 @@ private enum class Panel(
 }
 
 @Composable
-fun App() {
+private fun App(selectedPanel: Panel, selectPanel: (Panel) -> Unit) {
     val library by musicLibrary.collectAsState(null, Dispatchers.Default)
     var openSettings by remember { mutableStateOf(false) }
-    var selectedPanel by remember { mutableStateOf(LIBRARY) }
 
     MaterialTheme(
         typography = MusicPlayerTheme.typography,
@@ -81,9 +82,7 @@ fun App() {
                         openSettings = true
                     }
                     Divider()
-                    BottomBar(large, selectedPanel, visiblePanels) {
-                        selectedPanel = it
-                    }
+                    BottomBar(large, selectedPanel, visiblePanels, selectPanel)
                 }
             }
             if (openSettings) {
@@ -187,14 +186,84 @@ fun main() {
     SLF4JBridgeHandler.removeHandlersForRootLogger()
     SLF4JBridgeHandler.install()
     application {
+        val cs = rememberCoroutineScope()
+        var selectedPanel by remember { mutableStateOf(LIBRARY) }
         Window(
             title = "Music Player",
             onCloseRequest = ::exitApplication,
             state = remember {
                 WindowState(size = DpSize(1280.dp, 800.dp))
+            },
+            onPreviewKeyEvent = {
+                if (it.type == KeyEventType.KeyDown) {
+                    if (it.isCtrlPressed) {
+                        when (it.key) {
+                            Key.S -> {
+                                cs.launch {
+                                    PlayerController.channel.send(
+                                        PlayerCommand.ChangeQueue(PlayerController.queue?.toggleShuffle())
+                                    )
+                                }
+                                return@Window true
+                            }
+
+                            Key.R -> {
+                                cs.launch {
+                                    PlayerController.channel.send(
+                                        PlayerCommand.ChangeQueue(PlayerController.queue?.toggleRepeat())
+                                    )
+                                }
+                                return@Window true
+                            }
+
+                            Key.DirectionLeft -> {
+                                cs.launch {
+                                    PlayerController.channel.send(
+                                        PlayerCommand.ChangeQueue(PlayerController.queue?.previous())
+                                    )
+                                }
+                                return@Window true
+                            }
+
+                            Key.DirectionRight -> {
+                                cs.launch {
+                                    PlayerController.channel.send(
+                                        PlayerCommand.ChangeQueue(PlayerController.queue?.next())
+                                    )
+                                }
+                                return@Window true
+                            }
+                        }
+                    }else{
+                        when (it.key) {
+                            Key.Spacebar -> {
+                                cs.launch {
+                                    PlayerController.channel.send(if (PlayerController.pause) PlayerCommand.Play else PlayerCommand.Pause)
+                                }
+                                return@Window true
+                            }
+
+                            Key.F1 -> {
+                                selectedPanel = LIBRARY
+                                return@Window true
+                            }
+
+                            Key.F2 -> {
+                                selectedPanel = QUEUE
+                                return@Window true
+                            }
+
+                            Key.F3 -> {
+                                selectedPanel = PLAYER
+                                return@Window true
+                            }
+                        }
+                    }
+                }
+                false
             }
         ) {
-            App()
+            App(selectedPanel) { selectedPanel = it }
         }
     }
 }

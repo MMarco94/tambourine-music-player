@@ -26,7 +26,7 @@ sealed interface Position {
 sealed interface PlayerCommand {
     data class ChangeQueue(
         val queue: SongQueue?,
-        val position: Position,
+        val position: Position = Position.Current,
     ) : PlayerCommand
 
     object Play : PlayerCommand
