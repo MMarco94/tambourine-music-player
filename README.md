@@ -27,4 +27,3 @@ TBD
    - [ ] Media notification
    - [ ] Media keys
    - [ ] Background API?
- - Save on disk the library location
