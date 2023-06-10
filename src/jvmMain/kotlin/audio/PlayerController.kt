@@ -1,21 +1,21 @@
 package audio
 
 import androidx.compose.runtime.derivedStateOf
-import audio.PlayerCommand.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import audio.PlayerCommand.*
 import data.SongQueue
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import utils.debugElapsed
 import kotlin.concurrent.thread
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
+
+private val logger = KotlinLogging.logger {}
 
 sealed interface Position {
     object Current : Position
@@ -23,123 +23,200 @@ sealed interface Position {
     data class Specific(val time: Duration) : Position
 }
 
-sealed interface PlayerCommand {
+private sealed interface PlayerCommand {
+    val event: Long
+
     data class ChangeQueue(
+        override val event: Long,
         val queue: SongQueue?,
-        val position: Position = Position.Current,
+        val position: Position,
     ) : PlayerCommand
 
-    object Play : PlayerCommand
-    object Pause : PlayerCommand
-    object Seeking : PlayerCommand
-    object SeekDone : PlayerCommand
+    data class Play(override val event: Long) : PlayerCommand
+    data class Pause(override val event: Long) : PlayerCommand
+    data class Seeking(override val event: Long) : PlayerCommand
+    data class SeekDone(override val event: Long) : PlayerCommand
 }
 
-private val buffer = 32.milliseconds
+private val buffer = 64.milliseconds
 private val playLoopDelay = minOf(16.milliseconds, buffer / 2)
 
-object PlayerController {
-    val channel = Channel<PlayerCommand>(Channel.UNLIMITED)
+class PlayerController(
+    private val coroutineScope: CoroutineScope
+) {
 
-    private var pendingSeek by mutableStateOf<Duration?>(null)
-    private var playerPosition by mutableStateOf(ZERO)
-    val position by derivedStateOf {
-        pendingSeek ?: playerPosition
+    private val commandChannel = Channel<PlayerCommand>(Channel.UNLIMITED)
+    private val stateChannel = Channel<State>(Channel.CONFLATED)
+
+    private data class CurrentlyPlaying(
+        val queue: SongQueue,
+        val player: Player,
+        val bufferer: Job,
+    )
+
+    private data class State(
+        val processedEvents: Long,
+        val currentlyPlaying: CurrentlyPlaying?,
+        val position: Duration,
+        val pause: Boolean,
+        val seeking: Boolean,
+    ) {
+
+        companion object {
+            val initial = State(0L, null, ZERO, true, false)
+        }
+
+        data class StateChangeResult(
+            val newState: State,
+            val shouldPause: Boolean,
+        ) {
+            fun change(f: State.() -> State) = copy(newState = newState.f())
+        }
+
+        fun change(f: State.() -> State) = StateChangeResult(
+            this.f(), false
+        )
+
+        suspend fun play(cs: CoroutineScope): StateChangeResult {
+            return if (currentlyPlaying != null && !pause) {
+                val result = currentlyPlaying.player.playFrame()
+                if (result == Player.PlayResult.FINISHED && !seeking) {
+                    val (next, keepPlaying) = currentlyPlaying.queue.nextInQueue()
+                    changeQueue(cs, next, Position.Beginning)
+                        .change { copy(pause = pause || !keepPlaying) }
+                } else {
+                    StateChangeResult(
+                        copy(position = currentlyPlaying.player.position),
+                        shouldPause = result != Player.PlayResult.PLAYED
+                    )
+                }
+            } else {
+                StateChangeResult(this, true)
+            }
+        }
+
+        suspend fun changeQueue(cs: CoroutineScope, queue: SongQueue?, position: Position): StateChangeResult {
+            if (queue == null) {
+                currentlyPlaying?.apply {
+                    player.flush()
+                    player.stop()
+                    bufferer.cancel()
+                }
+                return StateChangeResult(State(processedEvents, null, ZERO, true, seeking), true)
+            }
+
+            val new = queue.currentSong
+
+            val newCp = if (currentlyPlaying?.queue?.currentSong != new) {
+                val stream = logger.debugElapsed("Opening song ${queue.currentSong.title}") {
+                    queue.currentSong.audioStream()
+                }
+                currentlyPlaying?.bufferer?.cancel()
+                val player = Player.create(stream, currentlyPlaying?.player, buffer)
+                player.buffer() // Doing a round of buffering now, so it can be played immediately
+                val bufferer = cs.launch(Dispatchers.IO) {
+                    logger.debugElapsed("Reading ${new.title}") {
+                        while (!player.buffer()) {
+                            yield()
+                        }
+                    }
+                }
+                CurrentlyPlaying(queue, player, bufferer)
+            } else {
+                CurrentlyPlaying(queue, currentlyPlaying.player, currentlyPlaying.bufferer)
+            }
+            when (position) {
+                Position.Current -> {}
+                Position.Beginning -> newCp.player.seekToStart()
+                is Position.Specific -> newCp.player.seekTo(position.time)
+            }
+            return StateChangeResult(
+                copy(currentlyPlaying = newCp, position = newCp.player.position),
+                shouldPause = false
+            )
+        }
     }
+    private var sentEvents = 0L
+    private var pendingSeek by mutableStateOf<Pair<Long, Duration>?>(null)
 
-    var queue by mutableStateOf<SongQueue?>(null)
-        private set
-
-    private var player: Player? = null
-    private var seeking = false
-    var pause by mutableStateOf(true)
-        private set
-
-    fun seek(coroutineScope: CoroutineScope, queue: SongQueue?, position: Duration) {
-        pendingSeek = position
-        coroutineScope.launch {
-            channel.send(Seeking)
-            channel.send(ChangeQueue(queue, Position.Specific(position)))
+    private var observableState by mutableStateOf(State.initial)
+    val queue get() = observableState.currentlyPlaying?.queue
+    val pause get() = observableState.pause
+    val position by derivedStateOf {
+        val ps = pendingSeek
+        val os = observableState
+        if (ps != null && os.processedEvents < ps.first) {
+            ps.second
+        } else {
+            os.position
         }
     }
 
+    suspend fun play() {
+        sendCommand(Play(sentEvents++))
+    }
+
+    suspend fun pause() {
+        sendCommand(Pause(sentEvents++))
+    }
+
+    suspend fun changeQueue(
+        queue: SongQueue?,
+        position: Position = Position.Current,
+    ) {
+        sendCommand(ChangeQueue(sentEvents++, queue, position))
+    }
+
+    private suspend fun sendCommand(command: PlayerCommand) {
+        commandChannel.send(command)
+    }
+
+    fun startSeek(queue: SongQueue?, position: Duration) {
+        val se = sentEvents
+        sentEvents += 2
+        pendingSeek = se + 1 to position
+        coroutineScope.launch {
+            sendCommand(Seeking(se))
+            sendCommand(ChangeQueue(se + 1, queue, Position.Specific(position)))
+        }
+    }
+
+    suspend fun endSeek() {
+        sendCommand(SeekDone(sentEvents++))
+    }
+
     init {
-        thread {
+        coroutineScope.launch {
+            for (state in stateChannel) {
+                observableState = state
+            }
+        }
+        thread(name = "Player") {
             runBlocking {
                 launch {
+                    var state = State.initial
                     while (true) {
-                        // This is to avoid sending too many bytes to the audio device. That would cause pausing to be slow
-                        play()
-                        delay(playLoopDelay)
-                    }
-                }
-                launch {
-                    for (command in channel) {
-                        when (command) {
-                            is ChangeQueue -> changeQueue(command.queue, command.position)
-                            Pause -> pause = true
-                            Play -> pause = false
-                            Seeking -> seeking = true
-                            SeekDone -> seeking = false
+                        val (newState, shouldPause) = when (val command = commandChannel.tryReceive().getOrNull()) {
+                            is ChangeQueue -> state
+                                .changeQueue(coroutineScope, command.queue, command.position)
+                                .change { copy(processedEvents = command.event + 1) }
+
+                            is Pause -> state.change { copy(processedEvents = command.event + 1, pause = true) }
+                            is Play -> state.change { copy(processedEvents = command.event + 1, pause = false) }
+                            is Seeking -> state.change { copy(processedEvents = command.event + 1, seeking = true) }
+                            is SeekDone -> state.change { copy(processedEvents = command.event + 1, seeking = false) }
+                            null -> state.play(coroutineScope)
+                        }
+                        if (newState != state) {
+                            state = newState
+                            stateChannel.send(state)
+                        }
+                        if (shouldPause) {
+                            delay(playLoopDelay)
                         }
                     }
                 }
             }
         }
-    }
-
-    private fun play() {
-        val p = player
-        if (p != null) {
-            if (!pause) {
-                val done = !p.playFrame()
-                if (done && !seeking) {
-                    val next = queue?.nextInQueue()
-                    if (next == null) {
-                        p.seekToStart()
-                        pause = true
-                    } else {
-                        changeQueue(next, Position.Beginning)
-                    }
-                }
-            }
-            playerPosition = p.position
-        }
-    }
-
-    private fun changeQueue(queue: SongQueue?, position: Position) {
-        if (queue == null) {
-            player?.flush()
-            player?.stop()
-            player = null
-            pendingSeek = null
-            this.queue = null
-            pause = true
-            return
-        }
-
-        val old = PlayerController.queue?.currentSong
-        val new = queue.currentSong
-        this.queue = queue
-
-        if (old != new) {
-            val stream = debugElapsed("Reading song ${queue.currentSong.title}") {
-                queue.currentSong.audioStream()
-            }
-            player = Player.create(stream, player, buffer)
-        }
-
-        val p = player
-        if (p != null) {
-            when (position) {
-                Position.Current -> {}
-                Position.Beginning -> p.seekToStart()
-                is Position.Specific -> p.seekTo(position.time)
-            }
-        }
-        play()
-        pendingSeek = null
-
-        return
     }
 }

@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
-import audio.PlayerCommand
 import audio.PlayerController
 import audio.Position
 import data.*
@@ -61,6 +60,7 @@ private enum class Panel(
 private fun App(selectedPanel: Panel, selectPanel: (Panel) -> Unit) {
     val library by musicLibrary.collectAsState(null, Dispatchers.Default)
     var openSettings by remember { mutableStateOf(false) }
+    val player = playerController.current
 
     MaterialTheme(
         typography = MusicPlayerTheme.typography,
@@ -68,7 +68,7 @@ private fun App(selectedPanel: Panel, selectPanel: (Panel) -> Unit) {
         shapes = MusicPlayerTheme.shapes,
     ) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colors.background) {
-            BlurredFadeAlbumCover(PlayerController.queue?.currentSong?.cover, Modifier.fillMaxSize())
+            BlurredFadeAlbumCover(player.queue?.currentSong?.cover, Modifier.fillMaxSize())
             BoxWithConstraints {
                 val w = constraints.maxWidth
                 val large = w >= with(LocalDensity.current) { (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPx() }
@@ -100,6 +100,7 @@ private fun MainContent(
     openSettings: () -> Unit,
 ) {
     val cs = rememberCoroutineScope()
+    val player = playerController.current
     PanelContainer(modifier, values().toSet(), visiblePanels) { panel ->
         when (panel) {
             LIBRARY -> LibraryContainer(library) { library ->
@@ -109,12 +110,8 @@ private fun MainContent(
                 LibraryHeader(Modifier.fillMaxSize(), library, listOptions, { listOptions = it }, openSettings) {
                     SongListUI(lib.stats.maxTrackNumber, items) { song ->
                         cs.launch {
-                            PlayerController.channel.send(
-                                PlayerCommand.ChangeQueue(
-                                    SongQueue.of(lib, song), Position.Beginning
-                                )
-                            )
-                            PlayerController.channel.send(PlayerCommand.Play)
+                            player.changeQueue(SongQueue.of(lib, song), Position.Beginning)
+                            player.play()
                         }
                     }
                 }
@@ -122,8 +119,8 @@ private fun MainContent(
 
             QUEUE -> SongQueueUI(Modifier.fillMaxSize()) { queue ->
                 cs.launch {
-                    PlayerController.channel.send(PlayerCommand.ChangeQueue(queue, Position.Beginning))
-                    PlayerController.channel.send(PlayerCommand.Play)
+                    player.changeQueue(queue, Position.Beginning)
+                    player.play()
                 }
             }
 
@@ -182,88 +179,89 @@ private fun LibraryContainer(library: Library?, f: @Composable (Library) -> Unit
     }
 }
 
+val playerController = staticCompositionLocalOf<PlayerController> { throw IllegalStateException() }
+
 fun main() {
     SLF4JBridgeHandler.removeHandlersForRootLogger()
     SLF4JBridgeHandler.install()
     application {
         val cs = rememberCoroutineScope()
-        var selectedPanel by remember { mutableStateOf(LIBRARY) }
-        Window(
-            title = "Music Player",
-            onCloseRequest = ::exitApplication,
-            state = remember {
-                WindowState(size = DpSize(1280.dp, 800.dp))
-            },
-            onPreviewKeyEvent = {
-                if (it.type == KeyEventType.KeyDown) {
-                    if (it.isCtrlPressed) {
-                        when (it.key) {
-                            Key.S -> {
-                                cs.launch {
-                                    PlayerController.channel.send(
-                                        PlayerCommand.ChangeQueue(PlayerController.queue?.toggleShuffle())
-                                    )
+        val pc = PlayerController(cs)
+        CompositionLocalProvider(playerController provides pc) {
+            var selectedPanel by remember { mutableStateOf(LIBRARY) }
+            Window(
+                title = "Music Player",
+                onCloseRequest = ::exitApplication,
+                state = remember {
+                    WindowState(size = DpSize(1280.dp, 800.dp))
+                },
+                onPreviewKeyEvent = {
+                    if (it.type == KeyEventType.KeyDown) {
+                        if (it.isCtrlPressed) {
+                            when (it.key) {
+                                Key.S -> {
+                                    cs.launch {
+                                        pc.changeQueue(pc.queue?.toggleShuffle())
+                                    }
+                                    return@Window true
                                 }
-                                return@Window true
-                            }
 
-                            Key.R -> {
-                                cs.launch {
-                                    PlayerController.channel.send(
-                                        PlayerCommand.ChangeQueue(PlayerController.queue?.toggleRepeat())
-                                    )
+                                Key.R -> {
+                                    cs.launch {
+                                        pc.changeQueue(pc.queue?.toggleRepeat())
+                                    }
+                                    return@Window true
                                 }
-                                return@Window true
-                            }
 
-                            Key.DirectionLeft -> {
-                                cs.launch {
-                                    PlayerController.channel.send(
-                                        PlayerCommand.ChangeQueue(PlayerController.queue?.previous())
-                                    )
+                                Key.DirectionLeft -> {
+                                    cs.launch {
+                                        pc.changeQueue(pc.queue?.previous())
+                                    }
+                                    return@Window true
                                 }
-                                return@Window true
-                            }
 
-                            Key.DirectionRight -> {
-                                cs.launch {
-                                    PlayerController.channel.send(
-                                        PlayerCommand.ChangeQueue(PlayerController.queue?.next())
-                                    )
+                                Key.DirectionRight -> {
+                                    cs.launch {
+                                        pc.changeQueue(pc.queue?.next())
+                                    }
+                                    return@Window true
                                 }
-                                return@Window true
                             }
-                        }
-                    }else{
-                        when (it.key) {
-                            Key.Spacebar -> {
-                                cs.launch {
-                                    PlayerController.channel.send(if (PlayerController.pause) PlayerCommand.Play else PlayerCommand.Pause)
+                        } else {
+                            when (it.key) {
+                                Key.Spacebar -> {
+                                    cs.launch {
+                                        if (pc.pause){
+                                            pc.play()
+                                        }else{
+                                            pc.pause()
+                                        }
+                                    }
+                                    return@Window true
                                 }
-                                return@Window true
-                            }
 
-                            Key.F1 -> {
-                                selectedPanel = LIBRARY
-                                return@Window true
-                            }
+                                Key.F1 -> {
+                                    selectedPanel = LIBRARY
+                                    return@Window true
+                                }
 
-                            Key.F2 -> {
-                                selectedPanel = QUEUE
-                                return@Window true
-                            }
+                                Key.F2 -> {
+                                    selectedPanel = QUEUE
+                                    return@Window true
+                                }
 
-                            Key.F3 -> {
-                                selectedPanel = PLAYER
-                                return@Window true
+                                Key.F3 -> {
+                                    selectedPanel = PLAYER
+                                    return@Window true
+                                }
                             }
                         }
                     }
+                    false
                 }
-                false
+            ) {
+                App(selectedPanel) { selectedPanel = it }
             }
-        ) {
-            App(selectedPanel) { selectedPanel = it }
         }
     }
 }

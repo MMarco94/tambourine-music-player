@@ -30,16 +30,14 @@ data class SongQueue(
         return copy(position = (position + 1).mod(songs.size))
     }
 
-    fun nextInQueue(): SongQueue? {
+    /**
+     * The next queue, plus whether it can continue playing, or it should stop
+     */
+    fun nextInQueue(): Pair<SongQueue, Boolean> {
         return when (repeatMode) {
-            DO_NOT_REPEAT -> if (position == songs.size - 1) {
-                null
-            } else {
-                copy(position = position + 1)
-            }
-
-            REPEAT_QUEUE -> copy(position = (position + 1).mod(songs.size))
-            REPEAT_SONG -> this
+            DO_NOT_REPEAT -> copy(position = (position + 1).mod(songs.size)) to (position < songs.size - 1)
+            REPEAT_QUEUE -> copy(position = (position + 1).mod(songs.size)) to true
+            REPEAT_SONG -> this to true
         }
     }
 

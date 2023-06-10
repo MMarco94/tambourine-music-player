@@ -14,12 +14,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import audio.PlayerCommand
-import audio.PlayerController
 import audio.Position
 import data.RepeatMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import playerController
 import utils.format
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.ZERO
@@ -30,7 +29,8 @@ fun PlayerUI(
     modifier: Modifier,
 ) {
     val cs = rememberCoroutineScope()
-    val queue = PlayerController.queue
+    val player = playerController.current
+    val queue = player.queue
     val song = queue?.currentSong
     Box(modifier.padding(horizontal = 16.dp)) {
         if (song == null) {
@@ -58,32 +58,34 @@ fun PlayerUI(
                     PlayerIcon(
                         cs, Icons.Default.Shuffle, "Shuffle", active = queue.isShuffled
                     ) {
-                        PlayerController.channel.send(
-                            PlayerCommand.ChangeQueue(queue.toggleShuffle())
-                        )
+                        player.changeQueue(queue.toggleShuffle())
                     }
                     Spacer(Modifier.width(16.dp))
                     PlayerIcon(
                         cs, Icons.Default.SkipPrevious, "Previous"
                     ) {
-                        PlayerController.channel.send(PlayerCommand.ChangeQueue(queue.previous(), Position.Beginning))
-                        PlayerController.channel.send(PlayerCommand.Play)
+                        player.changeQueue(queue.previous(), Position.Beginning)
+                        player.play()
                     }
                     Spacer(Modifier.width(8.dp))
                     PlayerIcon(
                         cs,
-                        if (PlayerController.pause) Icons.Default.PlayArrow else Icons.Default.Pause,
-                        if (PlayerController.pause) "Play" else "Pause",
+                        if (player.pause) Icons.Default.PlayArrow else Icons.Default.Pause,
+                        if (player.pause) "Play" else "Pause",
                         iconModifier = Modifier.size(48.dp),
                     ) {
-                        PlayerController.channel.send(if (PlayerController.pause) PlayerCommand.Play else PlayerCommand.Pause)
+                        if (player.pause) {
+                            player.play()
+                        } else {
+                            player.pause()
+                        }
                     }
                     Spacer(Modifier.width(8.dp))
                     PlayerIcon(
                         cs, Icons.Default.SkipNext, "Next"
                     ) {
-                        PlayerController.channel.send(PlayerCommand.ChangeQueue(queue.next(), Position.Beginning))
-                        PlayerController.channel.send(PlayerCommand.Play)
+                        player.changeQueue(queue.next(), Position.Beginning)
+                        player.play()
                     }
                     Spacer(Modifier.width(16.dp))
                     PlayerIcon(
@@ -92,30 +94,30 @@ fun PlayerUI(
                         "Repeat",
                         active = queue.repeatMode != RepeatMode.DO_NOT_REPEAT
                     ) {
-                        PlayerController.channel.send(
-                            PlayerCommand.ChangeQueue(queue.toggleRepeat())
+                        player.changeQueue(
+                            queue.toggleRepeat()
                         )
                     }
                 }
                 Spacer(Modifier.height(8.dp))
                 Slider(
-                    value = PlayerController.position.inWholeMilliseconds.toFloat(),
+                    value = player.position.inWholeMilliseconds.toFloat(),
                     valueRange = 0f..song.length.inWholeMilliseconds.toFloat(),
                     colors = SliderDefaults.colors(
                         thumbColor = Color.White,
                         activeTrackColor = Color.White,
                     ),
                     onValueChange = {
-                        PlayerController.seek(cs, queue, it.roundToInt().milliseconds)
+                        player.startSeek(queue, it.roundToInt().milliseconds)
                     },
                     onValueChangeFinished = {
-                        cs.launch { PlayerController.channel.send(PlayerCommand.SeekDone) }
+                        cs.launch { player.endSeek() }
                     }
                 )
                 Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(PlayerController.position.format())
+                    Text(player.position.format())
                     Spacer(Modifier.weight(1f))
-                    Text("-" + (song.length - PlayerController.position).coerceAtLeast(ZERO).format())
+                    Text((player.position - song.length).coerceAtMost(ZERO).format())
                 }
 
                 Spacer(Modifier.weight(1f))

@@ -1,5 +1,6 @@
 package audio
 
+import utils.AsyncInputStream
 import utils.durationToFrames
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
@@ -10,11 +11,13 @@ import kotlin.time.Duration.Companion.seconds
 
 class Player private constructor(
     source: AudioInputStream,
-    val output: SourceDataLine,
-    val buffer: ByteArray,
+    private val output: SourceDataLine,
+    private val buffer: ByteArray,
 ) {
-    private val source = CachedAudioInputStream(source)
+    private val input = AsyncInputStream(source)
+    private val source = SeekableAudioInputStream(source.format, input)
     private val format = source.format
+    private val bufferChunks = 1.shl(18).roundBytesToFrame()
     val position get() = source.readTime
 
     fun flush() {
@@ -25,26 +28,40 @@ class Player private constructor(
         output.stop()
     }
 
-    fun playFrame(): Boolean {
-        val available = output.available()
-        if (available > 0) {
-            val s = source.read(buffer, 0, available)
-            return if (s >= 0) {
-                output.write(buffer, 0, s)
-                true
-            } else {
-                false
-            }
-        }
-        return true
+    enum class PlayResult {
+        PLAYED, NOT_PLAYED, FINISHED
     }
 
-    fun seekToStart() {
+    suspend fun playFrame(): PlayResult {
+        val available = output.available()
+        if (available > 0) {
+            val s = source.read(buffer, available)
+            return if (s >= 0) {
+                output.write(buffer, 0, s)
+                PlayResult.PLAYED
+            } else {
+                PlayResult.FINISHED
+            }
+        }
+        return PlayResult.NOT_PLAYED
+    }
+
+    suspend fun seekToStart() {
         source.seekToStart()
     }
-    fun seekTo(position: Duration) {
+
+    suspend fun seekTo(position: Duration) {
         source.seekTo(format.durationToFrames(position))
     }
+
+    /**
+     * Returns whether the finish has been reached
+     */
+    suspend fun buffer(): Boolean {
+        return input.buffer(bufferChunks)
+    }
+
+    private fun Int.roundBytesToFrame() = this / format.frameSize * format.frameSize
 
     companion object {
         fun create(
@@ -65,9 +82,10 @@ class Player private constructor(
             } else {
                 older?.flush()
                 older?.stop()
+                val line: SourceDataLine = AudioSystem.getSourceDataLine(source.format)
+
                 val bps: Float = source.format.frameRate * source.format.frameSize
                 val buffer = ByteArray((bps * (bufferLength / 1.seconds)).roundToInt())
-                val line: SourceDataLine = AudioSystem.getSourceDataLine(source.format)
                 line.open(source.format, buffer.size)
                 line.start()
                 Player(source, line, buffer)

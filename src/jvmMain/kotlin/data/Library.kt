@@ -180,7 +180,7 @@ data class Library(
         }
 
         suspend fun fromFolder(folder: File): Library = coroutineScope {
-            debugElapsed("Load library") {
+            logger.debugElapsed("Load library") {
                 val songs = folder.walk()
                     .filter { it.isFile }
                     .map { file ->

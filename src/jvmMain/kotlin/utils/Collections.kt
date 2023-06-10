@@ -1,17 +1,6 @@
 package utils
 
 
-fun Long.chunked(chunk: Int, f: (chunk: Int) -> Unit) {
-    require(this >= 0)
-    require(chunk >= 0)
-    var done = 0L
-    while (done < this) {
-        val c = minOf(chunk.toLong(), this - done).toInt()
-        f(c)
-        done += c
-    }
-}
-
 fun <T> Collection<T>.rangeOfOrNull(f: (T) -> Int?): IntRange? {
     var min: Int? = null
     var max: Int? = null
