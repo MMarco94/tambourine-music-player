@@ -1,20 +1,25 @@
 package utils
 
 import kotlin.math.absoluteValue
+import kotlin.math.roundToLong
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 
-fun Duration.rounded(): Duration {
-    val sec = this.inWholeSeconds
-    return if (sec.absoluteValue < 1) {
-        this.inWholeMilliseconds.milliseconds
-    } else if (sec.absoluteValue < 10) {
-        (this.inWholeMilliseconds * 10 / 1000 * 100).milliseconds
-    } else if (sec.absoluteValue < 3600) {
-        sec.seconds
+fun Duration.format(): String {
+    if (isNegative()) return "-" + (-this).format()
+    else if (isInfinite()) return "Inf"
+
+    val rounded = (this.inWholeMilliseconds / 100f).roundToLong()
+    val min = rounded / 600
+    val sec = rounded.mod(600) / 10
+    val decimal = rounded.mod(10)
+
+    return if (min == 0L && sec.absoluteValue < 60) {
+        "$sec.${decimal}s"
+    } else if (min < 60) {
+        "${min}m ${sec}s"
     } else {
-        (sec / 60 * 60).seconds
+        val h = min / 60
+        "${h}h ${min.mod(60)}m ${sec}s"
     }
 }

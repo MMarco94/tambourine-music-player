@@ -20,8 +20,9 @@ import audio.Position
 import data.RepeatMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import utils.rounded
+import utils.format
 import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -112,9 +113,9 @@ fun PlayerUI(
                     }
                 )
                 Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(PlayerController.position.rounded().toString())
+                    Text(PlayerController.position.format())
                     Spacer(Modifier.weight(1f))
-                    Text("-" + (song.length - PlayerController.position).rounded())
+                    Text("-" + (song.length - PlayerController.position).coerceAtLeast(ZERO).format())
                 }
 
                 Spacer(Modifier.weight(1f))

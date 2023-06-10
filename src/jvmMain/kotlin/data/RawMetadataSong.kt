@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
 import org.jetbrains.skia.Image
+import utils.trimToNull
 import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -39,7 +40,7 @@ data class RawMetadataSong(
     val nnArtist get() = artist ?: "Unknown"
     val nnAlbumArtist get() = albumArtist ?: nnArtist
 
-    companion object{
+    companion object {
 
         fun fromMusicFile(file: File): RawMetadataSong {
             val f = AudioFileIO.read(file)
@@ -50,10 +51,10 @@ data class RawMetadataSong(
                 file = file,
                 track = tag.getFirst(FieldKey.TRACK)?.toIntOrNull(),
                 length = header.preciseTrackLength.seconds,
-                title = tag.getFirst(FieldKey.TITLE),
-                album = tag.getFirst(FieldKey.ALBUM),
-                artist = tag.getFirst(FieldKey.ARTIST),
-                albumArtist = tag.getFirst(FieldKey.ALBUM_ARTIST),
+                title = tag.getFirst(FieldKey.TITLE)?.trimToNull(),
+                album = tag.getFirst(FieldKey.ALBUM)?.trimToNull(),
+                artist = tag.getFirst(FieldKey.ARTIST)?.trimToNull(),
+                albumArtist = tag.getFirst(FieldKey.ALBUM_ARTIST)?.trimToNull(),
                 year = tag.getFirst(FieldKey.YEAR)?.toIntOrNull(),
                 cover = tag.firstArtwork?.binaryData?.let { RawImage(it) }
             )

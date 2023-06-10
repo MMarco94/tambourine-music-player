@@ -15,13 +15,16 @@ TBD
 ## Roadmap
 
  - Search
- - Lyrics
+ - Metadata
+   - Lyrics
+   - Disk n°
  - Improve queue UI
  - Improve library load speed and memory consumption
  - Packaging
    - [ ] Flatpak
    - [ ] ...
  - Integration with the OS
-   - [ ] Media controls
+   - [ ] Media notification
+   - [ ] Media keys
    - [ ] Background API?
  - Save on disk the library location

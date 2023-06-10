@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import data.SongCollectionStats
-import utils.rounded
+import utils.format
 
 @Composable
 fun SongCollectionStatsComposable(stats: SongCollectionStats) {
@@ -18,7 +18,7 @@ fun SongCollectionStatsComposable(stats: SongCollectionStats) {
     )
     // TODO: plurals
     Text("${stats.songsCount} songs", style = style)
-    Text(stats.totalLength.rounded().toString(), style = style)
+    Text(stats.totalLength.format(), style = style)
     if (stats.year != null) {
         if (stats.year.first == stats.year.last) {
             Text(stats.year.first.toString(), style = style)

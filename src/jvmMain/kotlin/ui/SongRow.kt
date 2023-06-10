@@ -13,7 +13,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import data.Song
 import utils.digits
-import utils.rounded
+import utils.format
 
 @Composable
 fun SongRow(
@@ -48,7 +48,7 @@ fun SongRow(
             Text(song.title,Modifier.weight(1f))
             Spacer(Modifier.width(8.dp))
             SingleLineText(
-                song.length.rounded().toString(),
+                song.length.format(),
                 color = MaterialTheme.colors.onSurfaceSecondary,
                 style = MaterialTheme.typography.subtitle2,
             )
