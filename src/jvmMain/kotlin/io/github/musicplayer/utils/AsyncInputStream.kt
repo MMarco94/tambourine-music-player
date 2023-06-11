@@ -26,10 +26,14 @@ class AsyncInputStream(
         val buffer = ByteArray(chunkSize)
         val read = input.read(buffer)
         return when {
-            read < 0 -> true
+            read < 0 -> {
+                channel.send(ReadInfo(buffer, 0, true))
+                true
+            }
+
             read == 0 -> false
             else -> {
-                channel.send(ReadInfo(buffer, read.coerceAtLeast(0), false))
+                channel.send(ReadInfo(buffer, read, false))
                 false
             }
         }
