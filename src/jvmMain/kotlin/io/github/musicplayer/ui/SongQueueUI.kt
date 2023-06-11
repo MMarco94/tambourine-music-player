@@ -36,8 +36,11 @@ fun SongQueueUI(
         )
     } else {
         Column(modifier) {
-            Row(Modifier.heightIn(min = 64.dp).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column {
+            Row(
+                Modifier.heightIn(min = 64.dp).padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.padding(horizontal = 16.dp)) {
                     // TODO: plurals
                     Text("${queue.songs.size} songs in the queue • ${queue.songs.sumOfDuration { it.length }.format()}")
                     val remaining = queue.remainingSongs

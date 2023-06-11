@@ -90,5 +90,13 @@ data class SongQueue(
                 library.songs.indexOf(song)
             )
         }
+
+        fun of(songs: List<Song>, song: Song): SongQueue {
+            return SongQueue(
+                songs,
+                songs,
+                songs.indexOf(song)
+            )
+        }
     }
 }

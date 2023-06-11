@@ -3,6 +3,9 @@ package io.github.musicplayer.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
@@ -22,6 +25,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun Dp.toPxApprox(): Float = with(LocalDensity.current) { toPx() }
@@ -65,7 +69,7 @@ fun BigIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    rippleradius: Dp = Dp.Unspecified,
+    rippleRadius: Dp = Dp.Unspecified,
     content: @Composable () -> Unit
 ) {
     Box(
@@ -76,11 +80,31 @@ fun BigIconButton(
                 enabled = enabled,
                 role = Role.Button,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = rememberRipple(bounded = false, radius = rippleradius)
+                indication = rememberRipple(bounded = false, radius = rippleRadius)
             ),
         contentAlignment = Alignment.Center
     ) {
         val contentAlpha = if (enabled) LocalContentAlpha.current else ContentAlpha.disabled
         CompositionLocalProvider(LocalContentAlpha provides contentAlpha, content = content)
+    }
+}
+
+@Composable
+fun IconButtonWithBG(
+    onClick: () -> Unit,
+    color: Color = Color.Black.copy(alpha = .5f),
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    IconButton(onClick, modifier, enabled) {
+        Surface(
+            color = color,
+            shape = CircleShape,
+        ) {
+            Box(Modifier.size(32.dp).padding(4.dp)) {
+                content()
+            }
+        }
     }
 }
