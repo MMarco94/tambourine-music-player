@@ -1,8 +1,12 @@
 package io.github.musicplayer.audio
 
 import io.github.musicplayer.utils.avgInRange
+import io.github.musicplayer.utils.concatenate
 import io.github.musicplayer.utils.decode
 import io.github.musicplayer.utils.mapInPlace
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import javax.sound.sampled.AudioFormat
 import kotlin.math.absoluteValue
 import kotlin.math.sqrt
@@ -12,17 +16,33 @@ data class Waveform(
     val summaryChannel: List<DoubleArray>,
 ) {
     companion object {
-        const val summaryLength = 1000
+        const val summaryLength = 480
 
-        fun fromBytes(audio: ByteArray, format: AudioFormat): Waveform {
-            val decoded = (0 until format.channels).map { channel ->
-                decode(audio, audio.size, format, channel)
-                    .mapInPlace { sqrt(it.absoluteValue) }
+        suspend fun fromStream(audio: AsyncAudioInputStream.Reader, format: AudioFormat): Waveform {
+            val allDecoded = List(format.channels) {
+                mutableListOf<DoubleArray>()
             }
-            return Waveform(
-                decoded,
-                decoded.map { summarize(it, summaryLength) }
-            )
+            while (true) {
+                val chunk = audio.read(Int.MAX_VALUE) ?: break
+                allDecoded.forEachIndexed { channel, all ->
+                    val decoded = decode(chunk.readData, chunk.offset, chunk.length, format, channel)
+                        .mapInPlace { sqrt(it.absoluteValue) }
+                    all.add(decoded)
+                }
+            }
+
+            return coroutineScope {
+                val concatenatedAndSummarized = allDecoded.map {
+                    async {
+                        val concatenate = it.concatenate()
+                        concatenate to summarize(concatenate, summaryLength)
+                    }
+                }.awaitAll()
+                Waveform(
+                    concatenatedAndSummarized.map { it.first },
+                    concatenatedAndSummarized.map { it.second },
+                )
+            }
         }
 
         private fun summarize(arr: DoubleArray, size: Int): DoubleArray {

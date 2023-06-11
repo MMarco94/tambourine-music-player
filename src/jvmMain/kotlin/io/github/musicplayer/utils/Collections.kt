@@ -31,6 +31,18 @@ fun ByteArray.countZeros(start: Int = 0, end: Int = size): Int {
     return end - start
 }
 
+fun List<DoubleArray>.concatenate(): DoubleArray {
+    var arr = 0
+    var offset = 0
+    return DoubleArray(sumOf { it.size }) {
+        if (offset >= this[arr].size) {
+            arr++
+            offset = 0
+        }
+        this[arr][offset++]
+    }
+}
+
 fun DoubleArray.getOrZero(index: Int) = getOrElse(index) { 0.0 }
 
 inline fun DoubleArray.mapInPlace(f: (Double) -> Double): DoubleArray {

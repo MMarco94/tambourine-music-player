@@ -15,7 +15,7 @@ fun AudioFormat.framesToDuration(frames: Long) = (frames / frameRate * 100000000
 fun AudioFormat.durationToFrames(duration: Duration) = ((duration / 1.seconds) * frameRate).roundToLong()
 
 
-fun decode(bytes: ByteArray, length: Int, format: AudioFormat, channel: Int = 0): DoubleArray {
+fun decode(bytes: ByteArray, offset: Int, length: Int, format: AudioFormat, channel: Int = 0): DoubleArray {
     // Adapted from https://stackoverflow.com/questions/21470012/apply-fft-to-audio-recording-in-java
     val bytesPerSample: Int = ceil(format.sampleSizeInBits / 8.0).toInt()
     val transfer = LongArray(length / format.frameSize) { frame ->
@@ -23,7 +23,7 @@ fun decode(bytes: ByteArray, length: Int, format: AudioFormat, channel: Int = 0)
         var ret = 0L
         for (b in 0 until bytesPerSample) {
             val actualB = if (format.isBigEndian) bytesPerSample - 1 - b else b
-            ret = ret or ((bytes[i + actualB].toLong() and 0xffL) shl (8 * b))
+            ret = ret or ((bytes[offset + i + actualB].toLong() and 0xffL) shl (8 * b))
         }
         ret
     }

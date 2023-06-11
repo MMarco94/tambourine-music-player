@@ -1,6 +1,5 @@
 package io.github.musicplayer.audio
 
-import io.github.musicplayer.utils.AsyncInputStream
 import io.github.musicplayer.utils.durationToFrames
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
@@ -11,12 +10,10 @@ import kotlin.time.Duration.Companion.seconds
 
 class Player private constructor(
     val format: AudioFormat,
-    val input: AsyncInputStream,
+    input: AsyncAudioInputStream.Reader,
     private val output: SourceDataLine,
-    private val buffer: ByteArray,
 ) {
-    private val source = SeekableAudioInputStream(format, this.input)
-    private val bufferChunks = 1.shl(18).roundBytesToFrame()
+    private val source = SeekableAudioInputStream(format, input)
     val position get() = source.readTime
 
     fun flush() {
@@ -28,7 +25,7 @@ class Player private constructor(
     }
 
     sealed interface PlayResult {
-        class Played(val data: ByteArray, val size: Int) : PlayResult
+        class Played(val chunk: Chunk) : PlayResult
         object NotPlayed : PlayResult
         object Finished : PlayResult
     }
@@ -36,10 +33,10 @@ class Player private constructor(
     suspend fun playFrame(): PlayResult {
         val available = output.available()
         if (available > 0) {
-            val s = source.read(buffer, available)
-            return if (s >= 0) {
-                output.write(buffer, 0, s)
-                PlayResult.Played(buffer, s)
+            val chunk = source.read(available)
+            return if (chunk != null) {
+                output.write(chunk.readData, chunk.offset, chunk.length)
+                PlayResult.Played(chunk)
             } else {
                 PlayResult.Finished
             }
@@ -55,19 +52,10 @@ class Player private constructor(
         source.seekTo(format.durationToFrames(position))
     }
 
-    /**
-     * Returns whether the finish has been reached
-     */
-    suspend fun buffer(): Boolean {
-        return input.buffer(bufferChunks)
-    }
-
-    private fun Int.roundBytesToFrame() = this / format.frameSize * format.frameSize
-
     companion object {
         fun create(
             format: AudioFormat,
-            input: AsyncInputStream,
+            input: AsyncAudioInputStream.Reader,
             older: Player?,
             bufferLength: Duration,
         ): Player {
@@ -80,7 +68,7 @@ class Player private constructor(
                 older.format.channels == format.channels &&
                 older.format.isBigEndian == format.isBigEndian
             ) {
-                Player(format, input, older.output, older.buffer)
+                Player(format, input, older.output)
             } else {
                 older?.flush()
                 older?.stop()
@@ -90,7 +78,7 @@ class Player private constructor(
                 val buffer = ByteArray((bps * (bufferLength / 1.seconds)).roundToInt())
                 line.open(format, buffer.size)
                 line.start()
-                Player(format, input, line, buffer)
+                Player(format, input, line)
             }
         }
     }

@@ -7,7 +7,6 @@ import androidx.compose.runtime.setValue
 import io.github.musicplayer.audio.PlayerCommand.*
 import io.github.musicplayer.data.Song
 import io.github.musicplayer.data.SongQueue
-import io.github.musicplayer.utils.AsyncInputStream
 import io.github.musicplayer.utils.debugElapsed
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -35,7 +34,7 @@ private sealed interface PlayerCommand {
     class Pause(val event: Long) : PlayerCommand
     class Seeking(val event: Long) : PlayerCommand
     class SeekDone(val event: Long) : PlayerCommand
-    class SongBuffered(val song: Song, val waveform: Waveform) : PlayerCommand
+    class WaveformComputed(val song: Song, val waveform: Waveform) : PlayerCommand
 }
 
 private val buffer = 64.milliseconds
@@ -53,6 +52,7 @@ class PlayerController(
         val queue: SongQueue,
         val player: Player,
         val bufferer: Job,
+        val waveformCreator: Job,
         val waveform: Waveform? = null,
     )
 
@@ -82,16 +82,16 @@ class PlayerController(
         suspend fun play(
             cs: CoroutineScope,
             frequencyAnalyzer: FrequencyAnalyzer,
-            onSongBuffered: suspend (Song, Waveform) -> Unit,
+            onWaveformComputed: suspend (Song, Waveform) -> Unit,
         ): StateChangeResult {
             return if (currentlyPlaying != null && !pause) {
                 val result = currentlyPlaying.player.playFrame()
                 if (result is Player.PlayResult.Played) {
-                    frequencyAnalyzer.push(result.data, result.size, currentlyPlaying.player.format)
+                    frequencyAnalyzer.push(result.chunk, currentlyPlaying.player.format)
                 }
                 if (result == Player.PlayResult.Finished && !seeking) {
                     val (next, keepPlaying) = currentlyPlaying.queue.nextInQueue()
-                    changeQueue(cs, next, Position.Beginning, onSongBuffered)
+                    changeQueue(cs, next, Position.Beginning, onWaveformComputed)
                         .change { copy(pause = this.pause || !keepPlaying) }
                 } else {
                     StateChangeResult(
@@ -108,13 +108,14 @@ class PlayerController(
             cs: CoroutineScope,
             queue: SongQueue?,
             position: Position,
-            onSongBuffered: suspend (Song, Waveform) -> Unit,
+            onWaveformComputed: suspend (Song, Waveform) -> Unit,
         ): StateChangeResult {
             if (queue == null) {
                 currentlyPlaying?.apply {
                     player.flush()
                     player.stop()
                     bufferer.cancel()
+                    waveformCreator.cancel()
                 }
                 return StateChangeResult(State(processedEvents, null, ZERO, true, seeking), true)
             }
@@ -126,20 +127,20 @@ class PlayerController(
                     queue.currentSong.audioStream()
                 }
                 currentlyPlaying?.bufferer?.cancel()
-                val input = AsyncInputStream(stream)
-                val player = Player.create(stream.format, input, currentlyPlaying?.player, buffer)
-                player.buffer() // Doing a round of buffering now, so it can be played immediately
+                val input = AsyncAudioInputStream(stream, 2)
+                val player = Player.create(stream.format, input.readers[0], currentlyPlaying?.player, buffer)
                 val bufferer = cs.launch(Dispatchers.IO) {
                     logger.debugElapsed("Reading ${new.title}") {
-                        while (!player.buffer()) {
-                            yield()
-                        }
-                    }
-                    logger.debugElapsed("Computing waveform for ${new.title}") {
-                        onSongBuffered(new, Waveform.fromBytes(input.readAll(), stream.format))
+                        input.bufferAll()
                     }
                 }
-                CurrentlyPlaying(queue, player, bufferer)
+                val waveformCreator = cs.launch(Dispatchers.Default) {
+                    logger.debugElapsed("Computing waveform for ${new.title}") {
+                        val waveform = Waveform.fromStream(input.readers[1], stream.format)
+                        onWaveformComputed(new, waveform)
+                    }
+                }
+                CurrentlyPlaying(queue, player, bufferer, waveformCreator)
             } else {
                 currentlyPlaying.copy(queue = queue)
             }
@@ -218,21 +219,21 @@ class PlayerController(
             frequencyAnalyzer.start()
         }
         coroutineScope.launch(Dispatchers.Default) {
-            val onSongBuffered: suspend (Song, Waveform) -> Unit = { song, waveform ->
-                commandChannel.send(SongBuffered(song, waveform))
+            val onWaveformComputed: suspend (Song, Waveform) -> Unit = { song, waveform ->
+                commandChannel.send(WaveformComputed(song, waveform))
             }
             var state = State.initial
             while (true) {
                 val (newState, shouldPause) = when (val command = commandChannel.tryReceive().getOrNull()) {
                     is ChangeQueue -> state
-                        .changeQueue(coroutineScope, command.queue, command.position, onSongBuffered)
+                        .changeQueue(coroutineScope, command.queue, command.position, onWaveformComputed)
                         .change { copy(processedEvents = command.event + 1) }
 
                     is Pause -> state.change { copy(processedEvents = command.event + 1, pause = true) }
                     is Play -> state.change { copy(processedEvents = command.event + 1, pause = false) }
                     is Seeking -> state.change { copy(processedEvents = command.event + 1, seeking = true) }
                     is SeekDone -> state.change { copy(processedEvents = command.event + 1, seeking = false) }
-                    is SongBuffered -> state.change {
+                    is WaveformComputed -> state.change {
                         copy(
                             currentlyPlaying = if (currentlyPlaying?.queue?.currentSong == command.song) {
                                 currentlyPlaying.copy(waveform = command.waveform)
@@ -242,7 +243,7 @@ class PlayerController(
                         )
                     }
 
-                    null -> state.play(coroutineScope, frequencyAnalyzer, onSongBuffered)
+                    null -> state.play(coroutineScope, frequencyAnalyzer, onWaveformComputed)
                 }
                 if (newState != state) {
                     state = newState

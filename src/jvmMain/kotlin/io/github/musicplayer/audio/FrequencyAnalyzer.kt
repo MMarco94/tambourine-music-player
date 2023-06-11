@@ -25,17 +25,24 @@ class FrequencyAnalyzer {
     var fadedALittleFrequency by mutableStateOf(DoubleArray(samplesSize))
         private set
 
-    private class AudioData(val data: ByteArray, val format: AudioFormat)
+    private class AudioData(val chunk: Chunk, val format: AudioFormat)
 
-    private val audioChannel = Channel<AudioData>(Int.MAX_VALUE)
+    private val audioChannel = Channel<AudioData>(Channel.CONFLATED)
     private val samples = DoubleArray(samplesSize)
 
     suspend fun start() {
         for (audioData in audioChannel) {
-            val sample = decode(audioData.data, audioData.data.size, audioData.format)
-
-            samples.copyInto(samples, 0, sample.size)
-            sample.copyInto(samples, destinationOffset = samples.size - sample.size)
+            val sample =
+                decode(audioData.chunk.readData, audioData.chunk.offset, audioData.chunk.length, audioData.format)
+            if (sample.size < samples.size) {
+                samples.copyInto(samples, 0, sample.size)
+            }
+            val destinationOffset = samples.size - sample.size
+            sample.copyInto(
+                samples,
+                destinationOffset = destinationOffset.coerceAtLeast(0),
+                startIndex = (-destinationOffset).coerceAtLeast(0)
+            )
 
             val outReal = DoubleArray(samples.size)
             FastFouriers.ITERATIVE_COOLEY_TUKEY.transform(
@@ -56,7 +63,7 @@ class FrequencyAnalyzer {
         }
     }
 
-    suspend fun push(buf: ByteArray, length: Int, format: AudioFormat) {
-        audioChannel.send(AudioData(buf.copyOfRange(0, length), format))
+    suspend fun push(chunk: Chunk, format: AudioFormat) {
+        audioChannel.send(AudioData(chunk, format))
     }
 }
