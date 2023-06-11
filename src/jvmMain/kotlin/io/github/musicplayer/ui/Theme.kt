@@ -22,7 +22,7 @@ const val inactiveAlpha = .4f
  */
 object MusicPlayerTheme {
     val shapes: Shapes = Shapes(
-        small = RoundedCornerShape(size = 4.dp),
+        small = RoundedCornerShape(size = 6.dp),
         medium = RoundedCornerShape(8.dp),
         large = RoundedCornerShape(12.dp)
     )

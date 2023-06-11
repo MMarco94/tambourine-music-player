@@ -1,10 +1,7 @@
 package io.github.musicplayer.ui
 
 import androidx.compose.foundation.VerticalScrollbar
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -22,13 +19,14 @@ fun SongListUI(
     maxTrackNumber: Int?,
     items: List<SongListItem>,
     state: LazyListState = rememberLazyListState(),
+    contentPadding: PaddingValues = PaddingValues(bottom = 128.dp),
     onSongSelected: (Song) -> Unit,
 ) {
     Box {
         LazyColumn(
             state = state,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 64.dp)
+            contentPadding = contentPadding,
         ) {
             itemsIndexed(items) { index, item ->
                 val offset = if (index == state.firstVisibleItemIndex) state.firstVisibleItemScrollOffset else 0
@@ -43,6 +41,7 @@ fun SongListUI(
 
                     is SongListItem.SingleSongListItem -> {
                         SongRow(
+                            Modifier.padding(horizontal = 16.dp),
                             maxTrackNumber,
                             item.song,
                             showAlbumInfo = true,

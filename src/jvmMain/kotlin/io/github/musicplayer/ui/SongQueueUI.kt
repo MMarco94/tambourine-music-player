@@ -1,6 +1,7 @@
 package io.github.musicplayer.ui
 
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -30,8 +31,11 @@ fun SongQueueUI(
                 "To begin, select a song from your library",
             )
         } else {
+            val padding = 128.dp
+            val approxRowHeight = 64.dp
             val pos = queue.position
-            val offset = (-(constraints.maxHeight - 64.dp.toPxApprox()) / 2).roundToInt()
+            val offset =
+                (-(constraints.maxHeight - padding.toPxApprox()) / 2 + approxRowHeight.toPxApprox()).roundToInt()
             val listState = rememberLazyListState(pos, offset)
             LaunchedEffect(pos) {
                 listState.animateScrollToItem(pos, offset)
@@ -40,6 +44,7 @@ fun SongQueueUI(
                 0,
                 queue.songs.map { SongListItem.SingleSongListItem(it) },
                 listState,
+                contentPadding = PaddingValues(vertical = padding),
             ) {
                 play(queue.skipTo(it))
             }

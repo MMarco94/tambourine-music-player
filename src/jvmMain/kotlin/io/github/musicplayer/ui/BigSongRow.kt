@@ -45,6 +45,7 @@ fun BigSongRow(
                 Column {
                     songs.forEach { song ->
                         SongRow(
+                            Modifier.padding(end = 4.dp), // Space for scrollbar
                             maxTrackNumber,
                             song,
                             showTrackNumber = inAlbumContext,

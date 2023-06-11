@@ -14,16 +14,22 @@ TBD
 
 ## Roadmap
 
- - Search
- - Metadata
-   - Lyrics
+- Search
+- Metadata
    - Disk n°
- - Improve queue UI
- - Improve library load speed and memory consumption
- - Packaging
+   - Lyrics
+- Improve queue UI
+   - Remaining songs/duration
+   - Shuffle/repeat options
+   - Drag & drop
+- Improve player UI
+   - Waveform in seeker
+   - Improve spectrometer
+- Improve library load speed and memory consumption
+- Packaging
    - [ ] Flatpak
    - [ ] ...
- - Integration with the OS
+- Integration with the OS
    - [ ] Media notification
    - [ ] Media keys
    - [ ] Background API?

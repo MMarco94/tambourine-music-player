@@ -1,7 +1,6 @@
 package io.github.musicplayer.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -86,7 +85,7 @@ fun SmallSpectrometers(
     val boost = 2f
     val chunks = 3
     val padding = 2.dp
-    Canvas(modifier.background(Color.Black.copy(alpha = 0.5f)).padding(6.dp)) {
+    Canvas(modifier.padding(padding)) {
         val paddingPx = padding.toPx()
         spectrometerDrawer(chunks, frequencies, boost) { s, e, a ->
             val h = (.1f + a * .9f) * (size.height - 2 * paddingPx)

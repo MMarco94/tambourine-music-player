@@ -1,5 +1,7 @@
 package io.github.musicplayer.ui
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
@@ -18,6 +20,7 @@ import io.github.musicplayer.utils.format
 
 @Composable
 fun SongRow(
+    modifier: Modifier,
     maxTrackNumber: Int?,
     song: Song,
     showTrackNumber: Boolean = false,
@@ -26,8 +29,9 @@ fun SongRow(
     onSongSelected: () -> Unit,
 ) {
     val player = playerController.current
+    val isCurrentSong = player.queue?.currentSong == song
     Surface(
-        modifier = Modifier.padding(end = 4.dp), // Space for scrollbar
+        modifier = modifier,
         shape = MaterialTheme.shapes.small,
         color = Color.Transparent,
     ) {
@@ -55,16 +59,32 @@ fun SongRow(
                         MaterialTheme.shapes.small,
                         elevation = 4.dp,
                         overlay = {
-                            if (player.queue?.currentSong == song) {
-                                SmallSpectrometers(
-                                    Modifier.fillMaxSize(),
-                                    player.frequencyAnalyzer.fadedALittleFrequency
-                                )
+                            if (isCurrentSong) {
+                                Box(
+                                    Modifier.background(Color.Black.copy(alpha = 0.5f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    SmallSpectrometers(
+                                        Modifier.fillMaxSize().padding(10.dp),
+                                        player.frequencyAnalyzer.fadedALittleFrequency
+                                    )
+                                }
                             }
                         }
                     )
                 }
                 Spacer(Modifier.width(16.dp))
+            }
+            Box(Modifier.animateContentSize()) {
+                if (isCurrentSong && !showAlbumInfo) {
+                    Row {
+                        SmallSpectrometers(
+                            Modifier.size(24.dp),
+                            player.frequencyAnalyzer.fadedALittleFrequency
+                        )
+                        Spacer(Modifier.width(8.dp))
+                    }
+                }
             }
             Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
                 Text(song.title)
