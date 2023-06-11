@@ -9,7 +9,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import javax.sound.sampled.AudioFormat
 import kotlin.math.absoluteValue
-import kotlin.math.sqrt
 
 data class Waveform(
     val decodedAudioChannel: List<DoubleArray>,
@@ -26,7 +25,7 @@ data class Waveform(
                 val chunk = audio.read(Int.MAX_VALUE) ?: break
                 allDecoded.forEachIndexed { channel, all ->
                     val decoded = decode(chunk.readData, chunk.offset, chunk.length, format, channel)
-                        .mapInPlace { sqrt(it.absoluteValue) }
+                        .mapInPlace { it.absoluteValue }
                     all.add(decoded)
                 }
             }

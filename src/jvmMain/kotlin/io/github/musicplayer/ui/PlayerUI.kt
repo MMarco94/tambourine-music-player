@@ -295,7 +295,7 @@ private fun ActualWaveform(
     Spectrometer(
         modifier,
         animatedWaveform,
-        { ceil(it.width / 4.dp.toPx()).roundToInt() },
+        { ceil(it.width / 2.dp.toPx()).roundToInt() },
         linear = true,
         invert = invert,
         brush = { size ->
