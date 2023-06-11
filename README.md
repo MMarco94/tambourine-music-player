@@ -16,20 +16,21 @@ TBD
 
 - Search
 - Metadata
-   - Disk n°
-   - Lyrics
+  - Disk n°
+  - Lyrics
 - Improve queue UI
-   - Remaining songs/duration
-   - Shuffle/repeat options
-   - Drag & drop
+  - Remaining songs/duration
+  - Shuffle/repeat options
+  - Drag & drop
 - Improve player UI
-   - Waveform in seeker
-   - Improve spectrometer
+  - Improve spectrometer (should I sum instead of avg?)
+- Improve library UI
+  - Reduce vertical space of albums with few songs
 - Improve library load speed and memory consumption
 - Packaging
-   - [ ] Flatpak
-   - [ ] ...
+  - [ ] Flatpak
+  - [ ] ...
 - Integration with the OS
-   - [ ] Media notification
-   - [ ] Media keys
-   - [ ] Background API?
+  - [ ] Media notification
+  - [ ] Media keys
+  - [ ] Background API?

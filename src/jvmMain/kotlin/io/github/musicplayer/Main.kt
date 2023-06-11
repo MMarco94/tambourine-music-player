@@ -199,7 +199,7 @@ fun main() {
                 title = "Music Player",
                 onCloseRequest = ::exitApplication,
                 state = remember {
-                    WindowState(size = DpSize(1280.dp, 800.dp))
+                    WindowState(size = DpSize(1440.dp, 960.dp))
                 },
                 onPreviewKeyEvent = {
                     if (it.type == KeyEventType.KeyDown) {

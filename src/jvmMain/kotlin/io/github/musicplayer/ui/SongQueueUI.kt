@@ -35,7 +35,7 @@ fun SongQueueUI(
             val approxRowHeight = 64.dp
             val pos = queue.position
             val offset =
-                (-(constraints.maxHeight - padding.toPxApprox()) / 2 + approxRowHeight.toPxApprox()).roundToInt()
+                (-(constraints.maxHeight - approxRowHeight.toPxApprox()) / 2 + padding.toPxApprox()).roundToInt()
             val listState = rememberLazyListState(pos, offset)
             LaunchedEffect(pos) {
                 listState.animateScrollToItem(pos, offset)

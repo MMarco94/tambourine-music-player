@@ -6,9 +6,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import io.github.musicplayer.ui.SpectrometerStyle.AREA
 import io.github.musicplayer.ui.SpectrometerStyle.BOXES
@@ -25,19 +27,21 @@ enum class SpectrometerStyle {
 fun Spectrometer(
     modifier: Modifier,
     frequencies: DoubleArray,
-    chunks: Int,
+    chunks: Density.(Size) -> Int,
     boost: Float = 1f,
     style: SpectrometerStyle = AREA,
-    color: Color = Color.White,
+    invert: Boolean = false,
+    linear: Boolean = false,
+    brush: Density.(Size) -> Brush,
 ) {
     Canvas(modifier) {
         when (style) {
             BOXES -> {
-                spectrometerDrawer(chunks, frequencies, boost) { s, e, a ->
+                spectrometerDrawer(chunks(size), frequencies, boost, linear) { s, e, a ->
                     val h = a * size.height
                     drawRect(
-                        color,
-                        topLeft = Offset(s, size.height - h),
+                        brush(size),
+                        topLeft = Offset(s, if (invert) 0f else size.height - h),
                         size = Size(e - s, h),
                     )
                 }
@@ -45,32 +49,37 @@ fun Spectrometer(
 
             AREA -> {
                 val p = Path().apply {
-                    moveTo(0f, size.height)
-                    spectrometerDrawer(chunks, frequencies, boost) { s, e, a ->
+                    moveTo(0f, if (invert) 0f else size.height)
+                    spectrometerDrawer(chunks(size), frequencies, boost, linear) { s, e, a ->
                         val h = a * size.height
-                        lineTo((s + e) / 2f, size.height - h)
+                        lineTo((s + e) / 2f, if (invert) h else size.height - h)
                     }
-                    lineTo(size.width, size.height)
+                    lineTo(size.width, if (invert) 0f else size.height)
                     close()
                 }
-                drawPath(p, color)
+                drawPath(p, brush(size))
             }
         }
     }
 }
 
-private fun DrawScope.spectrometerDrawer(
+private inline fun DrawScope.spectrometerDrawer(
     chunks: Int,
     frequencies: DoubleArray,
     boost: Float,
+    linear: Boolean = false,
     drawer: (start: Float, end: Float, amplitude: Float) -> Unit,
 ) {
     repeat(chunks) { chunk ->
         val start = chunk.toFloat() / chunks
         val end = (chunk + 1).toFloat() / chunks
-        val frequencyStart = 2.0.pow(humanHearingRangeLog.progress(start))
-        val frequencyEnd = 2.0.pow(humanHearingRangeLog.progress(end))
-        val amplitude = frequencies.avgInRange(frequencyStart, frequencyEnd)
+        val amplitude = if (linear) {
+            frequencies.avgInRange(start.toDouble() * frequencies.size, end.toDouble() * frequencies.size)
+        } else {
+            val frequencyStart = 2.0.pow(humanHearingRangeLog.progress(start))
+            val frequencyEnd = 2.0.pow(humanHearingRangeLog.progress(end))
+            frequencies.avgInRange(frequencyStart, frequencyEnd)
+        }
         val heightPercentage = (amplitude * boost).toFloat().coerceIn(0f, size.height)
 
         drawer(start * size.width, end * size.width, heightPercentage)

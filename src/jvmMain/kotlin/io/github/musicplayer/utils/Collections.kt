@@ -32,3 +32,8 @@ fun ByteArray.countZeros(start: Int = 0, end: Int = size): Int {
 }
 
 fun DoubleArray.getOrZero(index: Int) = getOrElse(index) { 0.0 }
+
+inline fun DoubleArray.mapInPlace(f: (Double) -> Double): DoubleArray {
+    onEachIndexed { index, d -> this[index] = f(d) }
+    return this
+}

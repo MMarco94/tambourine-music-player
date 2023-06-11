@@ -25,6 +25,7 @@ kotlin {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 api(compose.materialIconsExtended)
+                api(compose.material3)
 
                 // File picker
                 implementation("com.darkrockstudios:mpfilepicker:1.1.0")

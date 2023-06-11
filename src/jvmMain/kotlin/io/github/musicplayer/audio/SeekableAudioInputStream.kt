@@ -25,8 +25,9 @@ class SeekableAudioInputStream(
         if (zeroFrames == -1L) {
             skipZeros()
             zeroFrames = readFrames
+        } else {
+            seekTo(zeroFrames)
         }
-        seekTo(zeroFrames)
     }
 
     suspend fun seekTo(frames: Long) {

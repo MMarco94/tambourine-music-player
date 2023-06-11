@@ -2,7 +2,7 @@ package io.github.musicplayer.audio
 
 import io.github.musicplayer.utils.AsyncInputStream
 import io.github.musicplayer.utils.durationToFrames
-import javax.sound.sampled.AudioInputStream
+import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.SourceDataLine
 import kotlin.math.roundToInt
@@ -10,13 +10,12 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 class Player private constructor(
-    source: AudioInputStream,
+    val format: AudioFormat,
+    val input: AsyncInputStream,
     private val output: SourceDataLine,
     private val buffer: ByteArray,
 ) {
-    private val input = AsyncInputStream(source)
-    private val source = SeekableAudioInputStream(source.format, input)
-    val format = source.format
+    private val source = SeekableAudioInputStream(format, this.input)
     private val bufferChunks = 1.shl(18).roundBytesToFrame()
     val position get() = source.readTime
 
@@ -67,32 +66,32 @@ class Player private constructor(
 
     companion object {
         fun create(
-            source: AudioInputStream,
+            format: AudioFormat,
+            input: AsyncInputStream,
             older: Player?,
             bufferLength: Duration,
         ): Player {
             return if (
                 older != null &&
-                older.format.encoding == source.format.encoding &&
-                older.format.sampleRate == source.format.sampleRate &&
-                older.format.frameRate == source.format.frameRate &&
-                older.format.frameSize == source.format.frameSize &&
-                older.format.channels == source.format.channels &&
-                older.format.isBigEndian == source.format.isBigEndian
+                older.format.encoding == format.encoding &&
+                older.format.sampleRate == format.sampleRate &&
+                older.format.frameRate == format.frameRate &&
+                older.format.frameSize == format.frameSize &&
+                older.format.channels == format.channels &&
+                older.format.isBigEndian == format.isBigEndian
             ) {
-                Player(source, older.output, older.buffer)
+                Player(format, input, older.output, older.buffer)
             } else {
                 older?.flush()
                 older?.stop()
-                val line: SourceDataLine = AudioSystem.getSourceDataLine(source.format)
+                val line: SourceDataLine = AudioSystem.getSourceDataLine(format)
 
-                val bps: Float = source.format.frameRate * source.format.frameSize
+                val bps: Float = format.frameRate * format.frameSize
                 val buffer = ByteArray((bps * (bufferLength / 1.seconds)).roundToInt())
-                line.open(source.format, buffer.size)
+                line.open(format, buffer.size)
                 line.start()
-                Player(source, line, buffer)
+                Player(format, input, line, buffer)
             }
-
         }
     }
 }

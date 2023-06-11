@@ -7,17 +7,17 @@ class AsyncInputStream(
     private val input: InputStream
 ) {
 
-    private class ReadInfo(
+    private class Chunk(
         val readData: ByteArray,
         val readBytes: Int,
-        val isFinished: Boolean,
     )
 
     private var position = 0
     private var offset = 0
-    private val allInfo = mutableListOf<ReadInfo>()
-    private val allBuffered get() = allInfo.lastOrNull()?.isFinished == true
-    private val channel = Channel<ReadInfo>(Int.MAX_VALUE)
+    private val chunks = mutableListOf<Chunk>()
+    var allBuffered = false
+        private set
+    private val channel = Channel<Unit>(Channel.CONFLATED)
 
     /**
      * Returns whether the finish has been reached
@@ -27,13 +27,15 @@ class AsyncInputStream(
         val read = input.read(buffer)
         return when {
             read < 0 -> {
-                channel.send(ReadInfo(buffer, 0, true))
+                allBuffered = true
+                channel.send(Unit)
                 true
             }
 
             read == 0 -> false
             else -> {
-                channel.send(ReadInfo(buffer, read, false))
+                chunks.add(Chunk(buffer, read))
+                channel.send(Unit)
                 false
             }
         }
@@ -45,7 +47,7 @@ class AsyncInputStream(
     }
 
     /**
-     * The amount skipped
+     * Returns the amount skipped
      */
     suspend fun skip(bytes: Long): Long {
         var ret = 0L
@@ -65,17 +67,29 @@ class AsyncInputStream(
         return internalRead(buf, length)
     }
 
+    fun readAll(): ByteArray {
+        require(allBuffered)
+        val length = chunks.sumOf { it.readBytes }
+        var chunk = 0
+        var offset = 0
+        return ByteArray(length) { i ->
+            if (offset >= chunks[chunk].readBytes) {
+                chunk++
+                offset = 0
+            }
+            chunks[chunk].readData[offset++]
+        }
+    }
+
     private suspend fun internalRead(buf: ByteArray?, length: Int): Int {
         require(length >= 0)
         if (length == 0) return 0
-        if (allBuffered && position >= allInfo.size) return -1
 
-        if (position !in allInfo.indices) {
-            val newInfo = channel.receive()
-            allInfo.add(newInfo)
+        if (!allBuffered && position !in chunks.indices) {
+            channel.receive()
         }
 
-        val info = allInfo[position]
+        val info = chunks.getOrNull(position) ?: return -1
         val ret = minOf(length, info.readBytes - offset)
         if (buf != null) {
             info.readData.copyInto(buf, 0, offset, offset + ret)

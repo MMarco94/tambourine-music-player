@@ -66,7 +66,7 @@ fun SongRow(
                                 ) {
                                     SmallSpectrometers(
                                         Modifier.fillMaxSize().padding(10.dp),
-                                        player.frequencyAnalyzer.fadedALittleFrequency
+                                        player.frequencyAnalyzer.lastFrequency
                                     )
                                 }
                             }
@@ -75,12 +75,12 @@ fun SongRow(
                 }
                 Spacer(Modifier.width(16.dp))
             }
-            Box(Modifier.animateContentSize()) {
+            Box(Modifier.height(24.dp).animateContentSize()) {
                 if (isCurrentSong && !showAlbumInfo) {
                     Row {
                         SmallSpectrometers(
                             Modifier.size(24.dp),
-                            player.frequencyAnalyzer.fadedALittleFrequency
+                            player.frequencyAnalyzer.lastFrequency
                         )
                         Spacer(Modifier.width(8.dp))
                     }
