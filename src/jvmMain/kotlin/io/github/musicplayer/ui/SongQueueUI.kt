@@ -1,18 +1,22 @@
 package io.github.musicplayer.ui
 
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.Divider
+import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.musicplayer.data.SongListItem
 import io.github.musicplayer.data.SongQueue
 import io.github.musicplayer.playerController
+import io.github.musicplayer.utils.format
+import io.github.musicplayer.utils.sumOfDuration
 import kotlin.math.roundToInt
 
 @Composable
@@ -22,31 +26,43 @@ fun SongQueueUI(
 ) {
     val player = playerController.current
     val queue = player.queue
-    BoxWithConstraints(modifier) {
-        if (queue == null) {
-            BigMessage(
-                Modifier.fillMaxSize(),
-                Icons.Filled.QueueMusic,
-                "Empty queue",
-                "To begin, select a song from your library",
-            )
-        } else {
-            val padding = 128.dp
-            val approxRowHeight = 64.dp
-            val pos = queue.position
-            val offset =
-                (-(constraints.maxHeight - approxRowHeight.toPxApprox()) / 2 + padding.toPxApprox()).roundToInt()
-            val listState = rememberLazyListState(pos, offset)
-            LaunchedEffect(pos) {
-                listState.animateScrollToItem(pos, offset)
+    val cs = rememberCoroutineScope()
+    if (queue == null) {
+        BigMessage(
+            modifier,
+            Icons.Filled.QueueMusic,
+            "Empty queue",
+            "To begin, select a song from your library",
+        )
+    } else {
+        Column(modifier) {
+            Row(Modifier.heightIn(min = 64.dp).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    // TODO: plurals
+                    Text("${queue.songs.size} songs in the queue • ${queue.songs.sumOfDuration { it.length }.format()}")
+                    val remaining = queue.remainingSongs
+                    Text("${remaining.size} songs remaining • ${remaining.sumOfDuration { it.length }.format()}")
+                }
+                Spacer(Modifier.weight(1f))
+                RepeatIcon(cs, queue)
+                ShuffleIcon(cs, queue)
             }
-            SongListUI(
-                0,
-                queue.songs.map { SongListItem.SingleSongListItem(it) },
-                listState,
-                contentPadding = PaddingValues(vertical = padding),
-            ) {
-                play(queue.skipTo(it))
+            Divider()
+            BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
+                val approxRowHeight = 64.dp
+                val pos = queue.position
+                val offset = ((approxRowHeight.toPxApprox() - constraints.maxHeight) / 2).roundToInt()
+                val listState = rememberLazyListState(pos, offset)
+                LaunchedEffect(pos) {
+                    listState.animateScrollToItem(pos, offset)
+                }
+                SongListUI(
+                    0,
+                    queue.songs.map { SongListItem.SingleSongListItem(it) },
+                    listState,
+                ) {
+                    play(queue.skipTo(it))
+                }
             }
         }
     }

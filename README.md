@@ -19,8 +19,6 @@ TBD
   - Disk n°
   - Lyrics
 - Improve queue UI
-  - Remaining songs/duration
-  - Shuffle/repeat options
   - Drag & drop
 - Improve player UI
   - Improve spectrometer (should I sum instead of avg?)

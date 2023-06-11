@@ -1,5 +1,7 @@
 package io.github.musicplayer.utils
 
+import kotlin.time.Duration
+
 
 fun <T> Collection<T>.rangeOfOrNull(f: (T) -> Int?): IntRange? {
     var min: Int? = null
@@ -49,3 +51,12 @@ inline fun DoubleArray.mapInPlace(f: (Double) -> Double): DoubleArray {
     onEachIndexed { index, d -> this[index] = f(d) }
     return this
 }
+
+inline fun <T> Iterable<T>.sumOfDuration(selector: (T) -> Duration): Duration {
+    var sum: Duration = Duration.ZERO
+    for (element in this) {
+        sum += selector(element)
+    }
+    return sum
+}
+

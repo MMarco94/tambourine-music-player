@@ -22,6 +22,8 @@ data class SongQueue(
         require(songs.isNotEmpty())
     }
 
+    val remainingSongs = songs.subList(position, songs.size)
+
     fun previous(): SongQueue {
         return copy(position = (position - 1).mod(songs.size))
     }

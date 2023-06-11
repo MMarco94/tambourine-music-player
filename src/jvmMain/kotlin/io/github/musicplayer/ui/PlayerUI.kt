@@ -95,11 +95,7 @@ fun PlayerUI(
                 Spacer(Modifier.height(24.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    PlayerIcon(
-                        cs, Icons.Default.Shuffle, "Shuffle", active = queue.isShuffled
-                    ) {
-                        player.changeQueue(queue.toggleShuffle())
-                    }
+                    ShuffleIcon(cs, queue)
                     Spacer(Modifier.width(16.dp))
                     PlayerIcon(
                         cs, Icons.Default.SkipPrevious, "Previous"
@@ -128,20 +124,42 @@ fun PlayerUI(
                         player.play()
                     }
                     Spacer(Modifier.width(16.dp))
-                    PlayerIcon(
-                        cs,
-                        if (queue.repeatMode == RepeatMode.REPEAT_SONG) Icons.Default.RepeatOne else Icons.Default.Repeat,
-                        "Repeat",
-                        active = queue.repeatMode != RepeatMode.DO_NOT_REPEAT
-                    ) {
-                        player.changeQueue(
-                            queue.toggleRepeat()
-                        )
-                    }
+                    RepeatIcon(cs, queue)
                 }
                 Spacer(Modifier.weight(1f))
             }
         }
+    }
+}
+
+@Composable
+fun ShuffleIcon(
+    cs: CoroutineScope,
+    queue: SongQueue
+) {
+    val player = playerController.current
+    PlayerIcon(
+        cs, Icons.Default.Shuffle, "Shuffle", active = queue.isShuffled
+    ) {
+        player.changeQueue(queue.toggleShuffle())
+    }
+}
+
+@Composable
+fun RepeatIcon(
+    cs: CoroutineScope,
+    queue: SongQueue
+) {
+    val player = playerController.current
+    PlayerIcon(
+        cs,
+        if (queue.repeatMode == RepeatMode.REPEAT_SONG) Icons.Default.RepeatOne else Icons.Default.Repeat,
+        "Repeat",
+        active = queue.repeatMode != RepeatMode.DO_NOT_REPEAT
+    ) {
+        player.changeQueue(
+            queue.toggleRepeat()
+        )
     }
 }
 

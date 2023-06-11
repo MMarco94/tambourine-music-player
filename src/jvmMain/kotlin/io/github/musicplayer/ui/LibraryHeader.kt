@@ -235,7 +235,7 @@ fun LibraryHeader(
     val songRenderer = SongOptionsRenderer(SONG, options, setOptions)
 
     Column(modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.heightIn(min = 64.dp), verticalAlignment = Alignment.CenterVertically) {
             FlowRow(
                 Modifier.padding(2.dp).weight(1f).animateContentSize(),
                 verticalAlignment = Alignment.CenterVertically
@@ -278,9 +278,6 @@ fun LibraryHeader(
                     Box {
                         with(renderer) { Options { tab = null } }
                         Divider(Modifier.align(Alignment.BottomCenter))
-//                        IconButton({ tab = null }, Modifier.align(Alignment.TopEnd).size(40.dp)) {
-//                            Icon(Icons.Filled.Close, "Close")
-//                        }
                     }
                 }) { measurables, constraints ->
                     val newC = constraints.copy(
