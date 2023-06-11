@@ -16,7 +16,7 @@ class Player private constructor(
 ) {
     private val input = AsyncInputStream(source)
     private val source = SeekableAudioInputStream(source.format, input)
-    private val format = source.format
+    val format = source.format
     private val bufferChunks = 1.shl(18).roundBytesToFrame()
     val position get() = source.readTime
 
@@ -28,8 +28,10 @@ class Player private constructor(
         output.stop()
     }
 
-    enum class PlayResult {
-        PLAYED, NOT_PLAYED, FINISHED
+    sealed interface PlayResult {
+        class Played(val data: ByteArray, val size: Int) : PlayResult
+        object NotPlayed : PlayResult
+        object Finished : PlayResult
     }
 
     suspend fun playFrame(): PlayResult {
@@ -38,12 +40,12 @@ class Player private constructor(
             val s = source.read(buffer, available)
             return if (s >= 0) {
                 output.write(buffer, 0, s)
-                PlayResult.PLAYED
+                PlayResult.Played(buffer, s)
             } else {
-                PlayResult.FINISHED
+                PlayResult.Finished
             }
         }
-        return PlayResult.NOT_PLAYED
+        return PlayResult.NotPlayed
     }
 
     suspend fun seekToStart() {

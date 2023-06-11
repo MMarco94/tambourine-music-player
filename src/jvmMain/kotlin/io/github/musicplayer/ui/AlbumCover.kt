@@ -23,6 +23,7 @@ fun AlbumCover(
     modifier: Modifier,
     shape: Shape = RectangleShape,
     elevation: Dp = 0.dp,
+    overlay: @Composable () -> Unit = {},
 ) {
     Surface(modifier.aspectRatio(1f), shape = shape, elevation = elevation) {
         if (cover != null) {
@@ -36,6 +37,7 @@ fun AlbumCover(
                 )
             }
         }
+        overlay()
     }
 }
 

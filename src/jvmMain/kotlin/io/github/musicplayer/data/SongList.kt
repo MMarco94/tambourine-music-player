@@ -1,7 +1,5 @@
 package io.github.musicplayer.data
 
-import io.github.musicplayer.utils.orNoop
-
 data class SongListOptions(
     val artistSorter: ArtistSorter = ArtistSorter.ALPHABETICAL,
     val albumSorter: AlbumSorter = AlbumSorter.YEAR,
@@ -64,9 +62,9 @@ fun Library.filterAndSort(
     }
     return filter(options.artistFilter, options.albumFilter)
         .sort(
-            options.artistSorter.comparator.orNoop(),
-            options.albumSorter.comparator.orNoop(),
-            ss.comparator.orNoop(),
+            options.artistSorter.comparator,
+            options.albumSorter.comparator,
+            ss.comparator,
         )
 }
 

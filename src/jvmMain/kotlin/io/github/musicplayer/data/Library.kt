@@ -3,6 +3,7 @@ package io.github.musicplayer.data
 import androidx.compose.ui.graphics.ImageBitmap
 import io.github.musicplayer.utils.debugElapsed
 import io.github.musicplayer.utils.mostCommonOrNull
+import io.github.musicplayer.utils.orNoop
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -92,22 +93,23 @@ data class Library(
     }
 
     fun sort(
-        artist: Comparator<Artist>,
-        album: Comparator<Album>,
-        song: Comparator<Song>,
+        artist: Comparator<Artist>?,
+        album: Comparator<Album>?,
+        song: Comparator<Song>?,
     ): Library {
-        val newArtists = artists.sortedWith(artist)
+        val newArtists = artists.sortedWith(artist.orNoop())
         val artistIndices = newArtists.withIndex().associate { it.value to it.index }
 
         val newAlbums = albums.sortedWith(
-            compareBy<Album> { artistIndices.getValue(it.artist) }
-                .then(album)
+            compareBy<Album> { if (artist != null) artistIndices.getValue(it.artist) else 0 }
+                .then(album.orNoop())
         )
         val albumIndices = newAlbums.withIndex().associate { it.value to it.index }
 
         val newSongs = songs.sortedWith(
-            compareBy<Song> { albumIndices.getValue(it.album) }
-                .then(song)
+            compareBy<Song> { if (artist != null) artistIndices.getValue(it.artist) else 0 }
+                .thenBy { if (album != null) albumIndices.getValue(it.album) else 0 }
+                .then(song.orNoop())
         )
 
         return Library(

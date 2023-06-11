@@ -30,3 +30,5 @@ fun ByteArray.countZeros(start: Int = 0, end: Int = size): Int {
     }
     return end - start
 }
+
+fun DoubleArray.getOrZero(index: Int) = getOrElse(index) { 0.0 }

@@ -10,7 +10,6 @@ import io.github.musicplayer.utils.debugElapsed
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import mu.KotlinLogging
-import kotlin.concurrent.thread
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
@@ -47,6 +46,7 @@ class PlayerController(
 
     private val commandChannel = Channel<PlayerCommand>(Channel.UNLIMITED)
     private val stateChannel = Channel<State>(Channel.CONFLATED)
+    val frequencyAnalyzer = FrequencyAnalyzer()
 
     private data class CurrentlyPlaying(
         val queue: SongQueue,
@@ -77,17 +77,20 @@ class PlayerController(
             this.f(), false
         )
 
-        suspend fun play(cs: CoroutineScope): StateChangeResult {
+        suspend fun play(cs: CoroutineScope, frequencyAnalyzer: FrequencyAnalyzer): StateChangeResult {
             return if (currentlyPlaying != null && !pause) {
                 val result = currentlyPlaying.player.playFrame()
-                if (result == Player.PlayResult.FINISHED && !seeking) {
+                if (result is Player.PlayResult.Played) {
+                    frequencyAnalyzer.push(result.data, result.size, currentlyPlaying.player.format)
+                }
+                if (result == Player.PlayResult.Finished && !seeking) {
                     val (next, keepPlaying) = currentlyPlaying.queue.nextInQueue()
                     changeQueue(cs, next, Position.Beginning)
                         .change { copy(pause = pause || !keepPlaying) }
                 } else {
                     StateChangeResult(
                         copy(position = currentlyPlaying.player.position),
-                        shouldPause = result != Player.PlayResult.PLAYED
+                        shouldPause = result !is Player.PlayResult.Played
                     )
                 }
             } else {
@@ -123,7 +126,7 @@ class PlayerController(
                 }
                 CurrentlyPlaying(queue, player, bufferer)
             } else {
-                CurrentlyPlaying(queue, currentlyPlaying.player, currentlyPlaying.bufferer)
+                currentlyPlaying.copy(queue = queue)
             }
             when (position) {
                 Position.Current -> {}
@@ -131,11 +134,15 @@ class PlayerController(
                 is Position.Specific -> newCp.player.seekTo(position.time)
             }
             return StateChangeResult(
-                copy(currentlyPlaying = newCp, position = newCp.player.position),
+                copy(
+                    currentlyPlaying = newCp,
+                    position = newCp.player.position,
+                ),
                 shouldPause = false
             )
         }
     }
+
     private var sentEvents = 0L
     private var pendingSeek by mutableStateOf<Pair<Long, Duration>?>(null)
 
@@ -191,30 +198,29 @@ class PlayerController(
                 observableState = state
             }
         }
-        thread(name = "Player") {
-            runBlocking {
-                launch {
-                    var state = State.initial
-                    while (true) {
-                        val (newState, shouldPause) = when (val command = commandChannel.tryReceive().getOrNull()) {
-                            is ChangeQueue -> state
-                                .changeQueue(coroutineScope, command.queue, command.position)
-                                .change { copy(processedEvents = command.event + 1) }
+        coroutineScope.launch(Dispatchers.Default) {
+            frequencyAnalyzer.start()
+        }
+        coroutineScope.launch(Dispatchers.Default) {
+            var state = State.initial
+            while (true) {
+                val (newState, shouldPause) = when (val command = commandChannel.tryReceive().getOrNull()) {
+                    is ChangeQueue -> state
+                        .changeQueue(coroutineScope, command.queue, command.position)
+                        .change { copy(processedEvents = command.event + 1) }
 
-                            is Pause -> state.change { copy(processedEvents = command.event + 1, pause = true) }
-                            is Play -> state.change { copy(processedEvents = command.event + 1, pause = false) }
-                            is Seeking -> state.change { copy(processedEvents = command.event + 1, seeking = true) }
-                            is SeekDone -> state.change { copy(processedEvents = command.event + 1, seeking = false) }
-                            null -> state.play(coroutineScope)
-                        }
-                        if (newState != state) {
-                            state = newState
-                            stateChannel.send(state)
-                        }
-                        if (shouldPause) {
-                            delay(playLoopDelay)
-                        }
-                    }
+                    is Pause -> state.change { copy(processedEvents = command.event + 1, pause = true) }
+                    is Play -> state.change { copy(processedEvents = command.event + 1, pause = false) }
+                    is Seeking -> state.change { copy(processedEvents = command.event + 1, seeking = true) }
+                    is SeekDone -> state.change { copy(processedEvents = command.event + 1, seeking = false) }
+                    null -> state.play(coroutineScope, frequencyAnalyzer)
+                }
+                if (newState != state) {
+                    state = newState
+                    stateChannel.send(state)
+                }
+                if (shouldPause) {
+                    delay(playLoopDelay)
                 }
             }
         }

@@ -44,7 +44,22 @@ fun PlayerUI(
             Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(Modifier.weight(1f))
 
-                AlbumCover(song.cover, Modifier.size(256.dp), MaterialTheme.shapes.large, elevation = 16.dp)
+                AlbumCover(song.cover, Modifier.size(256.dp), MaterialTheme.shapes.large, elevation = 16.dp) {
+                    Spectrometer(
+                        Modifier.fillMaxSize(),
+                        player.frequencyAnalyzer.fadedFrequency,
+                        chunks = 50,
+                        boost = 0.3f,
+                        color = Color.Black.copy(alpha = 0.4f),
+                    )
+                    Spectrometer(
+                        Modifier.fillMaxSize(),
+                        player.frequencyAnalyzer.fadedALittleFrequency,
+                        chunks = 50,
+                        boost = 0.3f,
+                        color = Color.White.copy(alpha = 0.4f),
+                    )
+                }
                 Spacer(Modifier.height(24.dp))
 
                 Text(song.title, style = MaterialTheme.typography.h2)

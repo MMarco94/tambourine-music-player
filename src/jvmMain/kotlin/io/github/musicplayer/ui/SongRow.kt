@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import io.github.musicplayer.data.Song
+import io.github.musicplayer.playerController
 import io.github.musicplayer.utils.digits
 import io.github.musicplayer.utils.format
 
@@ -23,6 +24,7 @@ fun SongRow(
     showAlbum: Boolean = !inAlbumContext,
     onSongSelected: () -> Unit,
 ) {
+    val player = playerController.current
     Surface(
         modifier = Modifier.padding(end = 4.dp), // Space for scrollbar
         shape = MaterialTheme.shapes.small,
@@ -42,10 +44,19 @@ fun SongRow(
                 Spacer(Modifier.width(8.dp))
             }
             if (showAlbum) {
-                AlbumCover(song.cover, Modifier.size(40.dp), MaterialTheme.shapes.small)
+                AlbumCover(
+                    song.cover,
+                    Modifier.size(40.dp),
+                    MaterialTheme.shapes.small,
+                    overlay = {
+                        if (player.queue?.currentSong == song) {
+                            SmallSpectrometers(Modifier.fillMaxSize(), player.frequencyAnalyzer.fadedALittleFrequency)
+                        }
+                    }
+                )
                 Spacer(Modifier.width(8.dp))
             }
-            Text(song.title,Modifier.weight(1f))
+            Text(song.title, Modifier.weight(1f))
             Spacer(Modifier.width(8.dp))
             SingleLineText(
                 song.length.format(),

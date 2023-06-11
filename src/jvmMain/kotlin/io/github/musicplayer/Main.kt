@@ -59,6 +59,7 @@ private enum class Panel(
 @Composable
 private fun App(selectedPanel: Panel, selectPanel: (Panel) -> Unit) {
     val library by musicLibrary.collectAsState(null, Dispatchers.Default)
+    var listOptions by remember(library) { mutableStateOf(SongListOptions()) }
     var openSettings by remember { mutableStateOf(false) }
     val player = playerController.current
 
@@ -78,7 +79,12 @@ private fun App(selectedPanel: Panel, selectPanel: (Panel) -> Unit) {
                     listOf(selectedPanel)
                 }
                 Column {
-                    MainContent(Modifier.fillMaxWidth().weight(1f), visiblePanels, library) {
+                    MainContent(
+                        Modifier.fillMaxWidth().weight(1f),
+                        visiblePanels,
+                        library,
+                        listOptions,
+                        { listOptions = it }) {
                         openSettings = true
                     }
                     Divider()
@@ -97,6 +103,8 @@ private fun MainContent(
     modifier: Modifier,
     visiblePanels: List<Panel>,
     library: Library?,
+    listOptions: SongListOptions,
+    setListOptions: (SongListOptions) -> Unit,
     openSettings: () -> Unit,
 ) {
     val cs = rememberCoroutineScope()
@@ -104,10 +112,9 @@ private fun MainContent(
     PanelContainer(modifier, values().toSet(), visiblePanels) { panel ->
         when (panel) {
             LIBRARY -> LibraryContainer(library) { library ->
-                var listOptions by remember(library) { mutableStateOf(SongListOptions()) }
                 val lib = library.filterAndSort(listOptions)
                 val items = lib.toListItems(listOptions)
-                LibraryHeader(Modifier.fillMaxSize(), library, listOptions, { listOptions = it }, openSettings) {
+                LibraryHeader(Modifier.fillMaxSize(), library, listOptions, setListOptions, openSettings) {
                     SongListUI(lib.stats.maxTrackNumber, items) { song ->
                         cs.launch {
                             player.changeQueue(SongQueue.of(lib, song), Position.Beginning)
