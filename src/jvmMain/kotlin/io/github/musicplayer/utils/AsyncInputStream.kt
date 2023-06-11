@@ -23,13 +23,16 @@ class AsyncInputStream(
      * Returns whether the finish has been reached
      */
     suspend fun buffer(chunkSize: Int): Boolean {
-        if (allBuffered) return true
-
         val buffer = ByteArray(chunkSize)
         val read = input.read(buffer)
-        val info = ReadInfo(buffer, read.coerceAtLeast(0), read < 0)
-        channel.send(info)
-        return info.isFinished
+        return when {
+            read < 0 -> true
+            read == 0 -> false
+            else -> {
+                channel.send(ReadInfo(buffer, read.coerceAtLeast(0), false))
+                false
+            }
+        }
     }
 
     fun reset() {

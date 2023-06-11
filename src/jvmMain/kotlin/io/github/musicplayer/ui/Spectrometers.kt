@@ -8,10 +8,10 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import io.github.musicplayer.audio.humanHearingRangeLog
 import io.github.musicplayer.ui.SpectrometerStyle.AREA
 import io.github.musicplayer.ui.SpectrometerStyle.BOXES
 import io.github.musicplayer.utils.avgInRange
+import io.github.musicplayer.utils.humanHearingRangeLog
 import io.github.musicplayer.utils.progress
 import kotlin.math.pow
 
