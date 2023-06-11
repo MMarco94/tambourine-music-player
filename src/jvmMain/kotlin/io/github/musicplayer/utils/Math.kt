@@ -17,7 +17,7 @@ fun Long.toIntOrMax(): Int {
 fun IntRange.toLogRange(): ClosedFloatingPointRange<Double> = log2(start.toDouble())..log2(endInclusive.toDouble())
 
 
-fun DoubleArray.avgInRange(fromIndex: Double, toIndex: Double): Double {
+fun DoubleArray.sumInRange(fromIndex: Double, toIndex: Double): Double {
     val fromInclusive = fromIndex.toInt()
     val endInclusive = toIndex.toInt()
     var sum = 0.0
@@ -26,5 +26,9 @@ fun DoubleArray.avgInRange(fromIndex: Double, toIndex: Double): Double {
     }
     sum -= this.getOrZero(fromInclusive) * (fromIndex - fromInclusive)
     sum -= this.getOrZero(endInclusive) * (endInclusive + 1 - toIndex)
-    return sum / (toIndex - fromIndex)
+    return sum
+}
+
+fun DoubleArray.avgInRange(fromIndex: Double, toIndex: Double): Double {
+    return sumInRange(fromIndex, toIndex) / (toIndex - fromIndex)
 }

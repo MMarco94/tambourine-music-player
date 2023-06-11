@@ -25,11 +25,15 @@ class FrequencyAnalyzer {
     var fadedALittleFrequency by mutableStateOf(DoubleArray(samplesSize))
         private set
 
-    private val audioChannel = Channel<DoubleArray>(Int.MAX_VALUE)
+    private class AudioData(val data: ByteArray, val format: AudioFormat)
+
+    private val audioChannel = Channel<AudioData>(Int.MAX_VALUE)
     private val samples = DoubleArray(samplesSize)
 
     suspend fun start() {
-        for (sample in audioChannel) {
+        for (audioData in audioChannel) {
+            val sample = decode(audioData.data, audioData.data.size, audioData.format)
+
             samples.copyInto(samples, 0, sample.size)
             sample.copyInto(samples, destinationOffset = samples.size - sample.size)
 
@@ -53,6 +57,6 @@ class FrequencyAnalyzer {
     }
 
     suspend fun push(buf: ByteArray, length: Int, format: AudioFormat) {
-        audioChannel.send(decode(buf, length, format))
+        audioChannel.send(AudioData(buf.copyOfRange(0, length), format))
     }
 }
