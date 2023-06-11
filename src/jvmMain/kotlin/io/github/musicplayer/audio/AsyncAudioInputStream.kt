@@ -3,7 +3,6 @@ package io.github.musicplayer.audio
 import io.github.musicplayer.utils.AppendOnlyList
 import io.github.musicplayer.utils.toIntOrMax
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.yield
 import javax.sound.sampled.AudioInputStream
 
 class Chunk(
@@ -26,33 +25,23 @@ class AsyncAudioInputStream(
     private val bufferChunks = 1.shl(14) / input.format.frameSize * input.format.frameSize
     val readers = List(readerCount) { Reader() }
 
-    private val chunks = AppendOnlyList<Chunk>()
-
     suspend fun bufferAll() {
-        while (!buffer()) {
-            yield()
-        }
-    }
-
-    /**
-     * Returns whether the finish has been reached
-     */
-    suspend fun buffer(): Boolean {
-        val buffer = ByteArray(bufferChunks)
-        val read = input.read(buffer)
-        return when {
-            read < 0 -> {
-                readers.forEach { it.channel.send(BufferState(chunks, true)) }
-                true
-            }
-
-            read == 0 -> false
-            else -> {
+        val chunks = AppendOnlyList<Chunk>()
+        do {
+            val buffer = ByteArray(bufferChunks)
+            val read = input.read(buffer)
+            if (read > 0) {
                 chunks.add(Chunk(buffer, 0, read))
-                val immutableView = chunks.subList(0, chunks.size)
-                readers.forEach { it.channel.send(BufferState(immutableView, false)) }
-                false
+                val state = BufferState(chunks.subList(0, chunks.size), false)
+                readers.forEach {
+                    // Conflated channels should never block nor fail
+                    require(it.channel.trySend(state).isSuccess)
+                }
             }
+        } while (read >= 0)
+        val state = BufferState(chunks, true)
+        readers.forEach {
+            it.channel.send(state)
         }
     }
 
