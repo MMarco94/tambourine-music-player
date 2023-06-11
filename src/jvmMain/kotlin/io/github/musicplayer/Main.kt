@@ -20,7 +20,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.*
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -72,7 +71,7 @@ private fun App(selectedPanel: Panel, selectPanel: (Panel) -> Unit) {
             BlurredFadeAlbumCover(player.queue?.currentSong?.cover, Modifier.fillMaxSize())
             BoxWithConstraints {
                 val w = constraints.maxWidth
-                val large = w >= with(LocalDensity.current) { (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPx() }
+                val large = w >= (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPxApprox()
                 val visiblePanels = if (large) {
                     listOf(selectedPanel, PLAYER).distinct()
                 } else {

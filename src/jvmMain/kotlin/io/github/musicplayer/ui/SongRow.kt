@@ -20,8 +20,9 @@ import io.github.musicplayer.utils.format
 fun SongRow(
     maxTrackNumber: Int?,
     song: Song,
-    inAlbumContext: Boolean = false,
-    showAlbum: Boolean = !inAlbumContext,
+    showTrackNumber: Boolean = false,
+    showAlbumInfo: Boolean = true,
+    showArtistInfo: Boolean = true,
     onSongSelected: () -> Unit,
 ) {
     val player = playerController.current
@@ -31,35 +32,61 @@ fun SongRow(
         color = Color.Transparent,
     ) {
         Row(
-            Modifier.clickable { onSongSelected() }.padding(8.dp),
+            Modifier.clickable { onSongSelected() },
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (inAlbumContext) { // Track number
+            Spacer(Modifier.width(8.dp))
+            if (showTrackNumber) {
                 val maxDigits = maxTrackNumber?.digits() ?: 0
                 SingleLineText(
                     song.track?.toString().orEmpty().padStart(maxDigits, ' '),
+                    Modifier.padding(vertical = 8.dp),
                     fontFamily = FontFamily.Monospace,
                     color = MaterialTheme.colors.onSurfaceSecondary,
                 )
                 Spacer(Modifier.width(8.dp))
             }
-            if (showAlbum) {
-                AlbumCover(
-                    song.cover,
-                    Modifier.size(40.dp),
-                    MaterialTheme.shapes.small,
-                    overlay = {
-                        if (player.queue?.currentSong == song) {
-                            SmallSpectrometers(Modifier.fillMaxSize(), player.frequencyAnalyzer.fadedALittleFrequency)
-                        }
-                    }
-                )
+            if (showAlbumInfo) {
                 Spacer(Modifier.width(8.dp))
+                Box(Modifier.padding(vertical = 8.dp)) {
+                    AlbumCover(
+                        song.cover,
+                        Modifier.size(48.dp),
+                        MaterialTheme.shapes.small,
+                        elevation = 4.dp,
+                        overlay = {
+                            if (player.queue?.currentSong == song) {
+                                SmallSpectrometers(
+                                    Modifier.fillMaxSize(),
+                                    player.frequencyAnalyzer.fadedALittleFrequency
+                                )
+                            }
+                        }
+                    )
+                }
+                Spacer(Modifier.width(16.dp))
             }
-            Text(song.title, Modifier.weight(1f))
-            Spacer(Modifier.width(8.dp))
+            Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
+                Text(song.title)
+                if (showAlbumInfo || showArtistInfo) {
+                    Spacer(Modifier.height(4.dp))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val style = MaterialTheme.typography.subtitle2
+                    if (showAlbumInfo) {
+                        SingleLineText(song.album.title, style = style)
+                    }
+                    if (showAlbumInfo && showArtistInfo) {
+                        Text("•", Modifier.padding(horizontal = 8.dp))
+                    }
+                    if (showArtistInfo) {
+                        SingleLineText(song.artist.name, style = style)
+                    }
+                }
+            }
             SingleLineText(
                 song.length.format(),
+                Modifier.padding(8.dp),
                 color = MaterialTheme.colors.onSurfaceSecondary,
                 style = MaterialTheme.typography.subtitle2,
             )

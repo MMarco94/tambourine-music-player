@@ -47,7 +47,9 @@ fun BigSongRow(
                         SongRow(
                             maxTrackNumber,
                             song,
-                            inAlbumContext = inAlbumContext,
+                            showTrackNumber = inAlbumContext,
+                            showAlbumInfo = !inAlbumContext,
+                            showArtistInfo = false,
                             onSongSelected = { onSongSelected(song) })
                     }
                 }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
@@ -20,10 +21,10 @@ import io.github.musicplayer.data.SongListItem
 fun SongListUI(
     maxTrackNumber: Int?,
     items: List<SongListItem>,
+    state: LazyListState = rememberLazyListState(),
     onSongSelected: (Song) -> Unit,
 ) {
     Box {
-        val state = rememberLazyListState()
         LazyColumn(
             state = state,
             modifier = Modifier.fillMaxSize(),
@@ -41,7 +42,12 @@ fun SongListUI(
                     }
 
                     is SongListItem.SingleSongListItem -> {
-                        SongRow(maxTrackNumber, item.song) { onSongSelected(item.song) }
+                        SongRow(
+                            maxTrackNumber,
+                            item.song,
+                            showAlbumInfo = true,
+                            showArtistInfo = true
+                        ) { onSongSelected(item.song) }
                     }
                 }
             }
