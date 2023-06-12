@@ -21,7 +21,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -66,22 +65,7 @@ fun PlayerUI(
             Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(Modifier.weight(1f))
 
-                AlbumCover(song.cover, Modifier.size(256.dp), MaterialTheme.shapes.large, elevation = 16.dp) {
-                    Spectrometer(
-                        Modifier.fillMaxSize(),
-                        player.frequencyAnalyzer.fadedFrequency,
-                        chunks = { 50 },
-                        boost = 0.3f,
-                        brush = { SolidColor(Color.Black.copy(alpha = 0.4f)) },
-                    )
-                    Spectrometer(
-                        Modifier.fillMaxSize(),
-                        player.frequencyAnalyzer.fadedALittleFrequency,
-                        chunks = { 50 },
-                        boost = 0.3f,
-                        brush = { SolidColor(Color.White.copy(alpha = 0.4f)) },
-                    )
-                }
+                AlbumCover(song.cover, Modifier.size(256.dp), MaterialTheme.shapes.large, elevation = 16.dp)
                 Spacer(Modifier.height(24.dp))
 
                 Text(song.title, style = MaterialTheme.typography.h2, textAlign = TextAlign.Center)
