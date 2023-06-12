@@ -26,23 +26,14 @@ fun <T> Collection<T>.mostCommonOrNull(): T? {
     return numbersByElement.maxByOrNull { it.value }?.key
 }
 
-fun ByteArray.countZeros(start: Int = 0, end: Int = size): Int {
-    for (i in start until end) {
-        if (this[i] != 0.toByte()) return i
-    }
-    return end - start
-}
-
 fun List<DoubleArray>.concatenate(): DoubleArray {
-    var arr = 0
-    var offset = 0
-    return DoubleArray(sumOf { it.size }) {
-        if (offset >= this[arr].size) {
-            arr++
-            offset = 0
-        }
-        this[arr][offset++]
+    var index = 0
+    val ret = DoubleArray(sumOf { it.size })
+    forEach {
+        it.copyInto(ret, destinationOffset = index)
+        index += it.size
     }
+    return ret
 }
 
 fun DoubleArray.getOrZero(index: Int) = getOrElse(index) { 0.0 }
