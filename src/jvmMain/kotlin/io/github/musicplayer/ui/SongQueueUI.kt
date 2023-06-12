@@ -2,10 +2,10 @@ package io.github.musicplayer.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.Divider
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.QueueMusic
+import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -42,9 +42,17 @@ fun SongQueueUI(
             ) {
                 Column(Modifier.padding(horizontal = 16.dp)) {
                     // TODO: plurals
-                    Text("${queue.songs.size} songs in the queue • ${queue.songs.sumOfDuration { it.length }.format()}")
+                    SingleLineText(
+                        "${queue.songs.size} songs in the queue • ${
+                            queue.songs.sumOfDuration { it.length }.format()
+                        }", style = MaterialTheme.typography.bodyMedium
+                    )
                     val remaining = queue.remainingSongs
-                    Text("${remaining.size} songs remaining • ${remaining.sumOfDuration { it.length }.format()}")
+                    SingleLineText(
+                        "${remaining.size} songs remaining • ${
+                            remaining.sumOfDuration { it.length }.format()
+                        }", style = MaterialTheme.typography.bodyMedium
+                    )
                 }
                 Spacer(Modifier.weight(1f))
                 RepeatIcon(cs, queue)

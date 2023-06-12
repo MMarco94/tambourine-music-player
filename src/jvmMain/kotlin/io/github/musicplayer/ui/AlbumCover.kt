@@ -4,7 +4,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.Surface
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
@@ -25,7 +25,7 @@ fun AlbumCover(
     elevation: Dp = 0.dp,
     overlay: @Composable () -> Unit = {},
 ) {
-    Surface(modifier.aspectRatio(1f), shape = shape, elevation = elevation) {
+    Surface(modifier.aspectRatio(1f), shape = shape, tonalElevation = elevation, shadowElevation = elevation) {
         if (cover != null) {
             key(cover) {
                 Image(

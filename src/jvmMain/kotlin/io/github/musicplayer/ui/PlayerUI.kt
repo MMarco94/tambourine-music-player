@@ -5,14 +5,9 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Slider
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,6 +22,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.musicplayer.audio.PlayerController
 import io.github.musicplayer.audio.Position
@@ -68,11 +64,11 @@ fun PlayerUI(
                 AlbumCover(song.cover, Modifier.size(256.dp), MaterialTheme.shapes.large, elevation = 16.dp)
                 Spacer(Modifier.height(24.dp))
 
-                Text(song.title, style = MaterialTheme.typography.h2, textAlign = TextAlign.Center)
+                Text(song.title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(8.dp))
-                SingleLineText(song.album.title, style = MaterialTheme.typography.subtitle1)
+                SingleLineText(song.album.title, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(4.dp))
-                SingleLineText(song.album.artist.name, style = MaterialTheme.typography.subtitle2)
+                SingleLineText(song.album.artist.name, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(24.dp))
 
                 Seeker(Modifier.widthIn(max = 480.dp), player, song, queue, cs)
@@ -93,6 +89,7 @@ fun PlayerUI(
                         if (player.pause) Icons.Default.PlayArrow else Icons.Default.Pause,
                         if (player.pause) "Play" else "Pause",
                         iconModifier = Modifier.size(48.dp),
+                        size = 48.dp,
                     ) {
                         if (player.pause) {
                             player.play()
@@ -204,7 +201,7 @@ private fun Seeker(
             }
         )
         Row(Modifier.padding(horizontal = thumbRadius), verticalAlignment = Alignment.CenterVertically) {
-            val style = MaterialTheme.typography.subtitle2
+            val style = MaterialTheme.typography.labelMedium
             SingleLineText(player.position.format(), style = style)
             Spacer(Modifier.weight(1f))
             SingleLineText((player.position - song.length).coerceAtMost(ZERO).format(), style = style)
@@ -303,12 +300,13 @@ private fun PlayerIcon(
     icon: ImageVector,
     label: String,
     iconModifier: Modifier = Modifier,
+    size: Dp = 40.dp,
     enabled: Boolean = true,
     active: Boolean = true,
     onClick: suspend CoroutineScope.() -> Unit
 ) {
     val alpha by animateFloatAsState(if (active) 1f else inactiveAlpha)
-    BigIconButton({
+    BigIconButton(size = size, {
         cs.launch {
             onClick()
         }

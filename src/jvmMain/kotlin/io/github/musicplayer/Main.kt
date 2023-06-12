@@ -4,14 +4,20 @@ package io.github.musicplayer
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.defaultScrollbarStyle
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.PlayCircleFilled
 import androidx.compose.material.icons.filled.QueueMusic
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -64,34 +70,43 @@ private fun App(selectedPanel: Panel, selectPanel: (Panel) -> Unit) {
 
     MaterialTheme(
         typography = MusicPlayerTheme.typography,
-        colors = MusicPlayerTheme.colors,
+        colorScheme = MusicPlayerTheme.colors,
         shapes = MusicPlayerTheme.shapes,
     ) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colors.background) {
-            BlurredFadeAlbumCover(player.queue?.currentSong?.cover, Modifier.fillMaxSize())
-            BoxWithConstraints {
-                val w = constraints.maxWidth
-                val large = w >= (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPxApprox()
-                val visiblePanels = if (large) {
-                    listOf(selectedPanel, PLAYER).distinct()
-                } else {
-                    listOf(selectedPanel)
-                }
-                Column {
-                    MainContent(
-                        Modifier.fillMaxWidth().weight(1f),
-                        visiblePanels,
-                        library,
-                        listOptions,
-                        { listOptions = it }) {
-                        openSettings = true
+        CompositionLocalProvider(
+            LocalScrollbarStyle provides defaultScrollbarStyle().copy(
+                thickness = 12.dp,
+                shape = RoundedCornerShape(6.dp),
+                unhoverColor = Color.White.copy(alpha = .12f),
+                hoverColor = Color.White.copy(alpha = .5f),
+            )
+        ) {
+            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                BlurredFadeAlbumCover(player.queue?.currentSong?.cover, Modifier.fillMaxSize())
+                BoxWithConstraints {
+                    val w = constraints.maxWidth
+                    val large = w >= (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPxApprox()
+                    val visiblePanels = if (large) {
+                        listOf(selectedPanel, PLAYER).distinct()
+                    } else {
+                        listOf(selectedPanel)
                     }
-                    Divider()
-                    BottomBar(large, selectedPanel, visiblePanels, selectPanel)
+                    Column {
+                        MainContent(
+                            Modifier.fillMaxWidth().weight(1f),
+                            visiblePanels,
+                            library,
+                            listOptions,
+                            { listOptions = it }) {
+                            openSettings = true
+                        }
+                        Divider()
+                        BottomBar(large, selectedPanel, visiblePanels, selectPanel)
+                    }
                 }
-            }
-            if (openSettings) {
-                LibrarySettings { openSettings = false }
+                if (openSettings) {
+                    LibrarySettings { openSettings = false }
+                }
             }
         }
     }
@@ -163,7 +178,11 @@ private fun BottomBar(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(panel.icon, null)
-                    SingleLineText(panel.label, textAlign = TextAlign.Center)
+                    SingleLineText(
+                        panel.label,
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.labelMedium
+                    )
                 }
             }
         }
@@ -173,13 +192,11 @@ private fun BottomBar(
 @Composable
 private fun LibraryContainer(library: Library?, f: @Composable (Library) -> Unit) {
     if (library == null) {
-        Column(Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(Modifier.weight(1f))
-            CircularProgressIndicator()
-            Spacer(Modifier.height(8.dp))
-            Text("Loading...")
-            Spacer(Modifier.weight(1f))
-        }
+        BigMessage(
+            Modifier.fillMaxSize(),
+            Icons.Default.LibraryMusic,
+            "Loading...",
+        )
     } else {
         f(library)
     }

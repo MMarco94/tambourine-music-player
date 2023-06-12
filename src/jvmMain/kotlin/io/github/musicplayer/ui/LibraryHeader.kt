@@ -15,9 +15,9 @@ import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,24 +44,23 @@ private fun Tag(
 ) {
     val bg by animateColorAsState(
         if (enabled) {
-            MaterialTheme.colors.primary
+            MaterialTheme.colorScheme.primary
         } else {
-            MaterialTheme.colors.primary.copy(alpha = 0f)
+            MaterialTheme.colorScheme.primary.copy(alpha = 0f)
         }
     )
     val contentColor by animateColorAsState(
         if (enabled) {
-            MaterialTheme.colors.onPrimary
+            MaterialTheme.colorScheme.onPrimary
         } else {
-            MaterialTheme.colors.onSurface
+            MaterialTheme.colorScheme.onSurface
         }
     )
     val alpha by animateFloatAsState(if (active) 1f else inactiveAlpha)
     Card(
         Modifier.alpha(alpha),
-        backgroundColor = bg,
-        contentColor = contentColor,
-        elevation = 0.dp,
+        colors = CardDefaults.cardColors(bg, contentColor),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Box(Modifier.clickable { onClick() }) {
             content()
@@ -121,9 +120,9 @@ private fun TagWithOptions(
                         Spacer(Modifier.width(8.dp))
                         if (selected is SortFilterOption.Sort) {
                             Column {
-                                SingleLineText(description)
+                                SingleLineText(description, style = MaterialTheme.typography.labelLarge)
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    SingleLineText(selected.name, style = MaterialTheme.typography.subtitle2)
+                                    SingleLineText(selected.name, style = MaterialTheme.typography.labelMedium)
                                     if (selected.icon != null) {
                                         Spacer(Modifier.width(2.dp))
                                         Icon(selected.icon, null, Modifier.size(16.dp))
@@ -131,7 +130,7 @@ private fun TagWithOptions(
                                 }
                             }
                         } else {
-                            SingleLineText(selected.name)
+                            SingleLineText(selected.name, style = MaterialTheme.typography.labelLarge)
                         }
                     }
                     if (reset != null) {
@@ -193,9 +192,9 @@ private class FilterSortPopupRenderer(
     fun background(item: SortFilterOption): State<Color> {
         return animateColorAsState(
             if (item == selected) {
-                MaterialTheme.colors.primary
+                MaterialTheme.colorScheme.primary
             } else {
-                MaterialTheme.colors.primary.copy(alpha = 0f)
+                MaterialTheme.colorScheme.primary.copy(alpha = 0f)
             }
         )
     }
@@ -204,9 +203,9 @@ private class FilterSortPopupRenderer(
     fun contentColor(item: SortFilterOption): State<Color> {
         return animateColorAsState(
             if (item == selected) {
-                MaterialTheme.colors.onPrimary
+                MaterialTheme.colorScheme.onPrimary
             } else {
-                MaterialTheme.colors.onSurface
+                MaterialTheme.colorScheme.onSurface
             }
         )
     }
@@ -510,7 +509,7 @@ private fun CategorySeparator(name: String) {
             .padding(horizontal = 8.dp)
             .padding(top = 8.dp, bottom = 2.dp)
     ) {
-        SingleLineText(name, style = MaterialTheme.typography.subtitle1)
+        SingleLineText(name, style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -531,7 +530,7 @@ private fun FilterSortPopupRenderer.SimpleListItem(
             .padding(8.dp)
             .padding(start = 32.dp),
     ) {
-        SingleLineText(text)
+        SingleLineText(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -559,10 +558,10 @@ private fun FilterSortPopupRenderer.AlbumGridItem(item: SortFilterOption.Filter<
                     )
                 }
                 SingleLineText(
-                    item.element.title, style = MaterialTheme.typography.subtitle1, textAlign = TextAlign.Center
+                    item.element.title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center
                 )
                 SingleLineText(
-                    item.element.artist.name, style = MaterialTheme.typography.subtitle2, textAlign = TextAlign.Center
+                    item.element.artist.name, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center
                 )
             }
         }

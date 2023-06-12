@@ -6,10 +6,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,7 +34,7 @@ fun LibrarySettings(close: () -> Unit) {
             size = DpSize(640.dp, 320.dp),
         )
     ) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colors.background) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Box(Modifier.verticalScroll(rememberScrollState())) {
                 Column(Modifier.padding(32.dp).widthIn(max = 480.dp).align(Alignment.TopCenter)) {
                     LibraryDirectorySetting(library) {
@@ -57,6 +57,7 @@ fun LibrarySettings(close: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LibraryDirectorySetting(library: File, changeLibrary: (File) -> Unit) {
     var showFilePicker by remember { mutableStateOf(false) }
@@ -66,7 +67,7 @@ private fun LibraryDirectorySetting(library: File, changeLibrary: (File) -> Unit
             library.absolutePath,
             { changeLibrary(File(it)) },
             Modifier.weight(1f),
-            label = { SingleLineText("Library folder") },
+            label = { SingleLineText("Library folder", style = LocalTextStyle.current) },
             maxLines = 1,
             shape = MaterialTheme.shapes.medium.copy(
                 topEnd = ZeroCornerSize,
@@ -79,15 +80,16 @@ private fun LibraryDirectorySetting(library: File, changeLibrary: (File) -> Unit
             interactionSource = interactionSource,
         )
         Surface(
-            Modifier.fillMaxHeight().width(48.dp).padding(top = 8.dp).clickable {
-                showFilePicker = true
-            },
+            Modifier.fillMaxHeight().width(48.dp).padding(top = 8.dp),
+            color = MaterialTheme.colorScheme.primaryContainer,
             shape = MaterialTheme.shapes.medium.copy(
                 topStart = ZeroCornerSize,
                 bottomStart = ZeroCornerSize
             ),
         ) {
-            Box(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize().clickable {
+                showFilePicker = true
+            }) {
                 Icon(Icons.Default.FolderOpen, "Choose folder", Modifier.align(Alignment.Center))
             }
         }

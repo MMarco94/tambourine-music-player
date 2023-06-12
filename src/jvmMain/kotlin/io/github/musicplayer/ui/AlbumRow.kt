@@ -2,8 +2,8 @@ package io.github.musicplayer.ui
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -66,8 +66,8 @@ fun AlbumRow(
         }
         if (showAlbumInfo) {
             Spacer(Modifier.height(8.dp))
-            Text(album.title, textAlign = TextAlign.Center, style = MaterialTheme.typography.subtitle1)
-            Text(album.artist.name, textAlign = TextAlign.Center, style = MaterialTheme.typography.subtitle2)
+            Text(album.title, textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium)
+            Text(album.artist.name, textAlign = TextAlign.Center, style = MaterialTheme.typography.titleSmall)
         }
         if (showAlbumStats) {
             Spacer(Modifier.height(8.dp))

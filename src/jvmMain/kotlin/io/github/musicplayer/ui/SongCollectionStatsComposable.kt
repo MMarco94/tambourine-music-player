@@ -1,7 +1,6 @@
 package io.github.musicplayer.ui
 
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -10,22 +9,22 @@ import io.github.musicplayer.utils.format
 
 @Composable
 fun SongCollectionStatsComposable(stats: SongCollectionStats, yearOnly: Boolean = false) {
-    val style = MaterialTheme.typography.subtitle2.merge(
+    val style = MaterialTheme.typography.labelMedium.merge(
         TextStyle(
-            color = MaterialTheme.colors.onSurfaceSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceSecondary,
             textAlign = TextAlign.Center,
         )
     )
     // TODO: plurals
     if (!yearOnly) {
-        Text("${stats.songsCount} songs", style = style)
-        Text(stats.totalLength.format(), style = style)
+        SingleLineText("${stats.songsCount} songs", style = style)
+        SingleLineText(stats.totalLength.format(), style = style)
     }
     if (stats.year != null) {
         if (stats.year.first == stats.year.last) {
-            Text(stats.year.first.toString(), style = style)
+            SingleLineText(stats.year.first.toString(), style = style)
         } else {
-            Text("${stats.year.first}-${stats.year.last}", style = style)
+            SingleLineText("${stats.year.first}-${stats.year.last}", style = style)
         }
     }
 }

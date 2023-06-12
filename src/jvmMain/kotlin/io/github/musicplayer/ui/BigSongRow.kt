@@ -3,7 +3,7 @@ package io.github.musicplayer.ui
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Divider
+import androidx.compose.material3.Divider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,7 +50,7 @@ fun BigSongRow(
                 Column {
                     songs.forEach { song ->
                         SongRow(
-                            Modifier.padding(end = 4.dp), // Space for scrollbar
+                            Modifier.padding(end = 8.dp), // Space for scrollbar
                             maxTrackNumber,
                             song,
                             showTrackNumber = showTrackNumber,

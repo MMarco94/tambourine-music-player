@@ -4,9 +4,9 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,7 +47,8 @@ fun SongRow(
                     song.track?.toString().orEmpty().padStart(maxDigits, ' '),
                     Modifier.padding(vertical = 8.dp),
                     fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colors.onSurfaceSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceSecondary,
+                    style = MaterialTheme.typography.labelMedium,
                 )
                 Spacer(Modifier.width(8.dp))
             }
@@ -88,17 +89,17 @@ fun SongRow(
                 }
             }
             Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
-                Text(song.title)
+                Text(song.title, style = MaterialTheme.typography.titleSmall)
                 if (showAlbumInfo || showArtistInfo) {
                     Spacer(Modifier.height(4.dp))
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val style = MaterialTheme.typography.subtitle2
+                    val style = MaterialTheme.typography.titleSmall
                     if (showAlbumInfo) {
                         SingleLineText(song.album.title, style = style)
                     }
                     if (showAlbumInfo && showArtistInfo) {
-                        Text("•", Modifier.padding(horizontal = 8.dp))
+                        SingleLineText("•", Modifier.padding(horizontal = 8.dp), style = style)
                     }
                     if (showArtistInfo) {
                         SingleLineText(song.artist.name, style = style)
@@ -108,8 +109,8 @@ fun SongRow(
             SingleLineText(
                 song.length.format(),
                 Modifier.padding(8.dp),
-                color = MaterialTheme.colors.onSurfaceSecondary,
-                style = MaterialTheme.typography.subtitle2,
+                color = MaterialTheme.colorScheme.onSurfaceSecondary,
+                style = MaterialTheme.typography.labelMedium,
             )
         }
     }
