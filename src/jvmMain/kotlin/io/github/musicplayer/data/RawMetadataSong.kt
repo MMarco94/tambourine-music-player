@@ -1,27 +1,14 @@
 package io.github.musicplayer.data
 
-import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.graphics.ImageBitmap
 import io.github.musicplayer.utils.trimToNull
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
-import org.jetbrains.skia.Image
 import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-
-class RawImage(
-    val bytes: ByteArray,
-) {
-    fun decode() = Image.makeFromEncoded(bytes).toComposeImageBitmap()
-
-    override fun equals(other: Any?): Boolean {
-        return other is RawImage && other.bytes.contentEquals(bytes)
-    }
-
-    override fun hashCode(): Int {
-        return bytes.contentHashCode()
-    }
-}
 
 data class RawMetadataSong(
     val file: File,
@@ -32,8 +19,7 @@ data class RawMetadataSong(
     val artist: String?,
     val albumArtist: String?,
     override val year: Int?,
-    // TODO: make it so they're not all in memory
-    val cover: RawImage?,
+    val cover: Deferred<ImageBitmap?>,
 ) : BaseSong {
     val nnTitle get() = title ?: file.nameWithoutExtension
     val nnAlbum get() = album ?: "Unknown"
@@ -42,7 +28,7 @@ data class RawMetadataSong(
 
     companion object {
 
-        fun fromMusicFile(file: File): RawMetadataSong {
+        suspend fun fromMusicFile(file: File, decoder: CoversDecoder): RawMetadataSong {
             val f = AudioFileIO.read(file)
             val tag = f.tag
             val header = f.audioHeader
@@ -56,7 +42,7 @@ data class RawMetadataSong(
                 artist = tag.getFirst(FieldKey.ARTIST)?.trimToNull(),
                 albumArtist = tag.getFirst(FieldKey.ALBUM_ARTIST)?.trimToNull(),
                 year = tag.getFirst(FieldKey.YEAR)?.toIntOrNull(),
-                cover = tag.firstArtwork?.binaryData?.let { RawImage(it) }
+                cover = tag.firstArtwork?.binaryData?.let { decoder.decode(it) } ?: CompletableDeferred(value = null)
             )
         }
     }

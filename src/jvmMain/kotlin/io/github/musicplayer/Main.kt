@@ -40,16 +40,26 @@ import io.github.musicplayer.ui.*
 import io.github.musicplayer.utils.Preferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import org.slf4j.bridge.SLF4JBridgeHandler
 
 
-val musicLibrary: Flow<Library?> = Preferences.libraryFolder
+val musicLibrary: Flow<LibraryState?> = Preferences.libraryFolder
     .transformLatest {
         emit(null)
-        emit(Library.fromFolder(it))
+        val c = Channel<LibraryState>(Channel.CONFLATED)
+        coroutineScope {
+            launch(Dispatchers.Default) { Library.fromFolder(it, c) }
+            launch {
+                for (lib in c) {
+                    emit(lib)
+                }
+            }
+        }
     }
 
 private enum class Panel(
@@ -63,8 +73,8 @@ private enum class Panel(
 
 @Composable
 private fun App(selectedPanel: Panel, selectPanel: (Panel) -> Unit) {
-    val library by musicLibrary.collectAsState(null, Dispatchers.Default)
-    var listOptions by remember(library) { mutableStateOf(SongListOptions()) }
+    val library by musicLibrary.collectAsState(null)
+    var listOptions by remember(library as? Library) { mutableStateOf(SongListOptions()) }
     var openSettings by remember { mutableStateOf(false) }
     val player = playerController.current
 
@@ -116,7 +126,7 @@ private fun App(selectedPanel: Panel, selectPanel: (Panel) -> Unit) {
 private fun MainContent(
     modifier: Modifier,
     visiblePanels: List<Panel>,
-    library: Library?,
+    library: LibraryState?,
     listOptions: SongListOptions,
     setListOptions: (SongListOptions) -> Unit,
     openSettings: () -> Unit,
@@ -190,13 +200,17 @@ private fun BottomBar(
 }
 
 @Composable
-private fun LibraryContainer(library: Library?, f: @Composable (Library) -> Unit) {
-    if (library == null) {
+private fun LibraryContainer(library: LibraryState?, f: @Composable (Library) -> Unit) {
+    if (library !is Library) {
         BigMessage(
             Modifier.fillMaxSize(),
             Icons.Default.LibraryMusic,
             "Loading...",
-        )
+        ) {
+            if (library is Library.Companion.LoadingProgress) {
+                SingleLineText("${library.loaded} songs loaded", style = MaterialTheme.typography.labelMedium)
+            }
+        }
     } else {
         f(library)
     }

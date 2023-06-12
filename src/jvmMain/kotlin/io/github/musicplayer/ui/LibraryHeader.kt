@@ -431,7 +431,7 @@ private class AlbumOptionsRenderer(
     }
     private val albumsFilters = libForAlbums.albums.associateWith { album ->
         SortFilterOption.Filter(
-            album.title(options.artistFilter == null && options.artistSorter != ArtistSorter.NONE), album
+            album.title, album
         ) {
             it.withAlbumFilter(album)
         }

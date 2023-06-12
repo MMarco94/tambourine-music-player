@@ -1,9 +1,6 @@
 package io.github.musicplayer.ui
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,14 +18,48 @@ fun BigMessage(
     title: String,
     message: String? = null,
 ) {
+    BigMessage(
+        modifier = modifier,
+        icon = { Icon(icon, null, Modifier.matchParentSize()) },
+        title = { Text(title, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge) },
+        message = message?.let {
+            { Text(message, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium) }
+        }
+    )
+}
+
+@Composable
+fun BigMessage(
+    modifier: Modifier,
+    icon: ImageVector,
+    title: String,
+    message: @Composable () -> Unit,
+) {
+    BigMessage(
+        modifier = modifier,
+        icon = { Icon(icon, null, Modifier.matchParentSize()) },
+        title = { Text(title, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge) },
+        message = message
+    )
+}
+
+@Composable
+fun BigMessage(
+    modifier: Modifier,
+    icon: @Composable BoxScope.() -> Unit,
+    title: @Composable () -> Unit,
+    message: (@Composable () -> Unit)? = null,
+) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.weight(1f))
-        Icon(icon, null, Modifier.size(96.dp))
+        Box(Modifier.size(96.dp)) {
+            icon()
+        }
         Spacer(Modifier.height(16.dp))
-        Text(title, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
+        title()
         if (message != null) {
             Spacer(Modifier.height(16.dp))
-            Text(message, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
+            message()
         }
         Spacer(Modifier.weight(1f))
     }

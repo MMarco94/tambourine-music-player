@@ -4,11 +4,11 @@ import androidx.compose.ui.graphics.ImageBitmap
 import io.github.musicplayer.utils.debugElapsed
 import io.github.musicplayer.utils.mostCommonOrNull
 import io.github.musicplayer.utils.orNoop
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import mu.KotlinLogging
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
@@ -31,11 +31,6 @@ data class Album(
     val cover: ImageBitmap?,
     val stats: SongCollectionStats,
 ) {
-    fun title(withArtist: Boolean): String {
-        return if (withArtist) "${artist.name} - $title"
-        else title
-    }
-
     fun matches(artist: Artist?, album: Album?): Boolean {
         return (artist == null || this.artist == artist) && (album == null || this == album)
     }
@@ -73,12 +68,13 @@ data class Song(
     }
 }
 
+sealed interface LibraryState
 
 data class Library(
     val songs: List<Song>,
     val albums: List<Album>,
     val artists: List<Artist>,
-) {
+) : LibraryState {
 
     val songsByArtist: Map<Artist, List<Song>> = songs.groupBy { it.artist }
     val songsByAlbum: Map<Album, List<Song>> = songs.groupBy { it.album }
@@ -129,37 +125,21 @@ data class Library(
                 }
         }
 
-        private fun buildAlbums(
+        private suspend fun buildAlbums(
             metadata: Collection<RawMetadataSong>,
             artists: Map<String, Artist>,
-            covers: Map<RawImage, ImageBitmap?>,
         ): Map<Pair<Artist, String>, Album> {
             return metadata
                 .groupBy { artists.getValue(it.nnAlbumArtist) to it.nnAlbum }
                 .mapValues { (album, songs) ->
-                    val cover = songs.mapNotNull { it.cover }.mostCommonOrNull()
-                    Album(album.second, album.first, covers[cover], SongCollectionStats.of(songs))
+                    val cover = songs.map { it.cover }.awaitAll().filterNotNull().mostCommonOrNull()
+                    Album(album.second, album.first, cover, SongCollectionStats.of(songs))
                 }
         }
 
-        suspend fun from(metadata: Collection<RawMetadataSong>): Library = coroutineScope {
-            val covers: Map<RawImage, ImageBitmap?> = metadata
-                .mapNotNull { it.cover }
-                .distinct()
-                .map { img ->
-                    async {
-                        try {
-                            img to img.decode()
-                        } catch (e: Exception) {
-                            logger.error("Error while decoding artwork: ${e.message}")
-                            img to null
-                        }
-                    }
-                }
-                .awaitAll()
-                .associate { it }
+        private suspend fun from(metadata: Collection<RawMetadataSong>): Library {
             val artists = buildArtists(metadata)
-            val albums = buildAlbums(metadata, artists, covers)
+            val albums = buildAlbums(metadata, artists)
 
             val songs = metadata.map { song ->
                 val albumArtist = artists.getValue(song.nnAlbumArtist)
@@ -169,37 +149,54 @@ data class Library(
                     track = song.track,
                     title = song.nnTitle,
                     album = album,
-                    cover = covers[song.cover],
+                    cover = song.cover.await(),
                     length = song.length,
                     year = song.year,
                 )
             }
-            Library(
+            return Library(
                 songs,
                 albums.values.toList(),
                 artists.values.toList(),
             )
         }
 
-        suspend fun fromFolder(folder: File): Library = coroutineScope {
-            logger.debugElapsed("Load library") {
-                val songs = folder.walk()
+        data class LoadingProgress(val loaded: Int, val total: Int) : LibraryState
+
+        suspend fun fromFolder(
+            folder: File,
+            progress: Channel<LibraryState>,
+        ): Library = coroutineScope {
+            val decoder = CoversDecoder(this + Dispatchers.Default)
+            val songs = logger.debugElapsed("Loading song") {
+                val total = AtomicInteger(0)
+                val loaded = AtomicInteger(0)
+                folder.walk()
                     .filter { it.isFile }
+                    .onEach {
+                        total.incrementAndGet()
+                    }
                     .map { file ->
-                        async {
+                        async(Dispatchers.IO) {
                             try {
-                                RawMetadataSong.fromMusicFile(file)
+                                RawMetadataSong.fromMusicFile(file, decoder)
                             } catch (e: Exception) {
                                 logger.error("Error while parsing music file: ${e.message}")
                                 null
+                            }.also {
+                                progress.send(LoadingProgress(loaded.incrementAndGet(), total.get()))
                             }
                         }
                     }
                     .toList()
                     .awaitAll()
                     .filterNotNull()
+            }
+            val library = logger.debugElapsed("Creating library") {
                 from(songs)
             }
+            progress.send(library)
+            library
         }
     }
 }
