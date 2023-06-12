@@ -26,6 +26,7 @@ fun SongRow(
     showTrackNumber: Boolean = false,
     showAlbumInfo: Boolean = true,
     showArtistInfo: Boolean = true,
+    showAlbumCover: Boolean = showAlbumInfo,
     onSongSelected: () -> Unit,
 ) {
     val player = playerController.current
@@ -50,7 +51,7 @@ fun SongRow(
                 )
                 Spacer(Modifier.width(8.dp))
             }
-            if (showAlbumInfo) {
+            if (showAlbumCover) {
                 Spacer(Modifier.width(8.dp))
                 Box(Modifier.padding(vertical = 8.dp)) {
                     AlbumCover(

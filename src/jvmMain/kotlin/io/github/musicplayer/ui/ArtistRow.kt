@@ -12,9 +12,21 @@ fun ArtistRow(
     maxTrackNumber: Int?,
     artist: Artist, songs: List<Song>, sideOffset: Int, onSongSelected: (Song) -> Unit
 ) {
-    BigSongRow(maxTrackNumber, false, songs, sideOffset, onSongSelected) {
+    val showArtistStats = songs.size > 6
+
+    BigSongRow(
+        maxTrackNumber,
+        showTrackNumber = false,
+        showAlbumInfo = true,
+        showArtistInfo = false,
+        songs = songs,
+        sideOffset = sideOffset,
+        onSongSelected = onSongSelected,
+    ) {
         Text(artist.name, textAlign = TextAlign.Center)
-        PlayShuffleButtons(Modifier, songs)
-        SongCollectionStatsComposable(artist.stats)
+        if (showArtistStats) {
+            PlayShuffleButtons(Modifier, songs)
+            SongCollectionStatsComposable(artist.stats)
+        }
     }
 }

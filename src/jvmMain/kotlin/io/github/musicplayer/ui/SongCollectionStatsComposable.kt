@@ -9,7 +9,7 @@ import io.github.musicplayer.data.SongCollectionStats
 import io.github.musicplayer.utils.format
 
 @Composable
-fun SongCollectionStatsComposable(stats: SongCollectionStats) {
+fun SongCollectionStatsComposable(stats: SongCollectionStats, yearOnly: Boolean = false) {
     val style = MaterialTheme.typography.subtitle2.merge(
         TextStyle(
             color = MaterialTheme.colors.onSurfaceSecondary,
@@ -17,8 +17,10 @@ fun SongCollectionStatsComposable(stats: SongCollectionStats) {
         )
     )
     // TODO: plurals
-    Text("${stats.songsCount} songs", style = style)
-    Text(stats.totalLength.format(), style = style)
+    if (!yearOnly) {
+        Text("${stats.songsCount} songs", style = style)
+        Text(stats.totalLength.format(), style = style)
+    }
     if (stats.year != null) {
         if (stats.year.first == stats.year.last) {
             Text(stats.year.first.toString(), style = style)

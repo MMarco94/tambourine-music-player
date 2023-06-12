@@ -23,8 +23,6 @@ TBD
 - Improve player UI
   - Improve spectrometer (should I sum instead of avg?)
 - Improve theming based on current album image
-- Improve library UI
-  - Reduce vertical space of albums with few songs
 - Usability
   - Playing a song, if the queue is identical, should just skip there
   - Scroll should be kept when changing tabs

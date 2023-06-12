@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.musicplayer.data.Song
 
@@ -17,7 +18,11 @@ val BIG_SONG_ROW_DESIRED_WIDTH = 480.dp
 @Composable
 fun BigSongRow(
     maxTrackNumber: Int?,
-    inAlbumContext: Boolean,
+    showTrackNumber: Boolean,
+    showAlbumInfo: Boolean,
+    showArtistInfo: Boolean,
+    showAlbumCover: Boolean = showAlbumInfo,
+    sidePanelPadding: Dp = 16.dp,
     songs: List<Song>,
     sideOffset: Int,
     onSongSelected: (Song) -> Unit,
@@ -32,9 +37,9 @@ fun BigSongRow(
                     Modifier
                         .width(sidePanelW)
                         .padding(
-                            top = 16.dp,
-                            bottom = 16.dp,
-                            start = 16.dp,
+                            top = sidePanelPadding,
+                            bottom = sidePanelPadding,
+                            start = sidePanelPadding,
                         ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -48,9 +53,10 @@ fun BigSongRow(
                             Modifier.padding(end = 4.dp), // Space for scrollbar
                             maxTrackNumber,
                             song,
-                            showTrackNumber = inAlbumContext,
-                            showAlbumInfo = !inAlbumContext,
-                            showArtistInfo = false,
+                            showTrackNumber = showTrackNumber,
+                            showAlbumInfo = showAlbumInfo,
+                            showArtistInfo = showArtistInfo,
+                            showAlbumCover = showAlbumCover,
                             onSongSelected = { onSongSelected(song) })
                     }
                 }
