@@ -30,6 +30,8 @@ TBD
   - Scroll should be kept when changing tabs
   - Option to add a song to queue
   - Remember filter/sort
+- Skip "zeros" at the beginning of the song
+- Upgrade to Material design 3
 - Improve library load speed and memory consumption
 - Packaging
   - [ ] Flatpak
