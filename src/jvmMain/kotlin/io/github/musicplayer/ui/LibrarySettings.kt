@@ -24,8 +24,8 @@ import java.io.File
 
 @Composable
 fun LibrarySettings(close: () -> Unit) {
-    var library by remember { mutableStateOf(Preferences.libraryFolder.value) }
-    val latest by Preferences.libraryFolder.collectAsState()
+    var library by remember { mutableStateOf(Preferences.getLibraryFolder()) }
+    val latest by Preferences.libraryFolder.collectAsState(library)
 
     Window(
         close,

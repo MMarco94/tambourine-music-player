@@ -4,8 +4,10 @@ import androidx.compose.ui.graphics.ImageBitmap
 import io.github.musicplayer.utils.debugElapsed
 import io.github.musicplayer.utils.mostCommonOrNull
 import io.github.musicplayer.utils.orNoop
+import io.github.musicplayer.utils.readFolder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.toList
 import mu.KotlinLogging
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
@@ -161,41 +163,41 @@ data class Library(
             )
         }
 
-        data class LoadingProgress(val loaded: Int, val total: Int) : LibraryState
+        data class LoadingProgress(val loaded: Int) : LibraryState
 
         suspend fun fromFolder(
             folder: File,
             progress: Channel<LibraryState>,
         ): Library = coroutineScope {
             val decoder = CoversDecoder(this + Dispatchers.Default)
-            val songs = logger.debugElapsed("Loading song") {
-                val total = AtomicInteger(0)
+
+            val songs = logger.debugElapsed("Loading songs") {
+                val songsChannel = Channel<RawMetadataSong>(Channel.UNLIMITED)
                 val loaded = AtomicInteger(0)
-                folder.walk()
-                    .filter { it.isFile }
-                    .onEach {
-                        total.incrementAndGet()
-                    }
-                    .map { file ->
-                        async(Dispatchers.IO) {
-                            try {
-                                RawMetadataSong.fromMusicFile(file, decoder)
-                            } catch (e: Exception) {
-                                logger.error("Error while parsing music file: ${e.message}")
-                                null
-                            }.also {
-                                progress.send(LoadingProgress(loaded.incrementAndGet(), total.get()))
+                launch {
+                    coroutineScope {
+                        readFolder(folder) { file ->
+                            launch(Dispatchers.IO) {
+                                try {
+                                    val song = RawMetadataSong.fromMusicFile(file, decoder)
+                                    songsChannel.send(song)
+                                    progress.send(LoadingProgress(loaded.incrementAndGet()))
+                                } catch (e: Exception) {
+                                    logger.error("Error while parsing music file: ${e.message}")
+                                }
                             }
                         }
                     }
-                    .toList()
-                    .awaitAll()
-                    .filterNotNull()
+                    songsChannel.close()
+                }
+                songsChannel.toList()
             }
+
             val library = logger.debugElapsed("Creating library") {
                 from(songs)
             }
             progress.send(library)
+            progress.close()
             library
         }
     }

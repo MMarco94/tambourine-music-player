@@ -218,7 +218,8 @@ class PlayerController(
         coroutineScope.launch(Dispatchers.Default) {
             frequencyAnalyzer.start()
         }
-        coroutineScope.launch(Dispatchers.Default) {
+        // Giving this coroutine a dedicated thread
+        coroutineScope.launch(Dispatchers.Unconfined) {
             val onWaveformComputed: suspend (Song, Waveform) -> Unit = { song, waveform ->
                 commandChannel.send(WaveformComputed(song, waveform))
             }

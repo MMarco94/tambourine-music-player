@@ -14,12 +14,14 @@ class CoversDecoder(
 ) {
 
     private class RawImage(val bytes: ByteArray) {
+        private val hc = bytes.contentHashCode()
+
         override fun equals(other: Any?): Boolean {
-            return other is RawImage && other.bytes.contentEquals(bytes)
+            return other is RawImage && other.hc == hc && other.bytes.contentEquals(bytes)
         }
 
         override fun hashCode(): Int {
-            return bytes.contentHashCode()
+            return hc
         }
     }
 
@@ -27,8 +29,9 @@ class CoversDecoder(
     private val jobs = mutableMapOf<RawImage, Deferred<ImageBitmap?>>()
 
     suspend fun decode(img: ByteArray): Deferred<ImageBitmap?> {
+        val rawImg = RawImage(img)
         return mutex.withLock {
-            jobs.getOrPut(RawImage(img)) {
+            jobs.getOrPut(rawImg) {
                 coroutineScope.async {
                     Image.makeFromEncoded(img).toComposeImageBitmap()
                 }

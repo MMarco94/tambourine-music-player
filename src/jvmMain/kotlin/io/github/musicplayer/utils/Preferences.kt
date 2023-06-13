@@ -1,22 +1,31 @@
 package io.github.musicplayer.utils
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.mapLatest
 import java.io.File
 import java.util.prefs.Preferences
 
 object Preferences {
 
-    private var prefs = Preferences.userRoot().node("/io/github/music-player")
-    private val KEY_LIBRARY = "library_folder"
+    private val prefs by lazy {
+        Preferences.userRoot().node("/io/github/music-player")
+    }
+    private const val KEY_LIBRARY = "library_folder"
+    private val signals = MutableStateFlow(Any())
 
-    val _libraryFolder = MutableStateFlow(
-        File(prefs.get(KEY_LIBRARY, System.getProperty("user.home") + "/Music"))
-    )
-    val libraryFolder: StateFlow<File> get() = _libraryFolder
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val libraryFolder: Flow<File> = signals
+        .mapLatest { getLibraryFolder() }
+        .flowOn(Dispatchers.IO)
+
+    fun getLibraryFolder() = File(prefs.get(KEY_LIBRARY, System.getProperty("user.home") + "/Music"))
 
     fun setLibraryFolder(library: File) {
-        _libraryFolder.value = library
+        signals.value = Any()
         prefs.put(KEY_LIBRARY, library.absolutePath)
         prefs.flush()
     }
