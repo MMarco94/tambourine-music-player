@@ -48,7 +48,6 @@ fun main() = runBlocking {
     SLF4JBridgeHandler.install()
     //System.setProperty("compose.application.configure.swing.globals", "false")
     application {
-        val library by ml.collectAsState(null)
         val cs = rememberCoroutineScope()
         val player = PlayerController(cs)
         CompositionLocalProvider(playerController provides player) {
@@ -63,6 +62,7 @@ fun main() = runBlocking {
                     handleKeypress(cs, event, player) { selectedPanel = it }
                 }
             ) {
+                val library by ml.collectAsState(null)
                 App(library, selectedPanel) { selectedPanel = it }
             }
         }

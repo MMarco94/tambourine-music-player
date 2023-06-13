@@ -11,6 +11,7 @@ import io.github.musicplayer.utils.debugElapsed
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import mu.KotlinLogging
+import kotlin.concurrent.thread
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
@@ -218,40 +219,43 @@ class PlayerController(
         coroutineScope.launch(Dispatchers.Default) {
             frequencyAnalyzer.start()
         }
-        // Giving this coroutine a dedicated thread
-        coroutineScope.launch(Dispatchers.Unconfined) {
-            val onWaveformComputed: suspend (Song, Waveform) -> Unit = { song, waveform ->
-                commandChannel.send(WaveformComputed(song, waveform))
-            }
-            var state = State.initial
-            while (true) {
-                val (newState, shouldPause) = when (val command = commandChannel.tryReceive().getOrNull()) {
-                    is ChangeQueue -> state
-                        .changeQueue(coroutineScope, command.queue, command.position, onWaveformComputed)
-                        .change { copy(processedEvents = command.event + 1) }
-
-                    is Pause -> state.change { copy(processedEvents = command.event + 1, pause = true) }
-                    is Play -> state.change { copy(processedEvents = command.event + 1, pause = false) }
-                    is Seeking -> state.change { copy(processedEvents = command.event + 1, seeking = true) }
-                    is SeekDone -> state.change { copy(processedEvents = command.event + 1, seeking = false) }
-                    is WaveformComputed -> state.change {
-                        copy(
-                            currentlyPlaying = if (currentlyPlaying?.queue?.currentSong == command.song) {
-                                currentlyPlaying.copy(waveform = command.waveform)
-                            } else {
-                                currentlyPlaying
-                            }
-                        )
+        thread {
+            runBlocking {
+                launch {
+                    val onWaveformComputed: suspend (Song, Waveform) -> Unit = { song, waveform ->
+                        commandChannel.send(WaveformComputed(song, waveform))
                     }
+                    var state = State.initial
+                    while (true) {
+                        val (newState, shouldPause) = when (val command = commandChannel.tryReceive().getOrNull()) {
+                            is ChangeQueue -> state
+                                .changeQueue(coroutineScope, command.queue, command.position, onWaveformComputed)
+                                .change { copy(processedEvents = command.event + 1) }
 
-                    null -> state.play(coroutineScope, frequencyAnalyzer, onWaveformComputed)
-                }
-                if (newState != state) {
-                    state = newState
-                    stateChannel.send(state)
-                }
-                if (shouldPause) {
-                    delay(playLoopDelay)
+                            is Pause -> state.change { copy(processedEvents = command.event + 1, pause = true) }
+                            is Play -> state.change { copy(processedEvents = command.event + 1, pause = false) }
+                            is Seeking -> state.change { copy(processedEvents = command.event + 1, seeking = true) }
+                            is SeekDone -> state.change { copy(processedEvents = command.event + 1, seeking = false) }
+                            is WaveformComputed -> state.change {
+                                copy(
+                                    currentlyPlaying = if (currentlyPlaying?.queue?.currentSong == command.song) {
+                                        currentlyPlaying.copy(waveform = command.waveform)
+                                    } else {
+                                        currentlyPlaying
+                                    }
+                                )
+                            }
+
+                            null -> state.play(coroutineScope, frequencyAnalyzer, onWaveformComputed)
+                        }
+                        if (newState != state) {
+                            state = newState
+                            stateChannel.send(state)
+                        }
+                        if (shouldPause) {
+                            delay(playLoopDelay)
+                        }
+                    }
                 }
             }
         }
