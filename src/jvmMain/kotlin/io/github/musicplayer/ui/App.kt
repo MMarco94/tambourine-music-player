@@ -1,4 +1,4 @@
-package io.github.musicplayer.utils
+package io.github.musicplayer.ui
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
@@ -27,8 +27,7 @@ import androidx.compose.ui.unit.dp
 import io.github.musicplayer.audio.Position
 import io.github.musicplayer.data.*
 import io.github.musicplayer.playerController
-import io.github.musicplayer.ui.*
-import io.github.musicplayer.utils.Panel.*
+import io.github.musicplayer.ui.Panel.*
 import kotlinx.coroutines.launch
 
 
@@ -134,8 +133,12 @@ private fun MainContent(
     PanelContainer(modifier, values().toSet(), visiblePanels) { panel ->
         when (panel) {
             LIBRARY -> LibraryContainer(library, openSettings) { library ->
-                val lib = library.filterAndSort(listOptions)
-                val items = lib.toListItems(listOptions)
+                val lib by derivedStateOf {
+                    library.filterAndSort(listOptions)
+                }
+                val items by derivedStateOf {
+                    lib.toListItems(listOptions)
+                }
                 LibraryHeader(Modifier.fillMaxSize(), library, listOptions, setListOptions, openSettings) {
                     SongListUI(lib.stats.maxTrackNumber, items) { song ->
                         cs.launch {

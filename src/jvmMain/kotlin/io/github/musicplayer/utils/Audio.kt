@@ -17,27 +17,21 @@ fun AudioFormat.durationToFrames(duration: Duration) = ((duration / 1.seconds) *
 
 fun decode(bytes: ByteArray, offset: Int, length: Int, format: AudioFormat, channel: Int = 0): DoubleArray {
     // Adapted from https://stackoverflow.com/questions/21470012/apply-fft-to-audio-recording-in-java
+
+    require(format.encoding == AudioFormat.Encoding.PCM_SIGNED)
+    val signMask = -1L shl (format.sampleSizeInBits - 1L).toInt()
     val bytesPerSample: Int = ceil(format.sampleSizeInBits / 8.0).toInt()
-    val transfer = LongArray(length / format.frameSize) { frame ->
+    val fullScale = 1L.shl(format.sampleSizeInBits - 1)
+    return DoubleArray(length / format.frameSize) { frame ->
         val i = frame * format.frameSize + bytesPerSample * channel
         var ret = 0L
         for (b in 0 until bytesPerSample) {
             val actualB = if (format.isBigEndian) bytesPerSample - 1 - b else b
             ret = ret or ((bytes[offset + i + actualB].toLong() and 0xffL) shl (8 * b))
         }
-        ret
-    }
-    require(format.encoding == AudioFormat.Encoding.PCM_SIGNED)
-    val signMask = -1L shl (format.sampleSizeInBits - 1L).toInt()
-    for (i in transfer.indices) {
-        if (transfer[i] and signMask != 0L) {
-            val before = transfer[i]
-            val after = before or signMask
-            transfer[i] = after
-        }
-    }
-    val fullScale = 1L.shl(format.sampleSizeInBits - 1)
-    return DoubleArray(transfer.size) {
-        transfer[it].toDouble() / fullScale
+        val decoded = if (ret and signMask != 0L) {
+            ret or signMask
+        } else ret
+        decoded.toDouble() / fullScale
     }
 }

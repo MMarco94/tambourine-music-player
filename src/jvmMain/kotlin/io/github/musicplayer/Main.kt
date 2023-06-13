@@ -11,8 +11,8 @@ import androidx.compose.ui.window.application
 import io.github.musicplayer.audio.PlayerController
 import io.github.musicplayer.data.Library
 import io.github.musicplayer.data.LibraryState
-import io.github.musicplayer.utils.App
-import io.github.musicplayer.utils.Panel
+import io.github.musicplayer.ui.App
+import io.github.musicplayer.ui.Panel
 import io.github.musicplayer.utils.Preferences
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel

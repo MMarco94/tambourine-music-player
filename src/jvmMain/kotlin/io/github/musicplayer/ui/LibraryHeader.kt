@@ -229,9 +229,9 @@ fun LibraryHeader(
     content: @Composable () -> Unit,
 ) {
     var tab: Tab? by remember { mutableStateOf(null) }
-    val artistRenderer = ArtistOptionsRenderer(ARTIST, library, options, setOptions)
-    val albumRenderer = AlbumOptionsRenderer(ALBUM, library, options, setOptions)
-    val songRenderer = SongOptionsRenderer(SONG, options, setOptions)
+    val artistRenderer by derivedStateOf { ArtistOptionsRenderer(ARTIST, library, options, setOptions) }
+    val albumRenderer by derivedStateOf { AlbumOptionsRenderer(ALBUM, library, options, setOptions) }
+    val songRenderer by derivedStateOf { SongOptionsRenderer(SONG, options, setOptions) }
 
     Column(modifier) {
         Row(Modifier.heightIn(min = 64.dp), verticalAlignment = Alignment.CenterVertically) {

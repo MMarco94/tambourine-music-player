@@ -210,7 +210,7 @@ class PlayerController(
     }
 
     init {
-        coroutineScope.launch {
+        coroutineScope.launch(Dispatchers.Main) {
             for (state in stateChannel) {
                 observableState = state
             }
