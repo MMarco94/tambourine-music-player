@@ -8,6 +8,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import javax.sound.sampled.AudioFormat
 import kotlin.math.absoluteValue
+import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
 
 data class Waveform(
@@ -31,7 +32,8 @@ data class Waveform(
                 val chunk = audio.read(Int.MAX_VALUE) ?: break
                 summaries.forEachIndexed { channel, waveform ->
                     decode(chunk.readData, chunk.offset, chunk.length, format, channel) { frame, _, value ->
-                        val idx = ((decodedFrames + frame).toLong() * summaryLength / totalApproximateFrames).toInt()
+                        val idx =
+                            ((decodedFrames + frame).toLong() * summaryLength / totalApproximateFrames).roundToInt()
                         if (idx in waveform.indices) {
                             waveform[idx] += value.absoluteValue / framesPerSample
                         }
