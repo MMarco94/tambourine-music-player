@@ -41,6 +41,8 @@ kotlin {
                 implementation("net.jthink:jaudiotagger:3.0.1")
                 // FFT
                 implementation("com.tambapps.fft4j:fft4j:2.0")
+                // DBUS APIs
+                implementation("com.github.hypfvieh:dbus-java:3.3.2")
             }
         }
         val jvmTest by getting

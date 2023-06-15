@@ -59,10 +59,10 @@ data class SongQueue(
 
     fun shuffled(): SongQueue {
         return copy(
-            songs = listOf(currentSong) + (songs.subList(0, position + 1) + songs.subList(
-                position + 1,
-                songs.size
-            )).shuffled(),
+            songs = listOf(currentSong) + (
+                    songs.subList(0, position) +
+                            songs.subList(position + 1, songs.size)
+                    ).shuffled(),
             position = 0,
             isShuffled = true,
         )

@@ -48,8 +48,9 @@ class PlayerController(
     private val commandChannel: Channel<PlayerCommand> = Channel(Channel.UNLIMITED)
     private val stateChannel = Channel<State>(Channel.CONFLATED)
     val frequencyAnalyzer = FrequencyAnalyzer()
+    private val mprisPlayer = MPRISPlayerController(coroutineScope, this)
 
-    private data class CurrentlyPlaying(
+    data class CurrentlyPlaying(
         val queue: SongQueue,
         val player: Player,
         val bufferer: Job,
@@ -57,7 +58,7 @@ class PlayerController(
         val waveform: Waveform? = null,
     )
 
-    private data class State(
+    data class State(
         val processedEvents: Long,
         val currentlyPlaying: CurrentlyPlaying?,
         val position: Duration,
@@ -193,10 +194,6 @@ class PlayerController(
         sendCommand(ChangeQueue(sentEvents++, queue, position))
     }
 
-    private suspend fun sendCommand(command: PlayerCommand) {
-        commandChannel.send(command)
-    }
-
     fun startSeek(queue: SongQueue?, position: Duration) {
         val se = sentEvents
         sentEvents += 2
@@ -211,10 +208,15 @@ class PlayerController(
         sendCommand(SeekDone(sentEvents++))
     }
 
+    private suspend fun sendCommand(command: PlayerCommand) {
+        commandChannel.send(command)
+    }
+
     init {
         coroutineScope.launch(Dispatchers.Main) {
             for (state in stateChannel) {
                 observableState = state
+                mprisPlayer.setState(state)
             }
         }
         coroutineScope.launch(Dispatchers.Default) {
@@ -260,5 +262,6 @@ class PlayerController(
                 }
             }
         }
+        mprisPlayer.exportAs("music-player")
     }
 }
