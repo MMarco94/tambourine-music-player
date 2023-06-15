@@ -128,6 +128,7 @@ class PlayerController(
                     queue.currentSong.audioStream()
                 }
                 currentlyPlaying?.bufferer?.cancel()
+                currentlyPlaying?.waveformCreator?.cancel()
                 val input = AsyncAudioInputStream(stream, 2)
                 val player = Player.create(stream.format, input.readers[0], currentlyPlaying?.player, buffer)
                 val bufferer = cs.launch(Dispatchers.IO) {

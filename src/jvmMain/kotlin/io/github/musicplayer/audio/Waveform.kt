@@ -18,20 +18,20 @@ data class Waveform(
         const val summaryLength = 480
 
         suspend fun fromStream(audio: AsyncAudioInputStream.Reader, format: AudioFormat): Waveform {
-            val allDecoded = List(format.channels) {
+            val channels = List(format.channels) {
                 mutableListOf<DoubleArray>()
             }
             while (true) {
                 val chunk = audio.read(Int.MAX_VALUE) ?: break
-                allDecoded.forEachIndexed { channel, all ->
+                channels.forEachIndexed { channel, decodedSoFar ->
                     val decoded = decode(chunk.readData, chunk.offset, chunk.length, format, channel)
                         .mapInPlace { it.absoluteValue }
-                    all.add(decoded)
+                    decodedSoFar.add(decoded)
                 }
             }
 
             return coroutineScope {
-                val concatenatedAndSummarized = allDecoded.map {
+                val concatenatedAndSummarized = channels.map {
                     async {
                         val concatenate = it.concatenate()
                         concatenate to summarize(concatenate, summaryLength)

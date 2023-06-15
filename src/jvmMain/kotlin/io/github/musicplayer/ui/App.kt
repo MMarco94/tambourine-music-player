@@ -1,8 +1,10 @@
 package io.github.musicplayer.ui
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,24 +43,22 @@ enum class Panel(
 }
 
 /**
- * If the first frame of the app is slow to draw, the windows is a bit buggy.
- * Use this function to make sure the first frame is rendered with an alternative function
+ * If the first frames of the app are slow to draw, the windows is a bit buggy.
+ * Use this function to know whether the composable should be fast to render
  */
 @Composable
-private fun DelayDraw(firstFrame: @Composable () -> Unit, f: @Composable () -> Unit) {
-    var drawn by remember { mutableStateOf(false) }
-    Crossfade(drawn) {
-        if (!it) {
-            Canvas(Modifier) {
-                drawn = true
-            }
-            firstFrame()
-        } else {
-            f()
+private fun DelayDraw(f: @Composable (shouldRenderQuickly: Boolean) -> Unit) {
+    var drawCount by remember { mutableStateOf(0) }
+    val shouldRenderQuickly = drawCount < 3
+    if (shouldRenderQuickly) {
+        Canvas(Modifier) {
+            drawCount++
         }
     }
+    f(shouldRenderQuickly)
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun App(
     library: LibraryState?,
@@ -83,36 +83,41 @@ fun App(
             )
         ) {
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                if (library !is Library && player.queue == null) {
-                    LoadingLibraryComposable(library) { openSettings = true }
-                } else {
-                    BlurredFadeAlbumCover(player.queue?.currentSong?.cover, Modifier.fillMaxSize())
-                    DelayDraw({ }) {
-                        BoxWithConstraints {
-                            val w = constraints.maxWidth
-                            val large = w >= (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPxApprox()
-                            val visiblePanels = if (large) {
-                                listOf(selectedPanel, PLAYER).distinct()
-                            } else {
-                                listOf(selectedPanel)
-                            }
-                            Column {
-                                MainContent(
-                                    Modifier.fillMaxWidth().weight(1f),
-                                    visiblePanels,
-                                    library,
-                                    listOptions,
-                                    { listOptions = it }) {
-                                    openSettings = true
+                BlurredFadeAlbumCover(player.queue?.currentSong?.cover, Modifier.fillMaxSize())
+                DelayDraw { shouldRenderQuickly ->
+                    val transition = updateTransition(Triple(shouldRenderQuickly, library, player.queue))
+                    transition.Crossfade(contentKey = { (srq, lib, q) ->
+                        srq || (lib !is Library && q == null)
+                    }) { (srq, lib, q) ->
+                        if (srq || (lib !is Library && q == null)) {
+                            LoadingLibraryComposable(lib) { openSettings = true }
+                        } else {
+                            BoxWithConstraints {
+                                val w = constraints.maxWidth
+                                val large = w >= (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPxApprox()
+                                val visiblePanels = if (large) {
+                                    listOf(selectedPanel, PLAYER).distinct()
+                                } else {
+                                    listOf(selectedPanel)
                                 }
-                                Divider()
-                                BottomBar(large, selectedPanel, visiblePanels, selectPanel)
+                                Column {
+                                    MainContent(
+                                        Modifier.fillMaxWidth().weight(1f),
+                                        visiblePanels,
+                                        lib,
+                                        listOptions,
+                                        { listOptions = it }) {
+                                        openSettings = true
+                                    }
+                                    Divider()
+                                    BottomBar(large, selectedPanel, visiblePanels, selectPanel)
+                                }
                             }
                         }
                     }
-                    if (openSettings) {
-                        LibrarySettings { openSettings = false }
-                    }
+                }
+                if (openSettings) {
+                    LibrarySettings { openSettings = false }
                 }
             }
         }

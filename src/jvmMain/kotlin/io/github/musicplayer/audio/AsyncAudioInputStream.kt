@@ -3,6 +3,7 @@ package io.github.musicplayer.audio
 import io.github.musicplayer.utils.AppendOnlyList
 import io.github.musicplayer.utils.toIntOrMax
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.yield
 import javax.sound.sampled.AudioInputStream
 
 class Chunk(
@@ -38,6 +39,8 @@ class AsyncAudioInputStream(
                     require(it.channel.trySend(state).isSuccess)
                 }
             }
+            // Giving opportunities for this coroutine to be cancelled
+            yield()
         } while (read >= 0)
         val state = BufferState(chunks, true)
         readers.forEach {
