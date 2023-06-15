@@ -15,14 +15,29 @@ fun AudioFormat.framesToDuration(frames: Long) = (frames / frameRate * 100000000
 fun AudioFormat.durationToFrames(duration: Duration) = ((duration / 1.seconds) * frameRate).roundToLong()
 
 
-fun decode(bytes: ByteArray, offset: Int, length: Int, format: AudioFormat, channel: Int = 0): DoubleArray {
+fun decodeToArray(bytes: ByteArray, offset: Int, length: Int, format: AudioFormat, channel: Int = 0): DoubleArray {
+    val ret = DoubleArray(length / format.frameSize)
+    decode(bytes, offset, length, format, channel) { frame: Int, _: Long, scaledValue: Double ->
+        ret[frame] = scaledValue
+    }
+    return ret
+}
+
+inline fun decode(
+    bytes: ByteArray,
+    offset: Int,
+    length: Int,
+    format: AudioFormat,
+    channel: Int = 0,
+    consumer: (frame: Int, absoluteValue: Long, scaledValue: Double) -> Unit
+) {
     // Adapted from https://stackoverflow.com/questions/21470012/apply-fft-to-audio-recording-in-java
 
     require(format.encoding == AudioFormat.Encoding.PCM_SIGNED)
     val signMask = -1L shl (format.sampleSizeInBits - 1L).toInt()
     val bytesPerSample: Int = ceil(format.sampleSizeInBits / 8.0).toInt()
     val fullScale = 1L.shl(format.sampleSizeInBits - 1)
-    return DoubleArray(length / format.frameSize) { frame ->
+    repeat(length / format.frameSize) { frame ->
         val i = frame * format.frameSize + bytesPerSample * channel
         var ret = 0L
         for (b in 0 until bytesPerSample) {
@@ -32,6 +47,6 @@ fun decode(bytes: ByteArray, offset: Int, length: Int, format: AudioFormat, chan
         val decoded = if (ret and signMask != 0L) {
             ret or signMask
         } else ret
-        decoded.toDouble() / fullScale
+        consumer(frame, decoded, decoded.toDouble() / fullScale)
     }
 }

@@ -1,7 +1,6 @@
 package io.github.musicplayer.audio
 
-import io.github.musicplayer.utils.avgInRange
-import io.github.musicplayer.utils.concatenate
+import io.github.musicplayer.data.Song
 import io.github.musicplayer.utils.decode
 import io.github.musicplayer.utils.mapInPlace
 import kotlinx.coroutines.async
@@ -9,50 +8,48 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import javax.sound.sampled.AudioFormat
 import kotlin.math.absoluteValue
+import kotlin.time.DurationUnit
 
 data class Waveform(
-    val decodedAudioChannel: List<DoubleArray>,
-    val summaryChannel: List<DoubleArray>,
+    val waveformsPerChannel: List<DoubleArray>,
 ) {
     companion object {
         const val summaryLength = 480
 
-        suspend fun fromStream(audio: AsyncAudioInputStream.Reader, format: AudioFormat): Waveform {
-            val channels = List(format.channels) {
-                mutableListOf<DoubleArray>()
+        suspend fun fromStream(
+            audio: AsyncAudioInputStream.Reader,
+            format: AudioFormat,
+            song: Song,
+        ): Waveform {
+            val totalApproximateFrames = song.length.toDouble(DurationUnit.SECONDS) * format.sampleRate
+            val framesPerSample = totalApproximateFrames / summaryLength
+            val summaries = List(format.channels) {
+                DoubleArray(summaryLength)
             }
+            var decodedFrames = 0
             while (true) {
                 val chunk = audio.read(Int.MAX_VALUE) ?: break
-                channels.forEachIndexed { channel, decodedSoFar ->
-                    val decoded = decode(chunk.readData, chunk.offset, chunk.length, format, channel)
-                        .mapInPlace { it.absoluteValue }
-                    decodedSoFar.add(decoded)
+                summaries.forEachIndexed { channel, waveform ->
+                    decode(chunk.readData, chunk.offset, chunk.length, format, channel) { frame, _, value ->
+                        val idx = ((decodedFrames + frame).toLong() * summaryLength / totalApproximateFrames).toInt()
+                        if (idx in waveform.indices) {
+                            waveform[idx] += value.absoluteValue / framesPerSample
+                        }
+                    }
                 }
+                decodedFrames += chunk.length / format.frameSize
             }
 
+            // Rescaling, as the avg will bring the max down
             return coroutineScope {
-                val concatenatedAndSummarized = channels.map {
+                val scaled = summaries.map {
                     async {
-                        val concatenate = it.concatenate()
-                        concatenate to summarize(concatenate, summaryLength)
+                        val max = maxOf(.5, it.max())
+                        it.mapInPlace { it / max }
                     }
                 }.awaitAll()
-                Waveform(
-                    concatenatedAndSummarized.map { it.first },
-                    concatenatedAndSummarized.map { it.second },
-                )
+                Waveform(scaled)
             }
-        }
-
-        private fun summarize(arr: DoubleArray, size: Int): DoubleArray {
-            val ret = DoubleArray(size) { chunk ->
-                val start = chunk.toDouble() / size
-                val end = (chunk + 1).toDouble() / size
-                arr.avgInRange(start * arr.size, end * arr.size)
-            }
-            // Rescaling, as the avg will bring the max down
-            val max = maxOf(.5, ret.max())
-            return ret.mapInPlace { it / max }
         }
     }
 }

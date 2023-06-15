@@ -124,8 +124,8 @@ class PlayerController(
             val new = queue.currentSong
 
             val newCp = if (currentlyPlaying?.queue?.currentSong != new) {
-                val stream = logger.debugElapsed("Opening song ${queue.currentSong.title}") {
-                    queue.currentSong.audioStream()
+                val stream = logger.debugElapsed("Opening song ${new.title}") {
+                    new.audioStream()
                 }
                 currentlyPlaying?.bufferer?.cancel()
                 currentlyPlaying?.waveformCreator?.cancel()
@@ -138,7 +138,7 @@ class PlayerController(
                 }
                 val waveformCreator = cs.launch(Dispatchers.Default) {
                     logger.debugElapsed("Computing waveform for ${new.title}") {
-                        val waveform = Waveform.fromStream(input.readers[1], stream.format)
+                        val waveform = Waveform.fromStream(input.readers[1], stream.format, new)
                         onWaveformComputed(new, waveform)
                     }
                 }

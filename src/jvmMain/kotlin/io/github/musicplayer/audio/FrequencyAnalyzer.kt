@@ -4,7 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.tambapps.fft4j.FastFouriers
-import io.github.musicplayer.utils.decode
+import io.github.musicplayer.utils.decodeToArray
 import io.github.musicplayer.utils.mapInPlace
 import kotlinx.coroutines.channels.Channel
 import javax.sound.sampled.AudioFormat
@@ -33,7 +33,12 @@ class FrequencyAnalyzer {
     suspend fun start() {
         for (audioData in audioChannel) {
             val sample =
-                decode(audioData.chunk.readData, audioData.chunk.offset, audioData.chunk.length, audioData.format)
+                decodeToArray(
+                    audioData.chunk.readData,
+                    audioData.chunk.offset,
+                    audioData.chunk.length,
+                    audioData.format
+                )
             if (sample.size < samples.size) {
                 samples.copyInto(samples, 0, sample.size)
             }

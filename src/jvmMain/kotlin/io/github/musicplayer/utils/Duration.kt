@@ -3,6 +3,7 @@ package io.github.musicplayer.utils
 import kotlin.math.absoluteValue
 import kotlin.math.roundToLong
 import kotlin.time.Duration
+import kotlin.time.DurationUnit
 
 
 fun Duration.format(): String {
@@ -23,3 +24,13 @@ fun Duration.format(): String {
         "${h}h ${min.mod(60)}m ${sec}s"
     }
 }
+
+inline fun <T> Iterable<T>.sumOfDuration(selector: (T) -> Duration): Duration {
+    var sum: Duration = Duration.ZERO
+    for (element in this) {
+        sum += selector(element)
+    }
+    return sum
+}
+
+fun Duration.toFloat(unit: DurationUnit) = toDouble(unit).toFloat()

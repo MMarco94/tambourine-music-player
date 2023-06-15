@@ -34,12 +34,14 @@ import io.github.musicplayer.playerController
 import io.github.musicplayer.utils.format
 import io.github.musicplayer.utils.getOrZero
 import io.github.musicplayer.utils.progress
+import io.github.musicplayer.utils.toFloat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.DurationUnit
 
 @Composable
 fun PlayerUI(
@@ -169,8 +171,8 @@ private fun Seeker(
                     }
                 }
             },
-            value = player.position.inWholeMilliseconds.toFloat(),
-            valueRange = 0f..song.length.inWholeMilliseconds.toFloat(),
+            value = player.position.toFloat(DurationUnit.MILLISECONDS),
+            valueRange = 0f..song.length.toFloat(DurationUnit.MILLISECONDS),
             onValueChange = {
                 player.startSeek(queue, it.roundToInt().milliseconds)
             },
@@ -222,8 +224,8 @@ private fun WaveformUI(
     activePercent: Density.(Size) -> Float,
     mousePercent: (Density.(Size) -> Float)?,
 ) {
-    val left: DoubleArray? = wf?.summaryChannel?.first()
-    val right: DoubleArray? = wf?.summaryChannel?.getOrNull(1) ?: left
+    val left: DoubleArray? = wf?.waveformsPerChannel?.first()
+    val right: DoubleArray? = wf?.waveformsPerChannel?.getOrNull(1) ?: left
     Column(modifier) {
         SingleWaveformUI(left, false, activePercent, mousePercent)
         SingleWaveformUI(right, true, activePercent, mousePercent)
