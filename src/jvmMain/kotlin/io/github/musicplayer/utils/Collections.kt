@@ -37,7 +37,7 @@ inline fun DoubleArray.mapInPlace(f: (Double) -> Double): DoubleArray {
 fun <K, V> Map<K, V>.diff(another: Map<K, V>): Map<K, V> {
     val new = this
     return buildMap {
-        new.forEach { k, v ->
+        new.forEach { (k, v) ->
             if (k !in another || another.getValue(k) != v) {
                 put(k, v)
             }
