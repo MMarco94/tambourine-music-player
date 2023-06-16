@@ -5,8 +5,8 @@ import org.freedesktop.dbus.types.Variant
 import org.mpris.MediaPlayer2.LoopStatus
 
 class MPRISProperties(
-    private var mprisState: MPRISState,
-    private var mprisPlayerState: MPRISPlayerState,
+    var mprisState: MPRISState,
+    var mprisPlayerState: MPRISPlayerState,
     private val setFullscreen: (fullscreen: Boolean) -> Unit,
     private val setLoopStatus: (loopStatus: LoopStatus) -> Unit,
     private val setRate: (rate: Double) -> Unit,
@@ -16,22 +16,6 @@ class MPRISProperties(
 
     override fun getObjectPath() = "/org/mpris/MediaPlayer2"
     override fun isRemote() = false
-
-    fun setState(mprisState: MPRISState): Properties.PropertiesChanged? {
-        return if (this.mprisState != mprisState) {
-            val diff = mprisState.diff(this.mprisState)
-            this.mprisState = mprisState
-            diff
-        } else null
-    }
-
-    fun setPlayerState(mprisPlayerState: MPRISPlayerState): Properties.PropertiesChanged? {
-        return if (this.mprisPlayerState != mprisPlayerState) {
-            val diff = mprisPlayerState.diff(this.mprisPlayerState)
-            this.mprisPlayerState = mprisPlayerState
-            diff
-        } else null
-    }
 
     override fun GetAll(interfaceName: String): Map<String, Variant<*>> {
         return when (interfaceName) {

@@ -26,6 +26,7 @@ kotlin {
                 implementation(compose.desktop.currentOs)
                 api(compose.materialIconsExtended)
                 api(compose.material3)
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
 
                 // File picker
                 implementation("com.darkrockstudios:mpfilepicker:1.1.0")

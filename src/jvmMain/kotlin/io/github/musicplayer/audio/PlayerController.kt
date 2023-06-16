@@ -12,7 +12,6 @@ import io.github.musicplayer.utils.debugElapsed
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import mu.KotlinLogging
-import java.io.File
 import kotlin.concurrent.thread
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
@@ -38,7 +37,6 @@ private sealed interface PlayerCommand {
     class Seeking(val event: Long) : PlayerCommand
     class SeekDone(val event: Long) : PlayerCommand
     class WaveformComputed(val song: Song, val waveform: Waveform) : PlayerCommand
-    class AlbumCoverSavedComputed(val song: Song, val albumCoverFile: File) : PlayerCommand
 }
 
 private val buffer = 64.milliseconds
@@ -65,9 +63,7 @@ class PlayerController(
         val player: Player,
         val bufferer: Job,
         val waveformCreator: Job,
-        val albumCoverSaver: Job,
         val waveform: Waveform? = null,
-        val albumCoverFile: File? = null,
     )
 
     data class State(
@@ -97,7 +93,6 @@ class PlayerController(
             cs: CoroutineScope,
             frequencyAnalyzer: FrequencyAnalyzer,
             onWaveformComputed: suspend (Song, Waveform) -> Unit,
-            onAlbumCoverComputed: suspend (Song, File) -> Unit,
         ): StateChangeResult {
             return if (currentlyPlaying != null && !pause) {
                 val result = currentlyPlaying.player.playFrame()
@@ -106,7 +101,7 @@ class PlayerController(
                 }
                 if (result == Player.PlayResult.Finished && !seeking) {
                     val (next, keepPlaying) = currentlyPlaying.queue.nextInQueue()
-                    changeQueue(cs, next, Position.Beginning, onWaveformComputed, onAlbumCoverComputed)
+                    changeQueue(cs, next, Position.Beginning, onWaveformComputed)
                         .change { copy(pause = this.pause || !keepPlaying) }
                 } else {
                     StateChangeResult(
@@ -124,7 +119,6 @@ class PlayerController(
             queue: SongQueue?,
             position: Position,
             onWaveformComputed: suspend (Song, Waveform) -> Unit,
-            onAlbumCoverComputed: suspend (Song, File) -> Unit,
         ): StateChangeResult {
             if (queue == null) {
                 currentlyPlaying?.apply {
@@ -132,7 +126,6 @@ class PlayerController(
                     player.stop()
                     bufferer.cancel()
                     waveformCreator.cancel()
-                    albumCoverSaver.cancel()
                 }
                 return StateChangeResult(State(processedEvents, null, ZERO, true, seeking), true)
             }
@@ -145,7 +138,6 @@ class PlayerController(
                 }
                 currentlyPlaying?.bufferer?.cancel()
                 currentlyPlaying?.waveformCreator?.cancel()
-                currentlyPlaying?.albumCoverSaver?.cancel()
                 val input = AsyncAudioInputStream(stream, 2)
                 val player = Player.create(stream.format, input.readers[0], currentlyPlaying?.player, buffer)
                 val bufferer = cs.launch(Dispatchers.IO) {
@@ -159,17 +151,11 @@ class PlayerController(
                         onWaveformComputed(new, waveform)
                     }
                 }
-                val albumCoverSaver = cs.launch(Dispatchers.IO) {
-                    val file = new.album.cover?.file
-                    if (file != null) onAlbumCoverComputed(new, file)
-                }
                 CurrentlyPlaying(
                     queue,
                     player,
                     bufferer,
                     waveformCreator,
-                    albumCoverSaver,
-                    albumCoverFile = new.cover?.fileOrNull
                 )
             } else {
                 currentlyPlaying.copy(queue = queue)
@@ -255,9 +241,6 @@ class PlayerController(
                     val onWaveformComputed: suspend (Song, Waveform) -> Unit = { song, waveform ->
                         commandChannel.send(WaveformComputed(song, waveform))
                     }
-                    val onAlbumCoverComputed: suspend (Song, File) -> Unit = { song, albumCover ->
-                        commandChannel.send(AlbumCoverSavedComputed(song, albumCover))
-                    }
                     var state = State.initial
                     while (true) {
                         val (newState, shouldPause) = when (val command = commandChannel.tryReceive().getOrNull()) {
@@ -267,7 +250,6 @@ class PlayerController(
                                     command.queue,
                                     command.position,
                                     onWaveformComputed,
-                                    onAlbumCoverComputed
                                 )
                                 .change { copy(processedEvents = command.event + 1) }
 
@@ -285,21 +267,10 @@ class PlayerController(
                                 )
                             }
 
-                            is AlbumCoverSavedComputed -> state.change {
-                                copy(
-                                    currentlyPlaying = if (currentlyPlaying?.queue?.currentSong == command.song) {
-                                        currentlyPlaying.copy(albumCoverFile = command.albumCoverFile)
-                                    } else {
-                                        currentlyPlaying
-                                    }
-                                )
-                            }
-
                             null -> state.play(
                                 coroutineScope,
                                 frequencyAnalyzer,
                                 onWaveformComputed,
-                                onAlbumCoverComputed
                             )
                         }
                         if (newState != state) {
@@ -313,6 +284,6 @@ class PlayerController(
                 }
             }
         }
-        mprisPlayer.export()
+        mprisPlayer.start()
     }
 }

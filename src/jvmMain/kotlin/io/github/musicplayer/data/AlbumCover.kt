@@ -8,22 +8,27 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import mu.KotlinLogging
 import org.jetbrains.skia.Image
 import java.io.File
 import javax.imageio.ImageIO
 
+private val logger = KotlinLogging.logger {}
+
 data class AlbumCover(
     val image: ImageBitmap,
 ) {
-    private val lazyFile = lazy {
-        val f = File.createTempFile("album-cover-", ".png")
-        val img = image.toAwtImage()
-        require(ImageIO.write(img, "png", f))
-        f
+    val file: File? by lazy {
+        try {
+            val f = File.createTempFile("album-cover-", ".png")
+            val img = image.toAwtImage()
+            require(ImageIO.write(img, "png", f))
+            f
+        } catch (e: Exception) {
+            logger.error { "Error saving image: $e" }
+            null
+        }
     }
-    val file: File by lazyFile
-
-    val fileOrNull: File? get() = if (lazyFile.isInitialized()) file else null
 }
 
 class CoversDecoder(

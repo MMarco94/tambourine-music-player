@@ -37,16 +37,17 @@ data class MPRISMetadata(
     }.variant()
 }
 
-fun Song.mprisMetadata(albumCover: File? = this.cover?.fileOrNull): MPRISMetadata {
+
+fun Song.mprisTrackId() = "/io/github/MMarco94/music-player/" + hashCode().toString()
+fun Song.mprisMetadata(): MPRISMetadata {
     return MPRISMetadata(
-        // TODO: a better ID
-        trackId = "/io/github/MMarco94/music-player/" + hashCode().toString(),
+        trackId = mprisTrackId(),
         length = length,
         artist = listOf(artist.name),
         albumArtist = listOf(artist.name),
         album = album.title,
         title = title,
         discNumber = track?.toLong(),
-        artUrl = albumCover,
+        artUrl = cover?.file,
     )
 }
