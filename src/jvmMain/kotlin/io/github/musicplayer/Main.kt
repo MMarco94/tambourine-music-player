@@ -46,10 +46,16 @@ fun main() = runBlocking {
 
     SLF4JBridgeHandler.removeHandlersForRootLogger()
     SLF4JBridgeHandler.install()
-    //System.setProperty("compose.application.configure.swing.globals", "false")
+    System.setProperty("compose.application.configure.swing.globals", "false")
     application {
         val cs = rememberCoroutineScope()
-        val player = PlayerController(cs)
+        // Using `alwaysOnTop` is the most reliable method. awt.Window.toFront() doesn't work :(
+        var bringToTop by remember { mutableStateOf(false) }
+        val player = PlayerController(
+            cs,
+            quit = { exitApplication() },
+            raise = { bringToTop = true }
+        )
         CompositionLocalProvider(playerController provides player) {
             var selectedPanel by remember { mutableStateOf(Panel.LIBRARY) }
             Window(
@@ -60,7 +66,8 @@ fun main() = runBlocking {
                 },
                 onPreviewKeyEvent = { event ->
                     handleKeypress(cs, event, player) { selectedPanel = it }
-                }
+                },
+                alwaysOnTop = bringToTop.also { bringToTop = false }
             ) {
                 val library by ml.collectAsState(null)
                 App(library, selectedPanel) { selectedPanel = it }

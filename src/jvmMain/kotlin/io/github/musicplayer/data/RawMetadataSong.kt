@@ -1,6 +1,5 @@
 package io.github.musicplayer.data
 
-import androidx.compose.ui.graphics.ImageBitmap
 import io.github.musicplayer.utils.trimToNull
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
@@ -19,7 +18,7 @@ data class RawMetadataSong(
     val artist: String?,
     val albumArtist: String?,
     override val year: Int?,
-    val cover: Deferred<ImageBitmap?>,
+    val cover: Deferred<AlbumCover?>,
 ) : BaseSong {
     val nnTitle get() = title ?: file.nameWithoutExtension
     val nnAlbum get() = album ?: "Unknown"

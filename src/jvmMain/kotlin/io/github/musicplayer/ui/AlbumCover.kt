@@ -10,16 +10,16 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import io.github.musicplayer.data.AlbumCover
 
 @Composable
 fun AlbumCover(
-    cover: ImageBitmap?,
+    cover: AlbumCover?,
     modifier: Modifier,
     shape: Shape = RectangleShape,
     elevation: Dp = 0.dp,
@@ -29,7 +29,7 @@ fun AlbumCover(
         if (cover != null) {
             key(cover) {
                 Image(
-                    cover,
+                    cover.image,
                     null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
@@ -42,10 +42,10 @@ fun AlbumCover(
 }
 
 @Composable
-fun BlurredAlbumCover(cover: ImageBitmap?, modifier: Modifier) {
+fun BlurredAlbumCover(cover: AlbumCover?, modifier: Modifier) {
     if (cover != null) {
         Image(
-            cover,
+            cover.image,
             null,
             alpha = .3f,
             modifier = modifier.blur(64.dp),
@@ -56,7 +56,7 @@ fun BlurredAlbumCover(cover: ImageBitmap?, modifier: Modifier) {
 }
 
 @Composable
-fun BlurredFadeAlbumCover(cover: ImageBitmap?, modifier: Modifier) {
+fun BlurredFadeAlbumCover(cover: AlbumCover?, modifier: Modifier) {
     Crossfade(cover) { c ->
         BlurredAlbumCover(c, modifier)
     }

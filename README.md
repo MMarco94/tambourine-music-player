@@ -14,10 +14,8 @@ TBD
 
 ## Roadmap
 
-- Integration with the OS
-  - [ ] Media notification (https://specifications.freedesktop.org/mpris-spec/latest/)
-  - [ ] Media keys
-  - [ ] Background API?
+- MPRIS(https://specifications.freedesktop.org/mpris-spec/latest/)
+  - Implement remaining functions
 - Search
 - Metadata
   - Disk n°
@@ -25,17 +23,18 @@ TBD
 - Usability
   - Playing a song, if the queue is identical, should just skip there
   - Scroll should be kept when changing tabs
-  - Option to add a song to queue
-  - Remember filter/sort
+  - Option to add a song to current queue
+  - Persist filter/sort
 - Dynamically reload library if files change
 - Drag&drop and open files outside the library
 - Skip "zeros" at the beginning of the song
 - Improve theming based on current album image (https://github.com/SvenWoltmann/color-thief-java ?)
+- UI for empty library
 - Packaging
   - [ ] Flatpak
   - [ ] ...
-- Improve queue UI
-  - Drag & drop
+- Drag & drop in queue UI
 - Spectrometer
+- [ ] Background API?
 
 

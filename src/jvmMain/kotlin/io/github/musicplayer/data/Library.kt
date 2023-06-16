@@ -1,6 +1,5 @@
 package io.github.musicplayer.data
 
-import androidx.compose.ui.graphics.ImageBitmap
 import io.github.musicplayer.utils.debugElapsed
 import io.github.musicplayer.utils.mostCommonOrNull
 import io.github.musicplayer.utils.orNoop
@@ -30,7 +29,7 @@ data class Artist(
 data class Album(
     val title: String,
     val artist: Artist,
-    val cover: ImageBitmap?,
+    val cover: AlbumCover?,
     val stats: SongCollectionStats,
 ) {
     fun matches(artist: Artist?, album: Album?): Boolean {
@@ -43,7 +42,7 @@ data class Song(
     override val track: Int?,
     val title: String,
     val album: Album,
-    val cover: ImageBitmap?,
+    val cover: AlbumCover?,
     override val length: Duration,
     override val year: Int?,
 ) : BaseSong {

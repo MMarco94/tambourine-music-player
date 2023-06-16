@@ -16,6 +16,8 @@ import kotlin.time.Duration.Companion.microseconds
 class MPRISPlayerController(
     private val cs: CoroutineScope,
     private val playerController: PlayerController,
+    private val quit: () -> Unit,
+    private val raise: () -> Unit,
     private val properties: MPRISProperties = MPRISProperties(
         mprisState = MPRISState(
             canQuit = true,
@@ -26,7 +28,7 @@ class MPRISPlayerController(
             identity = "Music Player",
             desktopEntry = "TODO",//TODO
             supportedUriSchemes = listOf("file"),
-            supportedMimeTypes = listOf("audio/mpeg", "audio/mp4"),//TODO
+            supportedMimeTypes = listOf("audio/mpeg", "audio/mp3"),//TODO
         ),
         mprisPlayerState = MPRISPlayerState(
             playbackStatus = PlaybackStatus.Stopped,
@@ -103,7 +105,7 @@ class MPRISPlayerController(
                 },
                 rate = 1.0,
                 shuffle = state.currentlyPlaying != null && state.currentlyPlaying.queue.isShuffled,
-                metadata = currentSong?.mprisMetadata(),
+                metadata = currentSong?.mprisMetadata(state.currentlyPlaying.albumCoverFile),
                 volume = 1.0,
                 position = state.position,
                 minimumRate = 1.0,
@@ -164,28 +166,33 @@ class MPRISPlayerController(
     }
 
     override fun Seek(x: Long) {
-        // TODO: "If the value passed in would mean seeking beyond the end of the track, acts like a call to Next"
         cs.launch {
-            val pos = (playerController.position + x.microseconds).coerceAtLeast(ZERO)
-            playerController.changeQueue(playerController.queue, Position.Specific(pos))
+            val current = playerController.queue
+            if (current != null) {
+                val pos = (playerController.position + x.microseconds).coerceAtLeast(ZERO)
+                if (pos > current.currentSong.length) {
+                    playerController.changeQueue(current.next(), Position.Beginning)
+                } else {
+                    playerController.changeQueue(current, Position.Specific(pos))
+                }
+            }
         }
     }
 
     override fun SetPosition(trackId: TrackId, x: Long) {
-        // TODO: "If this does not match the id of the currently-playing track, the call is ignored as "stale""
         cs.launch {
-            playerController.changeQueue(playerController.queue, Position.Specific(x.microseconds))
+            if (playerController.queue?.currentSong?.mprisMetadata()?.trackId == trackId) {
+                playerController.changeQueue(playerController.queue, Position.Specific(x.microseconds))
+            }
         }
     }
 
     override fun Raise() {
-        //TODO
-        println("Raise")
+        raise()
     }
 
     override fun Quit() {
-        //TODO
-        println("Quit")
+        quit()
     }
 
     override fun OpenUri(uri: String) {
