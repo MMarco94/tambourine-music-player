@@ -5,7 +5,7 @@ plugins {
     id("org.jetbrains.compose")
 }
 
-group = "io.github"
+group = "io.github.MMarco94"
 version = "1.0-SNAPSHOT"
 
 repositories {

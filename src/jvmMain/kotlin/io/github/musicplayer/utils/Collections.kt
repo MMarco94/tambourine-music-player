@@ -30,3 +30,17 @@ inline fun DoubleArray.mapInPlace(f: (Double) -> Double): DoubleArray {
     onEachIndexed { index, d -> this[index] = f(d) }
     return this
 }
+
+/**
+ * Returns the map with the entries that were added or changed
+ */
+fun <K, V> Map<K, V>.diff(another: Map<K, V>): Map<K, V> {
+    val new = this
+    return buildMap {
+        new.forEach { k, v ->
+            if (k !in another || another.getValue(k) != v) {
+                put(k, v)
+            }
+        }
+    }
+}

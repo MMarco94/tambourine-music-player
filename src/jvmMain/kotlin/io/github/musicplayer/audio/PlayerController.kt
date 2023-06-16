@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import io.github.musicplayer.audio.PlayerCommand.*
 import io.github.musicplayer.data.Song
 import io.github.musicplayer.data.SongQueue
+import io.github.musicplayer.mpris.MPRISPlayerController
 import io.github.musicplayer.utils.debugElapsed
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -262,6 +263,6 @@ class PlayerController(
                 }
             }
         }
-        mprisPlayer.exportAs("music-player")
+        mprisPlayer.export()
     }
 }
