@@ -90,6 +90,7 @@ private inline fun DrawScope.spectrometerDrawer(
 fun SmallSpectrometers(
     modifier: Modifier,
     frequencies: DoubleArray,
+    color: Color = Color.White,
 ) {
     val boost = 2f
     val chunks = 3
@@ -99,7 +100,7 @@ fun SmallSpectrometers(
         spectrometerDrawer(chunks, frequencies, boost) { s, e, a ->
             val h = (.1f + a * .9f) * (size.height - 2 * paddingPx)
             drawRect(
-                Color.White,
+                color,
                 topLeft = Offset(s + paddingPx, size.height - h - paddingPx),
                 size = Size(e - s - 2 * paddingPx, h),
             )

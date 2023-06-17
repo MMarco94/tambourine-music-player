@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,7 +17,7 @@ import io.github.musicplayer.data.SongListItem
 fun SongListUI(
     maxTrackNumber: Int?,
     items: List<SongListItem>,
-    state: LazyListState = rememberLazyListState(),
+    state: LazyListState,
     contentPadding: PaddingValues = PaddingValues(bottom = 128.dp),
     onSongSelected: (Song) -> Unit,
 ) {

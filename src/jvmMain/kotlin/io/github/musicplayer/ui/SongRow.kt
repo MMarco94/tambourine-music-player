@@ -37,7 +37,9 @@ fun SongRow(
         color = Color.Transparent,
     ) {
         Row(
-            Modifier.clickable { onSongSelected() },
+            Modifier
+                .clickable { onSongSelected() }
+                .background(if (isCurrentSong) MaterialTheme.colorScheme.primaryContainer else Color.Transparent),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(Modifier.width(8.dp))
@@ -63,12 +65,13 @@ fun SongRow(
                         overlay = {
                             if (isCurrentSong) {
                                 Box(
-                                    Modifier.background(Color.Black.copy(alpha = 0.5f)),
+                                    Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     SmallSpectrometers(
                                         Modifier.fillMaxSize().padding(10.dp),
-                                        player.frequencyAnalyzer.lastFrequency
+                                        player.frequencyAnalyzer.lastFrequency,
+                                        color = MaterialTheme.colorScheme.onPrimary,
                                     )
                                 }
                             }
@@ -78,7 +81,7 @@ fun SongRow(
                 Spacer(Modifier.width(16.dp))
             }
             Box(Modifier.height(24.dp).animateContentSize()) {
-                if (isCurrentSong && !showAlbumInfo) {
+                if (isCurrentSong && !showAlbumCover) {
                     Row {
                         SmallSpectrometers(
                             Modifier.size(24.dp),

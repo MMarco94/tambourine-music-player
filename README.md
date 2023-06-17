@@ -22,7 +22,6 @@ TBD
   - Lyrics
 - Usability
   - Playing a song, if the queue is identical, should just skip there
-  - Scroll should be kept when changing tabs
   - Option to add a song to current queue
   - Persist filter/sort
 - Dynamically reload library if files change

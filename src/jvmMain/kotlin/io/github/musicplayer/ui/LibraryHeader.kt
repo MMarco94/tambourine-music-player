@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalLayoutApi::class, ExperimentalAnimationApi::class)
-
 package io.github.musicplayer.ui
 
 import androidx.compose.animation.*
@@ -16,7 +14,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -219,12 +220,14 @@ private enum class Tab {
     ARTIST, ALBUM, SONG;
 }
 
+@OptIn(ExperimentalLayoutApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun LibraryHeader(
     modifier: Modifier,
     library: Library,
     options: SongListOptions,
     setOptions: (SongListOptions) -> Unit,
+    showSettingsButton: Boolean,
     openSettings: () -> Unit,
     content: @Composable () -> Unit,
 ) {
@@ -236,6 +239,7 @@ fun LibraryHeader(
     Column(modifier) {
         Row(Modifier.heightIn(min = 64.dp), verticalAlignment = Alignment.CenterVertically) {
             FlowRow(
+                // TODO: is there a way to only animate the height?
                 Modifier.padding(2.dp).weight(1f).animateContentSize(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -249,10 +253,8 @@ fun LibraryHeader(
                         IconButton({ tab = null }, Modifier.fillMaxSize()) {
                             Icon(Icons.Filled.Close, "Close")
                         }
-                    } else {
-                        IconButton({ openSettings() }, Modifier.fillMaxSize()) {
-                            Icon(Icons.Filled.Settings, "Settings")
-                        }
+                    } else if (showSettingsButton) {
+                        SettingsButton(Modifier.fillMaxSize(), openSettings)
                     }
                 }
             }

@@ -2,23 +2,21 @@ package io.github.musicplayer.ui
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.updateTransition
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.LocalScrollbarStyle
+import androidx.compose.foundation.defaultScrollbarStyle
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.PlayCircleFilled
 import androidx.compose.material.icons.filled.QueueMusic
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
@@ -56,7 +54,6 @@ private fun DelayDraw(f: @Composable (shouldRenderQuickly: Boolean) -> Unit) {
     f(shouldRenderQuickly)
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun App(
     library: LibraryState?,
@@ -66,7 +63,7 @@ fun App(
     var listOptions by remember(library as? Library) { mutableStateOf(SongListOptions()) }
     var openSettings by remember { mutableStateOf(false) }
     val player = playerController.current
-    val mainImage = player.queue?.currentSong?.cover ?: (library as? Library)?.songs?.randomOrNull()?.cover
+    val mainImage = player.queue?.currentSong?.cover ?: (library as? Library)?.songs?.firstOrNull()?.cover
 
     MaterialTheme(
         typography = MusicPlayerTheme.typography,
@@ -98,14 +95,19 @@ fun App(
                             Column {
                                 MainContent(
                                     Modifier.fillMaxWidth().weight(1f),
+                                    large,
+                                    selectedPanel,
                                     visiblePanels,
+                                    selectPanel,
                                     lib,
                                     listOptions,
                                     { listOptions = it }) {
                                     openSettings = true
                                 }
-                                Divider()
-                                BottomBar(large, selectedPanel, visiblePanels, selectPanel)
+                                if (!large) {
+                                    Divider()
+                                    BottomBar(selectedPanel, selectPanel)
+                                }
                             }
                         }
                     }
@@ -121,7 +123,10 @@ fun App(
 @Composable
 private fun MainContent(
     modifier: Modifier,
+    large: Boolean,
+    selectedPanel: Panel,
     visiblePanels: List<Panel>,
+    selectPanel: (Panel) -> Unit,
     library: LibraryState?,
     listOptions: SongListOptions,
     setListOptions: (SongListOptions) -> Unit,
@@ -129,7 +134,9 @@ private fun MainContent(
 ) {
     val cs = rememberCoroutineScope()
     val player = playerController.current
+    val libraryScrollState = rememberLazyListState()
     PanelContainer(modifier, Panel.values().toSet(), visiblePanels) { panel ->
+        val showSettings = !large || panel == PLAYER
         when (panel) {
             LIBRARY -> LibraryContainer(library, openSettings) { library ->
                 val lib by derivedStateOf {
@@ -138,8 +145,15 @@ private fun MainContent(
                 val items by derivedStateOf {
                     lib.toListItems(listOptions)
                 }
-                LibraryHeader(Modifier.fillMaxSize(), library, listOptions, setListOptions, openSettings) {
-                    SongListUI(lib.stats.maxTrackNumber, items) { song ->
+                LibraryHeader(
+                    Modifier.fillMaxSize(),
+                    library,
+                    listOptions,
+                    setListOptions,
+                    showSettings,
+                    openSettings
+                ) {
+                    SongListUI(lib.stats.maxTrackNumber, items, libraryScrollState) { song ->
                         cs.launch {
                             player.changeQueue(SongQueue.of(lib, song), Position.Beginning)
                             player.play()
@@ -148,53 +162,66 @@ private fun MainContent(
                 }
             }
 
-            QUEUE -> SongQueueUI(Modifier.fillMaxSize()) { queue ->
+            QUEUE -> SongQueueUI(Modifier.fillMaxSize(), showSettings, openSettings) { queue ->
                 cs.launch {
                     player.changeQueue(queue, Position.Beginning)
                     player.play()
                 }
             }
 
-            PLAYER -> PlayerUI(Modifier.fillMaxSize())
+            PLAYER -> {
+                Box(Modifier.fillMaxSize()) {
+                    PlayerUI(Modifier.fillMaxSize(), showSettings, openSettings)
+                    if (large) {
+                        RailBar(selectedPanel, selectPanel)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RailBar(
+    selectedPanel: Panel,
+    selectPanel: (Panel) -> Unit,
+) {
+    NavigationRail(
+        Modifier.padding(vertical = 8.dp),
+        containerColor = Color.Transparent,
+    ) {
+        Panel.values().forEach { panel ->
+            if (panel != PLAYER) {
+                NavigationRailItem(
+                    panel == selectedPanel,
+                    onClick = { if (panel == selectedPanel) selectPanel(PLAYER) else selectPanel(panel) },
+                    icon = { Icon(panel.icon, null) },
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun BottomBar(
-    large: Boolean,
     selectedPanel: Panel,
-    visiblePanels: List<Panel>,
     selectPanel: (Panel) -> Unit,
 ) {
-    val doFancy = large && selectedPanel != PLAYER
-    Row(Modifier.height(IntrinsicSize.Max)) {
+    NavigationBar {
         Panel.values().forEach { panel ->
-            key(panel) {
-                val isSelected = panel in visiblePanels
-                val alpha by animateFloatAsState(if (isSelected) 1f else inactiveAlpha)
-                val bg by animateColorAsState(Color.Black.copy(alpha = if (panel != PLAYER && doFancy) 0.3f else 0.2f))
-                val weight by animateFloatAsState(if (panel == PLAYER && doFancy) 2f else 1f)
-                Column(
-                    Modifier
-                        .weight(weight)
-                        .background(bg)
-                        .fillMaxHeight()
-                        .clickable {
-                            selectPanel(if (large && selectedPanel == panel) PLAYER else panel)
-                        }
-                        .alpha(alpha)
-                        .padding(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(panel.icon, null)
+            NavigationBarItem(
+                panel == selectedPanel,
+                onClick = { selectPanel(panel) },
+                icon = { Icon(panel.icon, null) },
+                alwaysShowLabel = false,
+                label = {
                     SingleLineText(
                         panel.label,
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
-            }
+            )
         }
     }
 }
@@ -248,9 +275,7 @@ private fun LoadingLibraryComposable(library: LibraryState?, openSettings: () ->
                 SingleLineText("${library.loaded} songs loaded", style = MaterialTheme.typography.labelMedium)
             }
         }
-        IconButton(openSettings, Modifier.align(Alignment.TopEnd)) {
-            Icon(Icons.Default.Settings, "Settings")
-        }
+        SettingsButton(Modifier.align(Alignment.TopEnd), openSettings)
     }
 }
 

@@ -22,6 +22,8 @@ import kotlin.math.roundToInt
 @Composable
 fun SongQueueUI(
     modifier: Modifier,
+    showSettingsButton: Boolean,
+    openSettings: () -> Unit,
     play: (SongQueue) -> Unit,
 ) {
     val player = playerController.current
@@ -57,6 +59,9 @@ fun SongQueueUI(
                 Spacer(Modifier.weight(1f))
                 RepeatIcon(cs, queue)
                 ShuffleIcon(cs, queue)
+                if (showSettingsButton) {
+                    SettingsButton(Modifier, openSettings)
+                }
             }
             Divider()
             BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {

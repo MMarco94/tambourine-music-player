@@ -46,12 +46,14 @@ import kotlin.time.DurationUnit
 @Composable
 fun PlayerUI(
     modifier: Modifier,
+    showSettingsButton: Boolean,
+    openSettings: () -> Unit,
 ) {
     val cs = rememberCoroutineScope()
     val player = playerController.current
     val queue = player.queue
     val song = queue?.currentSong
-    Box(modifier.padding(horizontal = 16.dp)) {
+    Box(modifier) {
         if (song == null) {
             BigMessage(
                 Modifier.fillMaxSize(),
@@ -60,7 +62,10 @@ fun PlayerUI(
                 "To begin, select a song from your library",
             )
         } else {
-            Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Spacer(Modifier.weight(1f))
 
                 AlbumCover(song.cover, Modifier.size(256.dp), MaterialTheme.shapes.large, elevation = 16.dp)
@@ -110,6 +115,11 @@ fun PlayerUI(
                     RepeatIcon(cs, queue)
                 }
                 Spacer(Modifier.weight(1f))
+            }
+        }
+        if (showSettingsButton) {
+            Box(Modifier.width(48.dp).height(64.dp).align(Alignment.TopEnd)) {
+                SettingsButton(Modifier.fillMaxSize(), openSettings)
             }
         }
     }
