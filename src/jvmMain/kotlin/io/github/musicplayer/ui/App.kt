@@ -14,10 +14,7 @@ import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.PlayCircleFilled
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import io.github.musicplayer.audio.Position
 import io.github.musicplayer.data.*
 import io.github.musicplayer.playerController
+import io.github.musicplayer.ui.LibraryUIState.*
 import io.github.musicplayer.ui.Panel.*
 import kotlinx.coroutines.launch
 
@@ -68,7 +66,7 @@ fun App(
     var listOptions by remember(library as? Library) { mutableStateOf(SongListOptions()) }
     var openSettings by remember { mutableStateOf(false) }
     val player = playerController.current
-    val mainImage = player.queue?.currentSong?.cover ?: (library as? Library)?.songs?.random()?.cover
+    val mainImage = player.queue?.currentSong?.cover ?: (library as? Library)?.songs?.randomOrNull()?.cover
 
     MaterialTheme(
         typography = MusicPlayerTheme.typography,
@@ -86,33 +84,28 @@ fun App(
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 BlurredFadeAlbumCover(mainImage, Modifier.fillMaxSize())
                 DelayDraw { shouldRenderQuickly ->
-                    val transition = updateTransition(Triple(shouldRenderQuickly, library, player.queue))
-                    transition.Crossfade(contentKey = { (srq, lib, q) ->
-                        srq || (lib !is Library && q == null)
-                    }) { (srq, lib, q) ->
-                        if (srq || (lib !is Library && q == null)) {
-                            LoadingLibraryComposable(lib) { openSettings = true }
-                        } else {
-                            BoxWithConstraints {
-                                val w = constraints.maxWidth
-                                val large = w >= (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPxApprox()
-                                val visiblePanels = if (large) {
-                                    listOf(selectedPanel, PLAYER).distinct()
-                                } else {
-                                    listOf(selectedPanel)
+                    var libUIState = if (player.queue != null) NORMAL else library.toUIState()
+                    if (shouldRenderQuickly && libUIState == NORMAL) libUIState = LOADING
+                    LibraryContainer(libUIState, library, { openSettings = true }) { lib ->
+                        BoxWithConstraints {
+                            val w = constraints.maxWidth
+                            val large = w >= (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPxApprox()
+                            val visiblePanels = if (large) {
+                                listOf(selectedPanel, PLAYER).distinct()
+                            } else {
+                                listOf(selectedPanel)
+                            }
+                            Column {
+                                MainContent(
+                                    Modifier.fillMaxWidth().weight(1f),
+                                    visiblePanels,
+                                    lib,
+                                    listOptions,
+                                    { listOptions = it }) {
+                                    openSettings = true
                                 }
-                                Column {
-                                    MainContent(
-                                        Modifier.fillMaxWidth().weight(1f),
-                                        visiblePanels,
-                                        lib,
-                                        listOptions,
-                                        { listOptions = it }) {
-                                        openSettings = true
-                                    }
-                                    Divider()
-                                    BottomBar(large, selectedPanel, visiblePanels, selectPanel)
-                                }
+                                Divider()
+                                BottomBar(large, selectedPanel, visiblePanels, selectPanel)
                             }
                         }
                     }
@@ -136,7 +129,7 @@ private fun MainContent(
 ) {
     val cs = rememberCoroutineScope()
     val player = playerController.current
-    PanelContainer(modifier, values().toSet(), visiblePanels) { panel ->
+    PanelContainer(modifier, Panel.values().toSet(), visiblePanels) { panel ->
         when (panel) {
             LIBRARY -> LibraryContainer(library, openSettings) { library ->
                 val lib by derivedStateOf {
@@ -176,7 +169,7 @@ private fun BottomBar(
 ) {
     val doFancy = large && selectedPanel != PLAYER
     Row(Modifier.height(IntrinsicSize.Max)) {
-        values().forEach { panel ->
+        Panel.values().forEach { panel ->
             key(panel) {
                 val isSelected = panel in visiblePanels
                 val alpha by animateFloatAsState(if (isSelected) 1f else inactiveAlpha)
@@ -206,12 +199,40 @@ private fun BottomBar(
     }
 }
 
+private enum class LibraryUIState {
+    EMPTY, LOADING, NORMAL
+}
+
+private fun LibraryState?.toUIState(): LibraryUIState {
+    return when (this) {
+        null -> LOADING
+        is Library -> if (songs.isEmpty()) EMPTY else NORMAL
+        is Library.Companion.LoadingProgress -> LOADING
+    }
+}
+
+@OptIn(ExperimentalAnimationApi::class)
+@Composable
+private fun LibraryContainer(
+    state: LibraryUIState,
+    library: LibraryState?,
+    openSettings: () -> Unit,
+    f: @Composable (LibraryState?) -> Unit
+) {
+    val transition = updateTransition(state to library)
+    transition.Crossfade(contentKey = { it.first }) { (state, lib) ->
+        when (state) {
+            EMPTY -> LibraryEmptyComposable(openSettings)
+            LOADING -> LoadingLibraryComposable(library, openSettings)
+            NORMAL -> f(lib)
+        }
+    }
+}
+
 @Composable
 private fun LibraryContainer(library: LibraryState?, openSettings: () -> Unit, f: @Composable (Library) -> Unit) {
-    if (library !is Library) {
-        LoadingLibraryComposable(library, openSettings)
-    } else {
-        f(library)
+    LibraryContainer(library.toUIState(), library, openSettings) { lib ->
+        f(lib as Library)
     }
 }
 
@@ -229,6 +250,21 @@ private fun LoadingLibraryComposable(library: LibraryState?, openSettings: () ->
         }
         IconButton(openSettings, Modifier.align(Alignment.TopEnd)) {
             Icon(Icons.Default.Settings, "Settings")
+        }
+    }
+}
+
+@Composable
+private fun LibraryEmptyComposable(openSettings: () -> Unit) {
+    Box {
+        BigMessage(
+            Modifier.fillMaxSize(),
+            Icons.Default.LibraryMusic,
+            "Library is empty",
+        ) {
+            Button(openSettings) {
+                Text("Open settings")
+            }
         }
     }
 }

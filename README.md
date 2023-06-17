@@ -16,7 +16,6 @@ TBD
 
 ## Roadmap
 
-- UI for empty library
 - Search
 - Metadata
   - Disk n°
