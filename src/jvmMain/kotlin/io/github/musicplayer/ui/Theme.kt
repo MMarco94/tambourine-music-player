@@ -8,7 +8,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.github.musicplayer.data.AlbumCover
 import io.github.musicplayer.utils.hsb
-import kotlin.math.absoluteValue
 
 
 val ColorScheme.onSurfaceSecondary get() = onSurface.copy(alpha = 0.5f)
@@ -35,9 +34,7 @@ object MusicPlayerTheme {
     ).map { it.hsb() }
 
     fun colors(mainImage: AlbumCover?): ColorScheme {
-        val palette = mainImage?.palette?.map { it.hsb().pastel() }?.sortedBy {
-            (it.lightness - .7f).absoluteValue
-        } ?: defaultPalette
+        val palette = mainImage?.palette?.map { it.hsb().pastel() } ?: defaultPalette
         val primary = palette[0]
         val secondary = palette[1]
         val tertiary = palette[2]
