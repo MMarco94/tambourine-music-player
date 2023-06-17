@@ -4,7 +4,9 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.*
+import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -45,14 +48,14 @@ private fun Tag(
 ) {
     val bg by animateColorAsState(
         if (enabled) {
-            MaterialTheme.colorScheme.primary
+            MaterialTheme.colorScheme.primaryContainer
         } else {
-            MaterialTheme.colorScheme.primary.copy(alpha = 0f)
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0f)
         }
     )
     val contentColor by animateColorAsState(
         if (enabled) {
-            MaterialTheme.colorScheme.onPrimary
+            MaterialTheme.colorScheme.onPrimaryContainer
         } else {
             MaterialTheme.colorScheme.onSurface
         }
@@ -139,7 +142,7 @@ private fun TagWithOptions(
                             setOptions(reset)
                             close()
                         }, Modifier.width(40.dp).fillMaxHeight()) {
-                            Image(Icons.Filled.Close, "Reset", Modifier.padding(8.dp))
+                            Icon(Icons.Filled.Close, "Reset", Modifier.padding(8.dp))
                         }
                     }
                 }

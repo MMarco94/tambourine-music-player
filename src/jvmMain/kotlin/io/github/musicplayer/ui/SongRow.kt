@@ -34,12 +34,11 @@ fun SongRow(
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.small,
-        color = Color.Transparent,
+        color = if (isCurrentSong) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
     ) {
         Row(
             Modifier
-                .clickable { onSongSelected() }
-                .background(if (isCurrentSong) MaterialTheme.colorScheme.primaryContainer else Color.Transparent),
+                .clickable { onSongSelected() },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(Modifier.width(8.dp))
