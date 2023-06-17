@@ -190,7 +190,8 @@ private fun Seeker(
             },
             thumb = {
                 val animProgress by animateFloatAsState(
-                    if (player.waveform == null) 1f else 0f,
+                    0f,
+                    //if (player.waveform == null) 1f else 0f,
                     spring(stiffness = Spring.StiffnessVeryLow)
                 )
                 Surface(

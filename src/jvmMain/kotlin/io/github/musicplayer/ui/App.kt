@@ -68,10 +68,11 @@ fun App(
     var listOptions by remember(library as? Library) { mutableStateOf(SongListOptions()) }
     var openSettings by remember { mutableStateOf(false) }
     val player = playerController.current
+    val mainImage = player.queue?.currentSong?.cover ?: (library as? Library)?.songs?.random()?.cover
 
     MaterialTheme(
         typography = MusicPlayerTheme.typography,
-        colorScheme = MusicPlayerTheme.colors,
+        colorScheme = MusicPlayerTheme.colors(mainImage),
         shapes = MusicPlayerTheme.shapes,
     ) {
         CompositionLocalProvider(
@@ -83,7 +84,7 @@ fun App(
             )
         ) {
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                BlurredFadeAlbumCover(player.queue?.currentSong?.cover, Modifier.fillMaxSize())
+                BlurredFadeAlbumCover(mainImage, Modifier.fillMaxSize())
                 DelayDraw { shouldRenderQuickly ->
                     val transition = updateTransition(Triple(shouldRenderQuickly, library, player.queue))
                     transition.Crossfade(contentKey = { (srq, lib, q) ->

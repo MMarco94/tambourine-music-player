@@ -44,6 +44,8 @@ kotlin {
                 implementation("com.tambapps.fft4j:fft4j:2.0")
                 // DBUS APIs
                 implementation("com.github.hypfvieh:dbus-java:3.3.2")
+                // Dominant color from image
+                implementation("com.github.SvenWoltmann:color-thief-java:v1.1.2")
             }
         }
         val jvmTest by getting

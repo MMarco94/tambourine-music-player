@@ -3,6 +3,7 @@ package io.github.musicplayer.data
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import io.github.musicplayer.utils.palette
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -18,6 +19,7 @@ private val logger = KotlinLogging.logger {}
 data class AlbumCover(
     val image: ImageBitmap,
 ) {
+    val palette = image.palette()
     val file: File? by lazy {
         try {
             val f = File.createTempFile("album-cover-", ".png")
