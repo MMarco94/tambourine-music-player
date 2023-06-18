@@ -31,7 +31,8 @@ data class MPRISMetadata(
             put("xesam:discNumber", discNumber.variant())
         }
         if (artUrl != null) {
-            val artUri = "file://${artUrl.absolutePath}"
+            val artUri = artUrl.toURI().toString().replace("file:", "file://")
+            //val artUri = "file://${artUrl.absolutePath}"
             put("mpris:artUrl", artUri.variant())
         }
     }.variant()

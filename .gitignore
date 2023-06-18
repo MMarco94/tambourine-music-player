@@ -3,6 +3,8 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+.flatpak-builder
+build-dir
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

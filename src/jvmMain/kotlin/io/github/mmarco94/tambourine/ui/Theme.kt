@@ -10,7 +10,7 @@ import io.github.mmarco94.tambourine.data.AlbumCover
 import io.github.mmarco94.tambourine.utils.hsb
 
 
-val ColorScheme.onSurfaceSecondary get() = onSurface.copy(alpha = 0.5f)
+val ColorScheme.onSurfaceSecondary get() = onSurface.copy(alpha = 0.55f)
 
 // See Material3.ColorScheme
 const val inactiveAlpha = .38f

@@ -2,13 +2,15 @@
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{yyyy-MM-dd} %d{HH:mm:ss.SSS} | %5p | %-30.30logger | %m%n
+            <pattern>%d{yyyy-MM-dd} %d{HH:mm:ss.SSS} | %5p | %logger | %m%n
             </pattern>
             <charset>utf8</charset>
         </encoder>
     </appender>
-    <logger name="org.freedesktop.dbus" level="info" />
-    <root level="DEBUG">
+    <logger name="org.jaudiotagger.tag" level="WARN" />
+    <logger name="org.freedesktop.dbus" level="INFO" />
+    <logger name="com.tagtraum.ffsampledsp" level="TRACE" />
+    <root level="TRACE">
         <appender-ref ref="CONSOLE" />
     </root>
 </configuration>

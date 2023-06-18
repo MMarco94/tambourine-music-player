@@ -16,6 +16,7 @@ TBD
 
 ## Roadmap
 
+- Finish Flatpak packaging
 - Search
 - Metadata
   - Disk n°
@@ -27,11 +28,7 @@ TBD
 - Dynamically reload library if files change
 - Drag&drop and open files outside the library
 - Skip "zeros" at the beginning of the song
-- Packaging
-  - [ ] Flatpak
-  - [ ] ...
 - Drag & drop in queue UI
 - Spectrometer
 - Background API?
-
 

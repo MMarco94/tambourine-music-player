@@ -59,7 +59,6 @@ fun LibrarySettings(close: () -> Unit) {
         state = rememberWindowState(
             size = DpSize(640.dp, 320.dp),
         ),
-        alwaysOnTop = true,
     ) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Box(Modifier.verticalScroll(rememberScrollState())) {

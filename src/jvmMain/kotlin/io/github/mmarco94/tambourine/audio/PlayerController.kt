@@ -51,12 +51,19 @@ class PlayerController(
     private val commandChannel: Channel<PlayerCommand> = Channel(Channel.UNLIMITED)
     private val stateChannel = Channel<State>(Channel.CONFLATED)
     val frequencyAnalyzer = FrequencyAnalyzer()
-    val mprisPlayer = MPRISPlayerController(
-        coroutineScope,
-        this,
-        quit = quit,
-        raise = raise,
-    )
+    private val mprisPlayer = run {
+        try {
+            MPRISPlayerController(
+                coroutineScope,
+                this,
+                quit = quit,
+                raise = raise,
+            )
+        } catch (e: Exception) {
+            logger.error { "Error creating MPRIS: ${e.message}" }
+            null
+        }
+    }
 
     data class CurrentlyPlaying(
         val queue: SongQueue,
@@ -229,7 +236,7 @@ class PlayerController(
         coroutineScope.launch(Dispatchers.Main) {
             for (state in stateChannel) {
                 observableState = state
-                mprisPlayer.setState(state)
+                mprisPlayer?.setState(state)
             }
         }
         coroutineScope.launch(Dispatchers.Default) {
@@ -284,6 +291,10 @@ class PlayerController(
                 }
             }
         }
-        mprisPlayer.start()
+        try {
+            mprisPlayer?.start()
+        } catch (e: Exception) {
+            logger.error { "Error starting MPRIS: ${e.message}" }
+        }
     }
 }

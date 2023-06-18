@@ -10,7 +10,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import mu.KotlinLogging
 import org.freedesktop.dbus.connections.impl.DBusConnection
+import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder
 import org.freedesktop.dbus.interfaces.Properties
 import org.mpris.MediaPlayer2.*
 import org.mpris.MediaPlayer2.LoopStatus.None
@@ -19,6 +21,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.microseconds
 import kotlin.time.Duration.Companion.milliseconds
+
+private val logger = KotlinLogging.logger {}
 
 class MPRISPlayerController(
     private val cs: CoroutineScope,
@@ -58,8 +62,7 @@ class MPRISPlayerController(
             cs.launch {
                 playerController.changeQueue(
                     playerController.queue?.copy(
-                        repeatMode =
-                        when (repeat) {
+                        repeatMode = when (repeat) {
                             None -> DO_NOT_REPEAT
                             LoopStatus.Track -> REPEAT_SONG
                             Playlist -> REPEAT_QUEUE
@@ -87,12 +90,20 @@ class MPRISPlayerController(
 
     private data class LastSentPositionData(val song: Song, val position: Duration, val eventTime: Instant)
 
-    private val connection: DBusConnection = DBusConnection.getConnection(DBusConnection.DBusBusType.SESSION)
+    private val connection: DBusConnection = DBusConnectionBuilder.forSessionBus().apply {
+        withShared(false)
+        receivingThreadConfig().apply {
+            this.withSignalThreadCount(1)
+            this.withErrorHandlerThreadCount(1)
+            this.withMethodCallThreadCount(1)
+            this.withMethodReturnThreadCount(1)
+        }
+    }.build()
     private var latestState = Channel<PlayerController.State>(Channel.CONFLATED)
 
     fun start() {
         connection.exportObject("/org/mpris/MediaPlayer2", this)
-        connection.requestBusName("org.mpris.MediaPlayer2.tambourine-music-player")
+        connection.requestBusName("org.mpris.MediaPlayer2.io.github.mmarco94.tambourine")
         cs.launch(Dispatchers.Default) {
             var prevEvent: LastSentPositionData? = null
             for (state in latestState) {
@@ -153,7 +164,11 @@ class MPRISPlayerController(
         properties.mprisPlayerState = mprisPlayerState
         val diff = mprisPlayerState.diff(old, skipPosition)
         if (diff != null) {
-            connection.sendMessage(diff)
+            try {
+                connection.sendMessage(diff)
+            } catch (e: Exception) {
+                logger.error { "Cannot send message to the DBus: ${e.message}" }
+            }
         }
         return if (skipPosition) {
             lastPositionData

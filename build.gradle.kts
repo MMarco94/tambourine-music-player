@@ -43,7 +43,8 @@ kotlin {
                 // FFT
                 implementation("com.tambapps.fft4j:fft4j:2.0")
                 // DBUS APIs
-                implementation("com.github.hypfvieh:dbus-java:3.3.2")
+                implementation("com.github.hypfvieh:dbus-java-core:4.3.0")
+                implementation("com.github.hypfvieh:dbus-java-transport-native-unixsocket:4.3.0")
                 // Dominant color from image
                 implementation("com.github.SvenWoltmann:color-thief-java:v1.1.2")
             }
@@ -56,7 +57,7 @@ compose.desktop {
     application {
         mainClass = "io.github.mmarco94.tambourine.MainKt"
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Rpm)
             packageName = "tambourine"
             packageVersion = "1.0.0"
         }

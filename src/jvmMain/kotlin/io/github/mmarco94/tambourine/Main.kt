@@ -44,6 +44,10 @@ fun main() = runBlocking {
     // Start loading ASAP
     val ml = musicLibrary.stateIn(this, started = SharingStarted.Eagerly, null)
 
+    // Uncomment to get all logs from ffsampledsp
+    // val root: Logger = Logger.getLogger(FFNativeLibraryLoader::class.java.name)
+    // root.level = Level.ALL
+
     SLF4JBridgeHandler.removeHandlersForRootLogger()
     SLF4JBridgeHandler.install()
     System.setProperty("compose.application.configure.swing.globals", "false")
