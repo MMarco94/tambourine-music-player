@@ -5,6 +5,7 @@ build/
 !**/src/test/**/build/
 .flatpak-builder
 build-dir
+repo
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

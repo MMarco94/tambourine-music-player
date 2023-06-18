@@ -2,6 +2,10 @@
 
 A music player for your local music library.
 
+**THIS IS A PRE-RELEASE**, the project is still in development.
+
+![Main screen](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s1.png)
+
 Tenets:
 
 - Linux first
@@ -12,11 +16,19 @@ Tenets:
 
 ## Features
 
-TBD
+Browse your music collection; play a song; that's it really.
+
+## Screenshots
+
+![s1](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s1.png)
+![s2](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s2.png)
+![s3](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s3.png)
+![s4](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s4.png)
+![s5](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s5.png)
 
 ## Roadmap
 
-- Finish Flatpak packaging
+- Publish on FlatHub
 - Search
 - Metadata
   - Disk n°

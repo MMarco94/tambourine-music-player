@@ -28,6 +28,19 @@ modules:
         path: ../build/compose/jars/tambourine-linux-x64-1.0.0.jar
       - type: file
         path: run.sh
+  - name: extras
+    buildsystem: simple
+    build-commands:
+      - install -D io.github.mmarco94.tambourine.desktop /app/share/applications/io.github.mmarco94.tambourine.desktop
+      - install -D io.github.mmarco94.tambourine.metainfo.xml /app/share/metainfo/io.github.mmarco94.tambourine.metainfo.xml
+      - install -D icon.png /app/share/icons/hicolor/256x256/apps/io.github.mmarco94.tambourine.png
+    sources:
+      - type: file
+        path: io.github.mmarco94.tambourine.desktop
+      - type: file
+        path: io.github.mmarco94.tambourine.metainfo.xml
+      - type: file
+        path: icon.png
 finish-args:
   - --filesystem=xdg-music:ro
   # TODO: remove once the file portal integration works
