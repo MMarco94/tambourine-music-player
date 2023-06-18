@@ -61,6 +61,7 @@ class CoversDecoder(
                         val decoded = Image.makeFromEncoded(img).toComposeImageBitmap()
                         AlbumCover(decoded)
                     } catch (e: Exception) {
+                        logger.error { e.message }
                         null
                     }
                 }

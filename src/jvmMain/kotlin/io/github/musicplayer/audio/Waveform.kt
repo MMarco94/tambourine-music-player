@@ -15,7 +15,7 @@ data class Waveform(
     val waveformsPerChannel: List<DoubleArray>,
 ) {
     companion object {
-        const val summaryLength = 480
+        const val summaryLength = 360
 
         suspend fun fromStream(
             audio: AsyncAudioInputStream.Reader,

@@ -139,10 +139,10 @@ private fun MainContent(
         val showSettings = !large || panel == PLAYER
         when (panel) {
             LIBRARY -> LibraryContainer(library, openSettings) { library ->
-                val lib by derivedStateOf {
+                val lib = remember(library, listOptions) {
                     library.filterAndSort(listOptions)
                 }
-                val items by derivedStateOf {
+                val items = remember(lib, listOptions) {
                     lib.toListItems(listOptions)
                 }
                 LibraryHeader(

@@ -2,23 +2,38 @@ package io.github.musicplayer.utils
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asSkiaBitmap
 import de.androidpit.colorthief.MMCQ
+import org.jetbrains.skia.Bitmap
 import kotlin.math.roundToInt
 
-fun ImageBitmap.palette(): List<Color> {
-    val colors = IntArray(width * height)
-    this.readPixels(colors)
-    val colors2D = Array(width * height) { idx ->
-        val color = colors[idx]
-        intArrayOf(
-            color.shr(16) and 0xff,
-            color.shr(8) and 0xff,
-            color and 0xff,
-        )
-    }
-    return MMCQ.quantize(colors2D, 3)
+fun ImageBitmap.palette(reduction: Int = 10): List<Color> {
+    val pixels = getPixels(asSkiaBitmap(), reduction)
+    return MMCQ.quantize(pixels, 3)
         .palette()
         .map { (r, g, b) -> Color(r, g, b) }
+}
+
+private fun getPixels(
+    sourceImage: Bitmap,
+    reduction: Int,
+): Array<IntArray> {
+    val width = sourceImage.width
+    val height = sourceImage.height
+    val pixelCount = width * height
+    // numRegardedPixels must be rounded up to avoid an ArrayIndexOutOfBoundsException if all
+    // pixels are good.
+    val numRegardedPixels = (pixelCount + reduction - 1) / reduction
+    return Array(numRegardedPixels) { idx ->
+        val i = idx * reduction
+        val row = i / width
+        val col = i % width
+        val rgb = sourceImage.getColor(col, row)
+        val r = rgb shr 16 and 0xFF
+        val g = rgb shr 8 and 0xFF
+        val b = rgb and 0xFF
+        intArrayOf(r, g, b)
+    }
 }
 
 data class HSLColor(
