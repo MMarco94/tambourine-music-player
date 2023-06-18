@@ -1,4 +1,4 @@
-# Music Player
+# Tambourine Music Player
 
 A music player for your local music library.
 
@@ -32,6 +32,6 @@ TBD
   - [ ] ...
 - Drag & drop in queue UI
 - Spectrometer
-- [ ] Background API?
+- Background API?
 
 

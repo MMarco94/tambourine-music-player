@@ -5,7 +5,7 @@ plugins {
     id("org.jetbrains.compose")
 }
 
-group = "io.github.MMarco94"
+group = "io.github.mmarco94"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -54,10 +54,10 @@ kotlin {
 
 compose.desktop {
     application {
-        mainClass = "io.github.musicplayer.MainKt"
+        mainClass = "io.github.mmarco94.tambourine.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "music-player"
+            packageName = "tambourine"
             packageVersion = "1.0.0"
         }
     }
