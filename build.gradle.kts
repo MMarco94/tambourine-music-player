@@ -23,13 +23,26 @@ kotlin {
     sourceSets {
         val jvmMain by getting {
             dependencies {
+                implementation(compose.foundation)
                 implementation(compose.desktop.currentOs)
                 api(compose.materialIconsExtended)
                 api(compose.material3)
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
 
-                // File picker
-                implementation("com.darkrockstudios:mpfilepicker:1.1.0")
+                // Native file fialog
+                val lwjglVersion = "3.3.2"
+                listOf("lwjgl", "lwjgl-nfd").forEach { lwjglDep ->
+                    implementation("org.lwjgl:${lwjglDep}:${lwjglVersion}")
+                    listOf(
+                        //"natives-windows", "natives-windows-x86", "natives-windows-arm64",
+                        //"natives-macos", "natives-macos-arm64",
+                        "natives-linux", "natives-linux-arm64", "natives-linux-arm32"
+                    ).forEach { native ->
+                        runtimeOnly("org.lwjgl:${lwjglDep}:${lwjglVersion}:${native}")
+                    }
+                }
 
                 // Logging
                 implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")

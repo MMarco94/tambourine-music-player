@@ -40,7 +40,7 @@ private val musicLibrary: Flow<LibraryState?> = Preferences.libraryFolder
 
 val playerController = staticCompositionLocalOf<PlayerController> { throw IllegalStateException() }
 
-fun main() = runBlocking {
+fun main(): Unit = runBlocking {
     // Start loading ASAP
     val ml = musicLibrary.stateIn(this, started = SharingStarted.Eagerly, null)
 
@@ -50,7 +50,6 @@ fun main() = runBlocking {
 
     SLF4JBridgeHandler.removeHandlersForRootLogger()
     SLF4JBridgeHandler.install()
-    System.setProperty("compose.application.configure.swing.globals", "false")
     application {
         val cs = rememberCoroutineScope()
         // Using `alwaysOnTop` is the most reliable method. awt.Window.toFront() doesn't work :(

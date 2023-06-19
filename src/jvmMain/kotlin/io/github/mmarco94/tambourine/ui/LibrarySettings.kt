@@ -14,14 +14,20 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.rememberWindowState
-import com.darkrockstudios.libraries.mpfilepicker.DirectoryPicker
 import io.github.mmarco94.tambourine.utils.Preferences
+import io.github.mmarco94.tambourine.utils.nativeFileChooser
+import kotlinx.coroutines.launch
 import java.io.File
 
 
@@ -48,6 +54,7 @@ fun SettingsButton(
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun LibrarySettings(close: () -> Unit) {
     var library by remember { mutableStateOf(Preferences.getLibraryFolder()) }
@@ -59,6 +66,18 @@ fun LibrarySettings(close: () -> Unit) {
         state = rememberWindowState(
             size = DpSize(640.dp, 320.dp),
         ),
+        onPreviewKeyEvent = { event ->
+            if (event.type == KeyEventType.KeyDown) {
+                when (event.key) {
+                    Key.Escape -> {
+                        close()
+                        true
+                    }
+
+                    else -> false
+                }
+            } else false
+        },
     ) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Box(Modifier.verticalScroll(rememberScrollState())) {
@@ -71,7 +90,7 @@ fun LibrarySettings(close: () -> Unit) {
                         {
                             Preferences.setLibraryFolder(library)
                             close()
-                        }, enabled = latest != library && library.exists(), modifier = Modifier.align(Alignment.End)
+                        }, enabled = latest != library && library.isDirectory, modifier = Modifier.align(Alignment.End)
                     ) {
                         Text("Apply changes")
                     }
@@ -84,7 +103,7 @@ fun LibrarySettings(close: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LibraryDirectorySetting(library: File, changeLibrary: (File) -> Unit) {
-    var showFilePicker by remember { mutableStateOf(false) }
+    val cs = rememberCoroutineScope()
     Row(Modifier.height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
         val interactionSource = remember { MutableInteractionSource() }
         OutlinedTextField(
@@ -99,7 +118,7 @@ private fun LibraryDirectorySetting(library: File, changeLibrary: (File) -> Unit
             leadingIcon = {
                 Icon(Icons.Default.LibraryMusic, null)
             },
-            isError = !library.exists(),
+            isError = !library.isDirectory,
             interactionSource = interactionSource,
         )
         Surface(
@@ -110,17 +129,18 @@ private fun LibraryDirectorySetting(library: File, changeLibrary: (File) -> Unit
             ),
         ) {
             Box(Modifier.fillMaxSize().clickable {
-                showFilePicker = true
+                cs.launch {
+                    val file = nativeFileChooser(
+                        pickFiles = false,
+                        initialDirectory = library,
+                    )
+                    if (file != null) {
+                        changeLibrary(file)
+                    }
+                }
             }) {
                 Icon(Icons.Default.FolderOpen, "Choose folder", Modifier.align(Alignment.Center))
             }
-        }
-    }
-
-    DirectoryPicker(showFilePicker, initialDirectory = library.absolutePath) { path ->
-        showFilePicker = false
-        if (path != null) {
-            changeLibrary(File(path))
         }
     }
 }
