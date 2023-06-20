@@ -35,11 +35,12 @@ modules:
       - ln -s /usr/lib/x86_64-linux-gnu/libbz2.so.1.0.8 /app/jre/lib/libbz2.so.1.0
       - mkdir -p /app/lib/ffmpeg
       # Installing the actual app
-      - install -D tambourine-linux-x64-1.0.0.jar /app/bin/tambourine.jar
+      - install -D tambourine-linux.jar /app/bin/tambourine.jar
       - install -D run.sh /app/bin/run.sh
     sources:
       - type: file
-        path: ../build/compose/jars/tambourine-linux-x64-1.0.0.jar
+        path: ../build/compose/jars/tambourine-linux-x64-0.2.jar
+        dest-filename: tambourine-linux.jar
       - type: file
         path: run.sh
   - name: extras
