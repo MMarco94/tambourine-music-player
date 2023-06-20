@@ -1,5 +1,3 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-
 plugins {
     kotlin("multiplatform")
     id("org.jetbrains.compose")
@@ -70,9 +68,8 @@ compose.desktop {
     application {
         mainClass = "io.github.mmarco94.tambourine.MainKt"
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Rpm)
             packageName = "tambourine"
-            packageVersion = "1.0.0"
+            packageVersion = version.toString()
         }
     }
 }
