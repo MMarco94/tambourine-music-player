@@ -14,8 +14,8 @@ finish-args:
   - --filesystem=xdg-music:ro
   - --filesystem=xdg-run/gvfs
   - --filesystem=xdg-run/gvfsd
-  # Use this to get full file system access
-  # - --filesystem=host:ro
+  # Workaround until https://github.com/LWJGL/lwjgl3/issues/893 is fixed
+  - --filesystem=host:ro
   - --socket=wayland
   - --socket=fallback-x11
   - --socket=pulseaudio
@@ -23,9 +23,6 @@ finish-args:
   - --device=dri
   - --env=PATH=/app/jre/bin:/app/bin:/usr/bin
   - --env=JAVA_HOME=/app/jre
-  # TODO: this shouldn't be used, but if I don't do this, the DBUS connection gets closed
-  # almost immediately because of "Invalid client serial"
-  - --socket=session-bus
 modules:
   - name: openjdk
     buildsystem: simple

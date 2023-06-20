@@ -3,6 +3,7 @@ package io.github.mmarco94.tambourine.mpris
 import io.github.mmarco94.tambourine.utils.diff
 import io.github.mmarco94.tambourine.utils.variant
 import org.freedesktop.dbus.interfaces.Properties.PropertiesChanged
+import org.freedesktop.dbus.messages.DBusSignal
 import org.freedesktop.dbus.types.Variant
 import org.mpris.MediaPlayer2.LoopStatus
 import org.mpris.MediaPlayer2.PlaybackStatus
@@ -99,7 +100,10 @@ data class MPRISPlayerState(
         return if (diffs.isEmpty()) {
             null
         } else {
-            PropertiesChanged(objectPath, interfaceName, diffs, emptyList())
+            PropertiesChanged(objectPath, interfaceName, diffs, emptyList()).also {
+                // TODO LOL
+                DBusSignal("", "", "", "", "")
+            }
         }
     }
 }
