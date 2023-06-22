@@ -28,17 +28,20 @@ Browse your music collection; play a song; that's it really.
 
 ## Roadmap
 
-- Publish on FlatHub
-- Search
+Blockers for V1:
+ - Use Flatpak file portal
+ - Search
+ - Playing a song, if the queue is identical, should just skip there
+ - Option to add a song to current queue
+ - Dynamically reload library if files change
+
+Other non-blocking features:
 - Metadata
   - Disk n°
   - Lyrics
-- Usability
-  - Playing a song, if the queue is identical, should just skip there
-  - Option to add a song to current queue
-  - Persist filter/sort
-- Dynamically reload library if files change
-- Drag&drop and open files outside the library
+- Translations
+- Persist filter/sort
+- Drag&drop and open files to open them 
 - Skip "zeros" at the beginning of the song
 - Drag & drop in queue UI
 - Spectrometer
