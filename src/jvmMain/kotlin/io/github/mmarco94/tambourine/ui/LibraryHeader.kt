@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,60 +18,28 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.data.*
-import io.github.mmarco94.tambourine.ui.Tab.*
+import io.github.mmarco94.tambourine.ui.LibraryHeaderTab.*
+import io.github.mmarco94.tambourine.utils.animateContentHeight
 import io.github.mmarco94.tambourine.utils.noopComparator
 import io.github.mmarco94.tambourine.utils.orNoop
 import kotlin.math.roundToInt
-
-
-@Composable
-private fun Tag(
-    active: Boolean,
-    enabled: Boolean,
-    content: @Composable () -> Unit,
-    onClick: () -> Unit,
-) {
-    val bg by animateColorAsState(
-        if (enabled) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0f)
-        }
-    )
-    val contentColor by animateColorAsState(
-        if (enabled) {
-            MaterialTheme.colorScheme.onPrimaryContainer
-        } else {
-            MaterialTheme.colorScheme.onSurface
-        }
-    )
-    val alpha by animateFloatAsState(if (active) 1f else inactiveAlpha)
-    Card(
-        Modifier.alpha(alpha),
-        colors = CardDefaults.cardColors(bg, contentColor),
-        elevation = CardDefaults.cardElevation(0.dp)
-    ) {
-        Box(Modifier.clickable { onClick() }) {
-            content()
-        }
-    }
-}
 
 private sealed interface SortFilterOption {
     val name: String
@@ -98,7 +67,7 @@ private sealed interface SortFilterOption {
 }
 
 @Composable
-private fun TagWithOptions(
+private fun TagForOptions(
     active: Boolean,
     enabled: Boolean,
     selected: SortFilterOption,
@@ -109,46 +78,17 @@ private fun TagWithOptions(
     close: () -> Unit,
     setOptions: (SongListOptions) -> Unit,
 ) {
-    Box(Modifier.padding(2.dp)) {
-        Tag(
-            active = active,
-            enabled = enabled,
-            onClick = onClick,
-            content = {
-                Row(
-                    Modifier.height(IntrinsicSize.Max).heightIn(min = 40.dp).animateContentSize(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(icon, description)
-                        Spacer(Modifier.width(8.dp))
-                        if (selected is SortFilterOption.Sort) {
-                            Column {
-                                SingleLineText(description, style = MaterialTheme.typography.labelLarge)
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    SingleLineText(selected.name, style = MaterialTheme.typography.labelMedium)
-                                    if (selected.icon != null) {
-                                        Spacer(Modifier.width(2.dp))
-                                        Icon(selected.icon, null, Modifier.size(16.dp))
-                                    }
-                                }
-                            }
-                        } else {
-                            SingleLineText(selected.name, style = MaterialTheme.typography.labelLarge)
-                        }
-                    }
-                    if (reset != null) {
-                        IconButton({
-                            setOptions(reset)
-                            close()
-                        }, Modifier.width(40.dp).fillMaxHeight()) {
-                            Icon(Icons.Filled.Close, "Reset", Modifier.padding(8.dp))
-                        }
-                    }
-                }
-            },
-        )
-    }
+    Tag(
+        active = active,
+        enabled = enabled,
+        showAsSubtitle = selected is SortFilterOption.Sort,
+        icon = icon,
+        description = description,
+        selectedLabel = selected.name,
+        selectedIcon = (selected as? SortFilterOption.Sort)?.icon,
+        reset = reset?.let { { setOptions(it); close() } },
+        onClick = onClick,
+    )
 }
 
 private class FilterSortPopupRenderer(
@@ -219,8 +159,8 @@ private class FilterSortPopupRenderer(
     }
 }
 
-private enum class Tab {
-    ARTIST, ALBUM, SONG;
+enum class LibraryHeaderTab {
+    ARTIST, ALBUM, SONG, SEARCH;
 }
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalAnimationApi::class)
@@ -230,11 +170,12 @@ fun LibraryHeader(
     library: Library,
     options: SongListOptions,
     setOptions: (SongListOptions) -> Unit,
+    tab: LibraryHeaderTab?,
+    setTab: (LibraryHeaderTab?) -> Unit,
     showSettingsButton: Boolean,
     openSettings: () -> Unit,
     content: @Composable () -> Unit,
 ) {
-    var tab: Tab? by remember { mutableStateOf(null) }
     val artistRenderer = remember(library, options, setOptions) {
         ArtistOptionsRenderer(ARTIST, library, options, setOptions)
     }
@@ -244,28 +185,105 @@ fun LibraryHeader(
     val songRenderer = remember(options, setOptions) {
         SongOptionsRenderer(SONG, options, setOptions)
     }
+    val queryTransition = updateTransition(options.queryFilter)
 
+    val searchBarMode = updateTransition(
+        when {
+            tab == SEARCH -> LibrarySearchBarMode.EXPANDED
+            options.queryFilter.isEmpty() -> LibrarySearchBarMode.ICON
+            else -> LibrarySearchBarMode.TAG
+        }
+    )
     Column(modifier) {
-        Row(Modifier.heightIn(min = 64.dp), verticalAlignment = Alignment.CenterVertically) {
-            FlowRow(
-                // TODO: is there a way to only animate the height?
-                Modifier.padding(2.dp).weight(1f).animateContentSize(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                artistRenderer.Tag(tab) { tab = it }
-                albumRenderer.Tag(tab) { tab = it }
-                songRenderer.Tag(tab) { tab = it }
-            }
-            Box(Modifier.size(48.dp)) {
-                Crossfade(tab != null) {
-                    if (it) {
-                        IconButton({ tab = null }, Modifier.fillMaxSize()) {
+        var parentPos by remember { mutableStateOf(Offset(0f, 0f)) }
+        var parentSize by remember { mutableStateOf(IntSize(0, 0)) }
+        var searchTagPos by remember { mutableStateOf(Offset(0f, 0f)) }
+        var searchTagSize by remember { mutableStateOf(IntSize(0, 0)) }
+        var searchIconPos by remember { mutableStateOf(Offset(0f, 0f)) }
+        Box(
+            Modifier.heightIn(min = 64.dp).animateContentHeight().onGloballyPositioned {
+                parentPos = it.localToWindow(Offset.Zero)
+                parentSize = it.size
+            },
+            contentAlignment = Alignment.Center,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                FlowRow(
+                    Modifier.padding(2.dp).weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    artistRenderer.Tag(tab, setTab)
+                    albumRenderer.Tag(tab, setTab)
+                    songRenderer.Tag(tab, setTab)
+                    Box(Modifier.onGloballyPositioned {
+                        searchTagPos = it.localToWindow(Offset.Zero)
+                        searchTagSize = it.size
+                    }) {
+                        queryTransition.Crossfade(contentKey = { it.isNotEmpty() }) { q ->
+                            if (q.isNotEmpty()) {
+                                Tag(
+                                    tab == null || tab == SEARCH, true,
+                                    false, Icons.Default.Search,
+                                    "Search", q, null,
+                                    { setTab(null);setOptions(options.removeSearch()) },
+                                    { setTab(SEARCH) },
+                                )
+                            }
+                        }
+                    }
+                }
+                Box(Modifier.onGloballyPositioned {
+                    searchIconPos = it.localToWindow(Offset.Zero)
+                }) {
+                    queryTransition.AnimatedContent(
+                        contentKey = { it.isEmpty() },
+                        transitionSpec = {
+                            fadeIn() with fadeOut() using SizeTransform()
+                        }) { q ->
+                        Box(Modifier.height(48.dp)) {
+                            if (q.isEmpty()) {
+                                IconButton(
+                                    { setTab(SEARCH) }, Modifier.alpha(
+                                        if (
+                                            searchBarMode.currentState == LibrarySearchBarMode.EXPANDED ||
+                                            searchBarMode.targetState == LibrarySearchBarMode.EXPANDED
+                                        ) 0f else 1f
+                                    )
+                                ) {
+                                    Icon(Icons.Filled.Search, "Search")
+                                }
+                            }
+                        }
+                    }
+                }
+                val otherButtonState = tab to showSettingsButton
+                val secondButtonTransition = updateTransition(otherButtonState)
+                secondButtonTransition.AnimatedContent(
+                    transitionSpec = {
+                        fadeIn() with fadeOut() using SizeTransform()
+                    },
+                    contentKey = { (tab, _) -> tab != null },
+                ) { (tab, showSettingsButton) ->
+                    if (tab != null && tab != SEARCH) {
+                        IconButton({ setTab(null) }) {
                             Icon(Icons.Filled.Close, "Close")
                         }
                     } else if (showSettingsButton) {
-                        SettingsButton(Modifier.fillMaxSize(), openSettings)
+                        SettingsButton(Modifier, openSettings)
                     }
                 }
+            }
+            LibrarySearchBar(
+                mode = searchBarMode,
+                collapse = { setTab(null) },
+                iconOffset = searchIconPos - parentPos,
+                tagOffset = searchTagPos - parentPos,
+                tagSize = searchTagSize,
+                expandedSize = parentSize,
+                library = library,
+                query = options.queryFilter,
+            ) {
+                setOptions(options.copy(queryFilter = it))
             }
         }
         Divider()
@@ -283,63 +301,80 @@ fun LibraryHeader(
                     ARTIST -> artistRenderer
                     ALBUM -> albumRenderer
                     SONG -> songRenderer
+                    SEARCH -> null
                 }
-                Layout(content = {
-                    Box {
-                        with(renderer) { Options { tab = null } }
-                        Divider(Modifier.align(Alignment.BottomCenter))
+                if (renderer != null) {
+                    Layout(content = {
+                        Box {
+                            with(renderer) { Render { setTab(null) } }
+                            Divider(Modifier.align(Alignment.BottomCenter))
+                        }
+                    }) { measurables, constraints ->
+                        val newC = constraints.copy(
+                            maxHeight = constraints.maxHeight - 80.dp.toPx().roundToInt(),
+                        )
+                        val p = measurables.single().measure(newC)
+                        layout(p.width, p.height) {
+                            p.place(0, 0)
+                        }
                     }
-                }) { measurables, constraints ->
-                    val newC = constraints.copy(
-                        maxHeight = constraints.maxHeight - 80.dp.toPx().roundToInt(),
-                    )
-                    val p = measurables.single().measure(newC)
-                    layout(p.width, p.height) {
-                        p.place(0, 0)
-                    }
+                } else {
+                    Spacer(Modifier.fillMaxWidth())
                 }
             } else {
                 Spacer(Modifier.fillMaxWidth())
             }
         }
 
-        val alpha by animateFloatAsState(if (tab == null) 1f else inactiveAlpha)
+        val shouldHide = tab != null && tab != SEARCH
+        val alpha by animateFloatAsState(if (shouldHide) inactiveAlpha else 1f)
+        val blur by animateFloatAsState(if (shouldHide) 2.dp.toPxApprox() else 0f)
         Box(
-            Modifier.graphicsLayer { this.alpha = alpha }
+            Modifier.graphicsLayer {
+                this.alpha = alpha
+                this.renderEffect = if (blur > 0) {
+                    BlurEffect(blur, blur)
+                } else null
+            }
         ) {
             content()
-            if (tab != null) {
+            if (shouldHide) {
                 Box(Modifier
                     .matchParentSize()
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                    ) { tab = null }
+                    ) { setTab(null) }
                 )
             }
         }
     }
 }
 
-private interface OptionsRenderer {
+private interface TabRenderer {
+
+    @Composable
+    fun BoxScope.Render(close: () -> Unit)
+
+}
+
+private interface OptionsRenderer : TabRenderer {
     val description: String
-    val tab: Tab
+    val icon: ImageVector
+    val tab: LibraryHeaderTab
     val activeFilter: Any?
     val withoutFilter: SongListOptions
     val selectedOption: SortFilterOption
     val setOptions: (SongListOptions) -> Unit
 
     @Composable
-    fun BoxScope.Options(close: () -> Unit)
-
-    @Composable
-    fun Tag(currentTab: Tab?, setTab: (Tab?) -> Unit) {
-        TagWithOptions(
+    fun Tag(currentTab: LibraryHeaderTab?, setTab: (LibraryHeaderTab?) -> Unit) {
+        TagForOptions(
             active = currentTab == null || tab == currentTab,
             selected = selectedOption,
             enabled = activeFilter != null,
             description = description,
-            icon = Icons.Filled.Groups,
+            icon = icon,
             reset = if (activeFilter != null) withoutFilter else null,
             setOptions = setOptions,
             onClick = { setTab(if (tab == currentTab) null else tab) },
@@ -380,12 +415,13 @@ private interface OptionsRenderer {
 }
 
 private class ArtistOptionsRenderer(
-    override val tab: Tab,
+    override val tab: LibraryHeaderTab,
     library: Library,
     private val options: SongListOptions,
     override val setOptions: (SongListOptions) -> Unit,
 ) : OptionsRenderer {
     override val description = "Artists"
+    override val icon = Icons.Default.Groups
     override val activeFilter = options.artistFilter
     override val withoutFilter = options.withArtistFilter(null)
     private val libForArtists = library.sort(
@@ -409,7 +445,7 @@ private class ArtistOptionsRenderer(
     }
 
     @Composable
-    override fun BoxScope.Options(close: () -> Unit) {
+    override fun BoxScope.Render(close: () -> Unit) {
         FilterSortContent(
             options,
             selectedOption,
@@ -422,19 +458,20 @@ private class ArtistOptionsRenderer(
 }
 
 private class AlbumOptionsRenderer(
-    override val tab: Tab,
+    override val tab: LibraryHeaderTab,
     library: Library,
     private val options: SongListOptions,
     override val setOptions: (SongListOptions) -> Unit,
 ) : OptionsRenderer {
     override val description = "Albums"
+    override val icon = Icons.Default.Album
     override val activeFilter = options.albumFilter
     override val withoutFilter = options.withAlbumFilter(null)
     private val libForAlbums = library.sort(
         options.artistSorter.comparator.orNoop(),
         options.albumSorter.comparator ?: compareBy { it.title },
         noopComparator()
-    ).filter(options.artistFilter, null)
+    ).filter(options.artistFilter, null, "")
     private val albumsSorters = AlbumSorter.values().associateWith { sorter ->
         SortFilterOption.Sort(sorter) {
             it.withAlbumFilter(null).copy(albumSorter = sorter)
@@ -454,7 +491,7 @@ private class AlbumOptionsRenderer(
     }
 
     @Composable
-    override fun BoxScope.Options(close: () -> Unit) {
+    override fun BoxScope.Render(close: () -> Unit) {
         FilterSortPopupRenderer(
             options, selectedOption, close, setOptions
         ).render {
@@ -480,11 +517,12 @@ private class AlbumOptionsRenderer(
 }
 
 private class SongOptionsRenderer(
-    override val tab: Tab,
+    override val tab: LibraryHeaderTab,
     private val options: SongListOptions,
     override val setOptions: (SongListOptions) -> Unit,
 ) : OptionsRenderer {
     override val description = "Songs"
+    override val icon = Icons.Default.MusicNote
     override val activeFilter = null
     override val withoutFilter = options
     private val isGroupingByAlbum = options.isInAlbumMode
@@ -501,7 +539,7 @@ private class SongOptionsRenderer(
     }
 
     @Composable
-    override fun BoxScope.Options(close: () -> Unit) {
+    override fun BoxScope.Render(close: () -> Unit) {
         FilterSortContent<Nothing>(
             options,
             selectedOption,

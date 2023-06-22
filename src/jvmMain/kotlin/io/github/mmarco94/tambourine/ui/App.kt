@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.PlayCircleFilled
 import androidx.compose.material.icons.filled.QueueMusic
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -58,7 +59,9 @@ private fun DelayDraw(f: @Composable (shouldRenderQuickly: Boolean) -> Unit) {
 fun App(
     library: LibraryState?,
     selectedPanel: Panel,
-    selectPanel: (Panel) -> Unit
+    selectPanel: (Panel) -> Unit,
+    libraryTab: LibraryHeaderTab?,
+    selectLibraryTab: (LibraryHeaderTab?) -> Unit,
 ) {
     var listOptions by remember(library as? Library) { mutableStateOf(SongListOptions()) }
     var openSettings by remember { mutableStateOf(false) }
@@ -83,7 +86,11 @@ fun App(
                 DelayDraw { shouldRenderQuickly ->
                     var libUIState = if (player.queue != null) NORMAL else library.toUIState()
                     if (shouldRenderQuickly && libUIState == NORMAL) libUIState = LOADING
-                    LibraryContainer(libUIState, library, { openSettings = true }) { lib ->
+                    LibraryContainer(
+                        libUIState,
+                        library,
+                        { openSettings = true },
+                    ) { lib ->
                         BoxWithConstraints {
                             val w = constraints.maxWidth
                             val large = w >= (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPxApprox()
@@ -101,9 +108,11 @@ fun App(
                                     selectPanel,
                                     lib,
                                     listOptions,
-                                    { listOptions = it }) {
-                                    openSettings = true
-                                }
+                                    { listOptions = it },
+                                    { openSettings = true },
+                                    libraryTab,
+                                    selectLibraryTab,
+                                )
                                 if (!large) {
                                     Divider()
                                     BottomBar(selectedPanel, selectPanel)
@@ -131,6 +140,8 @@ private fun MainContent(
     listOptions: SongListOptions,
     setListOptions: (SongListOptions) -> Unit,
     openSettings: () -> Unit,
+    libraryTab: LibraryHeaderTab?,
+    selectLibraryTab: (LibraryHeaderTab?) -> Unit,
 ) {
     val cs = rememberCoroutineScope()
     val player = playerController.current
@@ -138,7 +149,10 @@ private fun MainContent(
     PanelContainer(modifier, Panel.values().toSet(), visiblePanels) { panel ->
         val showSettings = !large || panel == PLAYER
         when (panel) {
-            LIBRARY -> LibraryContainer(library, openSettings) { library ->
+            LIBRARY -> LibraryContainer(
+                library,
+                openSettings
+            ) { library ->
                 val lib = remember(library, listOptions) {
                     library.filterAndSort(listOptions)
                 }
@@ -150,13 +164,22 @@ private fun MainContent(
                     library,
                     listOptions,
                     setListOptions,
+                    libraryTab,
+                    selectLibraryTab,
                     showSettings,
-                    openSettings
+                    openSettings,
                 ) {
-                    SongListUI(lib.stats.maxTrackNumber, items, libraryScrollState) { song ->
-                        cs.launch {
-                            player.changeQueue(SongQueue.of(lib, song), Position.Beginning)
-                            player.play()
+                    Crossfade(listOptions.queryFilter.isNotEmpty() && lib.songs.isEmpty()) {
+                        if (it) {
+                            LibraryNoSearchResultsComposable { setListOptions(listOptions.removeSearch()) }
+                        } else {
+                            SongListUI(lib.stats.maxTrackNumber, items, libraryScrollState) { song ->
+                                selectLibraryTab(null)
+                                cs.launch {
+                                    player.changeQueue(SongQueue.of(lib, song), Position.Beginning)
+                                    player.play()
+                                }
+                            }
                         }
                     }
                 }
@@ -257,7 +280,11 @@ private fun LibraryContainer(
 }
 
 @Composable
-private fun LibraryContainer(library: LibraryState?, openSettings: () -> Unit, f: @Composable (Library) -> Unit) {
+private fun LibraryContainer(
+    library: LibraryState?,
+    openSettings: () -> Unit,
+    f: @Composable (Library) -> Unit
+) {
     LibraryContainer(library.toUIState(), library, openSettings) { lib ->
         f(lib as Library)
     }
@@ -281,15 +308,26 @@ private fun LoadingLibraryComposable(library: LibraryState?, openSettings: () ->
 
 @Composable
 private fun LibraryEmptyComposable(openSettings: () -> Unit) {
-    Box {
-        BigMessage(
-            Modifier.fillMaxSize(),
-            Icons.Default.LibraryMusic,
-            "Library is empty",
-        ) {
-            Button(openSettings) {
-                Text("Open settings")
-            }
+    BigMessage(
+        Modifier.fillMaxSize(),
+        Icons.Default.LibraryMusic,
+        "Library is empty",
+    ) {
+        Button(openSettings) {
+            Text("Open settings")
+        }
+    }
+}
+
+@Composable
+private fun LibraryNoSearchResultsComposable(clearSearch: () -> Unit) {
+    BigMessage(
+        Modifier.fillMaxSize(),
+        Icons.Default.SearchOff,
+        "No search result",
+    ) {
+        Button(clearSearch) {
+            Text("Remove filter")
         }
     }
 }

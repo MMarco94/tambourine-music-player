@@ -5,6 +5,7 @@ data class SongListOptions(
     val albumSorter: AlbumSorter = AlbumSorter.YEAR,
     val songSorter: SongSorter = SongSorter.ALPHABETICAL,
     val songSorterInAlbum: SongSorter = SongSorter.TRACK,
+    val queryFilter: String = "",
     val artistFilter: Artist? = null,
     val albumFilter: Album? = null,
 ) {
@@ -16,6 +17,8 @@ data class SongListOptions(
         get() {
             return !isInAlbumMode && (artistSorter != ArtistSorter.NONE || artistFilter != null)
         }
+
+    fun removeSearch() = copy(queryFilter = "")
 
     fun withArtistFilter(artistFilter: Artist?): SongListOptions {
         return if (artistFilter == null) {
@@ -52,15 +55,17 @@ sealed interface SongListItem {
     ) : SongListItem
 }
 
-fun Library.filterAndSort(
-    options: SongListOptions,
-): Library {
-    val ss = if(options.isInAlbumMode){
+fun Library.filter(options: SongListOptions): Library {
+    return filter(options.artistFilter, options.albumFilter, options.queryFilter)
+}
+
+fun Library.filterAndSort(options: SongListOptions): Library {
+    val ss = if (options.isInAlbumMode) {
         options.songSorterInAlbum
-    }else {
+    } else {
         options.songSorter
     }
-    return filter(options.artistFilter, options.albumFilter)
+    return filter(options)
         .sort(
             options.artistSorter.comparator,
             options.albumSorter.comparator,

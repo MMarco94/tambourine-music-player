@@ -21,8 +21,8 @@ data class Artist(
     val name: String,
     val stats: SongCollectionStats,
 ) {
-    fun matches(artist: Artist?): Boolean {
-        return (artist == null || this == artist)
+    fun matches(queryFilter: String): Boolean {
+        return name.contains(queryFilter, ignoreCase = true)
     }
 }
 
@@ -32,8 +32,8 @@ data class Album(
     val cover: AlbumCover?,
     val stats: SongCollectionStats,
 ) {
-    fun matches(artist: Artist?, album: Album?): Boolean {
-        return (artist == null || this.artist == artist) && (album == null || this == album)
+    fun matches(queryFilter: String): Boolean {
+        return title.contains(queryFilter, ignoreCase = true)
     }
 }
 
@@ -49,8 +49,14 @@ data class Song(
 
     val artist get() = album.artist
 
-    fun matches(artist: Artist?, album: Album?): Boolean {
-        return (artist == null || this.artist == artist) && (album == null || this.album == album)
+    fun matches(artist: Artist?, album: Album?, queryFilter: String): Boolean {
+        return (artist == null || this.artist == artist) &&
+                (album == null || this.album == album) &&
+                (queryFilter.isBlank() ||
+                        title.contains(queryFilter, ignoreCase = true) ||
+                        this.album.matches(queryFilter) ||
+                        this.artist.matches(queryFilter)
+                        )
     }
 
     fun audioStream(): AudioInputStream {
@@ -75,17 +81,22 @@ data class Library(
     val songs: List<Song>,
     val albums: List<Album>,
     val artists: List<Artist>,
+    val songsByAlbum: Map<Album, List<Song>> = songs.groupBy { it.album },
+    val songsByArtist: Map<Artist, List<Song>> = songs.groupBy { it.artist },
 ) : LibraryState {
 
-    val songsByArtist: Map<Artist, List<Song>> = songs.groupBy { it.artist }
-    val songsByAlbum: Map<Album, List<Song>> = songs.groupBy { it.album }
     val stats = SongCollectionStats.of(songs)
 
-    fun filter(artist: Artist?, album: Album?): Library {
+    fun filter(artist: Artist?, album: Album?, queryFilter: String): Library {
+        val songs = songs.filter { it.matches(artist, album, queryFilter) }
+        val songsByAlbum = songs.groupBy { it.album }
+        val songsByArtist = songs.groupBy { it.artist }
         return Library(
-            songs = songs.filter { it.matches(artist, album) },
-            albums = albums.filter { it.matches(artist, album) },
-            artists = artists.filter { it.matches(artist) },
+            songs = songs,
+            albums = albums.filter { it in songsByAlbum },
+            artists = artists.filter { it in songsByArtist },
+            songsByAlbum = songsByAlbum,
+            songsByArtist = songsByArtist,
         )
     }
 

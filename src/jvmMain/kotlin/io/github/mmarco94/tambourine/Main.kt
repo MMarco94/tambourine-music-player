@@ -12,6 +12,7 @@ import io.github.mmarco94.tambourine.audio.PlayerController
 import io.github.mmarco94.tambourine.data.Library
 import io.github.mmarco94.tambourine.data.LibraryState
 import io.github.mmarco94.tambourine.ui.App
+import io.github.mmarco94.tambourine.ui.LibraryHeaderTab
 import io.github.mmarco94.tambourine.ui.Panel
 import io.github.mmarco94.tambourine.utils.Preferences
 import kotlinx.coroutines.*
@@ -61,6 +62,7 @@ fun main(): Unit = runBlocking {
         )
         CompositionLocalProvider(playerController provides player) {
             var selectedPanel by remember { mutableStateOf(Panel.LIBRARY) }
+            var libraryTab: LibraryHeaderTab? by remember { mutableStateOf(null) }
             Window(
                 title = "Tambourine",
                 onCloseRequest = ::exitApplication,
@@ -68,12 +70,12 @@ fun main(): Unit = runBlocking {
                     WindowState(size = DpSize(1440.dp, 960.dp))
                 },
                 onPreviewKeyEvent = { event ->
-                    handleKeypress(cs, event, player) { selectedPanel = it }
+                    handleKeypress(cs, event, player, libraryTab, { selectedPanel = it }, { libraryTab = it })
                 },
                 alwaysOnTop = bringToTop.also { bringToTop = false }
             ) {
                 val library by ml.collectAsState(null)
-                App(library, selectedPanel) { selectedPanel = it }
+                App(library, selectedPanel, { selectedPanel = it }, libraryTab, { libraryTab = it })
             }
         }
     }
@@ -84,7 +86,9 @@ private fun handleKeypress(
     cs: CoroutineScope,
     event: KeyEvent,
     player: PlayerController,
-    selectedPanel: (Panel) -> Unit
+    libraryTab: LibraryHeaderTab?,
+    selectedPanel: (Panel) -> Unit,
+    selectLibraryTab: (LibraryHeaderTab?) -> Unit,
 ): Boolean {
     if (event.type == KeyEventType.KeyDown) {
         if (event.isCtrlPressed) {
@@ -116,6 +120,12 @@ private fun handleKeypress(
                     }
                     return true
                 }
+
+                Key.F -> {
+                    selectedPanel(Panel.LIBRARY)
+                    selectLibraryTab(LibraryHeaderTab.SEARCH)
+                    return true
+                }
             }
         } else {
             when (event.key) {
@@ -143,6 +153,13 @@ private fun handleKeypress(
                 Key.F3 -> {
                     selectedPanel(Panel.PLAYER)
                     return true
+                }
+
+                Key.Escape -> {
+                    if (libraryTab != null) {
+                        selectLibraryTab(null)
+                        return true
+                    }
                 }
             }
         }
