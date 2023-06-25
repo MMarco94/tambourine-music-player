@@ -42,11 +42,13 @@ fun SongQueueUI(
                 Modifier.heightIn(min = 64.dp).padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Spacer(Modifier.width(16.dp))
                 SmallSpectrometers(
-                    Modifier.size(64.dp).padding(16.dp),
+                    Modifier.size(32.dp),
                     player.frequencyAnalyzer.lastFrequency,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
+                Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
                     // TODO: plurals
                     SingleLineText(
