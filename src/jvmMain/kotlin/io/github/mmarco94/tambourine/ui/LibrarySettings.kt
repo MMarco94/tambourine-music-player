@@ -37,20 +37,22 @@ fun SettingsButton(
     openSettings: () -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    IconButton({ showMenu = !showMenu }, modifier) {
-        Icon(Icons.Default.MoreVert, "Open menu")
-    }
-    DropdownMenu(
-        showMenu,
-        { showMenu = false },
-        offset = DpOffset(8.dp, 0.dp),
-    ) {
-        DropdownMenuItem(text = { SingleLineText("Settings", style = LocalTextStyle.current) },
-            leadingIcon = { Icon(Icons.Default.Settings, null) },
-            onClick = {
-                openSettings()
-                showMenu = false
-            })
+    Box(modifier) {
+        IconButton({ showMenu = !showMenu }) {
+            Icon(Icons.Default.MoreVert, "Open menu")
+        }
+        DropdownMenu(
+            showMenu,
+            { showMenu = false },
+            offset = DpOffset(8.dp, 0.dp),
+        ) {
+            DropdownMenuItem(text = { SingleLineText("Settings", style = LocalTextStyle.current) },
+                leadingIcon = { Icon(Icons.Default.Settings, null) },
+                onClick = {
+                    openSettings()
+                    showMenu = false
+                })
+        }
     }
 }
 

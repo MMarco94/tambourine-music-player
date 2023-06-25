@@ -34,6 +34,5 @@ flatpak run io.github.mmarco94.tambourine
 
 ## TODO
 
-- Do not access the whole DBUS
 - Access the FS through the file portal;
   see https://github.com/ATLauncher/ATLauncher/issues/564 https://github.com/ATLauncher/ATLauncher/blob/master/src/main/java/com/atlauncher/dbus/DBusUtils.java

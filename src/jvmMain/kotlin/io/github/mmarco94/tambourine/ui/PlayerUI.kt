@@ -118,9 +118,7 @@ fun PlayerUI(
             }
         }
         if (showSettingsButton) {
-            Box(Modifier.width(48.dp).height(64.dp).align(Alignment.TopEnd)) {
-                SettingsButton(Modifier.fillMaxSize(), openSettings)
-            }
+            SettingsButton(Modifier.align(Alignment.TopEnd), openSettings)
         }
     }
 }

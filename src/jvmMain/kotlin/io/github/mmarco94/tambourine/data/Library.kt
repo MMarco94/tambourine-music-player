@@ -4,9 +4,11 @@ import io.github.mmarco94.tambourine.utils.debugElapsed
 import io.github.mmarco94.tambourine.utils.mostCommonOrNull
 import io.github.mmarco94.tambourine.utils.orNoop
 import io.github.mmarco94.tambourine.utils.readFolder
-import kotlinx.coroutines.*
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.toList
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
@@ -175,7 +177,7 @@ data class Library(
             folder: File,
             progress: Channel<LibraryState>,
         ): Library = coroutineScope {
-            val decoder = CoversDecoder(this + Dispatchers.Default)
+            val decoder = CoversDecoder(this)
 
             val songs = logger.debugElapsed("Loading songs") {
                 val songsChannel = Channel<RawMetadataSong>(Channel.UNLIMITED)
@@ -183,7 +185,7 @@ data class Library(
                 launch {
                     coroutineScope {
                         readFolder(folder) { file ->
-                            launch(Dispatchers.IO) {
+                            launch {
                                 try {
                                     val song = RawMetadataSong.fromMusicFile(file, decoder)
                                     songsChannel.send(song)
