@@ -32,6 +32,33 @@ data class SongQueue(
         return copy(position = (position + 1).mod(songs.size))
     }
 
+    fun move(oldIndex: Int, newIndex: Int): SongQueue {
+        val newSongs = songs.toMutableList().apply {
+            val s = removeAt(oldIndex)
+            add(if (newIndex <= oldIndex) newIndex else newIndex - 1, s)
+        }
+        val newPos = when {
+            position == oldIndex -> newIndex
+            position == newIndex -> oldIndex
+            oldIndex < position && newIndex > position -> position - 1
+            oldIndex > position && newIndex < position -> position + 1
+            else -> position
+        }
+        return copy(
+            position = newPos,
+            songs = newSongs,
+        )
+    }
+
+    fun add(index: Int, song: Song): SongQueue {
+        return copy(
+            position = if (index <= position) position + 1 else position,
+            songs = songs.toMutableList().apply {
+                add(index, song)
+            },
+        )
+    }
+
     /**
      * The next queue, plus whether it can continue playing, or it should stop
      */
@@ -57,6 +84,14 @@ data class SongQueue(
         return if (isShuffled) unshuffled() else shuffled()
     }
 
+    fun maybeShuffled(shuffled: Boolean?): SongQueue {
+        return when (shuffled) {
+            true -> shuffled()
+            false -> unshuffled()
+            null -> this
+        }
+    }
+
     fun shuffled(): SongQueue {
         return copy(
             songs = listOf(currentSong) + (
@@ -76,22 +111,17 @@ data class SongQueue(
         )
     }
 
-    fun skipTo(song: Song): SongQueue {
-        val iof = songs.indexOf(song)
-        require(iof >= 0)
-        return copy(position = iof)
-    }
-
     companion object {
-        fun of(currentQueue: SongQueue?, library: Library, song: Song): SongQueue {
-            return of(currentQueue, library.songs, song)
-        }
 
         fun of(currentQueue: SongQueue?, songs: List<Song>, song: Song): SongQueue {
             return if (currentQueue != null && currentQueue.originalSongs.toSet() == songs.toSet()) {
                 currentQueue.copy(
                     originalSongs = songs,
-                    position = currentQueue.songs.indexOf(song),
+                    position = if (song == currentQueue.currentSong) {
+                        currentQueue.position
+                    } else {
+                        currentQueue.songs.indexOf(song)
+                    },
                 )
             } else {
                 SongQueue(

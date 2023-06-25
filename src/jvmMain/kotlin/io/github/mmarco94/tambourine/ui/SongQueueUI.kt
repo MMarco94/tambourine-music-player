@@ -12,8 +12,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.github.mmarco94.tambourine.data.Library
 import io.github.mmarco94.tambourine.data.SongListItem
-import io.github.mmarco94.tambourine.data.SongQueue
+import io.github.mmarco94.tambourine.data.SongQueueController
 import io.github.mmarco94.tambourine.playerController
 import io.github.mmarco94.tambourine.utils.format
 import io.github.mmarco94.tambourine.utils.sumOfDuration
@@ -22,9 +23,9 @@ import kotlin.math.roundToInt
 @Composable
 fun SongQueueUI(
     modifier: Modifier,
+    sortedLibrary: Library,
     showSettingsButton: Boolean,
     openSettings: () -> Unit,
-    play: (SongQueue) -> Unit,
 ) {
     val player = playerController.current
     val queue = player.queue
@@ -37,6 +38,7 @@ fun SongQueueUI(
             "To begin, select a song from your library",
         )
     } else {
+        val controller = SongQueueController(cs, queue.originalSongs, sortedLibrary, player)
         Column(modifier) {
             Row(
                 Modifier.heightIn(min = 64.dp).padding(vertical = 8.dp),
@@ -81,11 +83,10 @@ fun SongQueueUI(
                 }
                 SongListUI(
                     0,
-                    queue.songs.map { SongListItem.SingleSongListItem(it) },
+                    queue.songs.mapIndexed { index, it -> SongListItem.QueuedSongListItem(index, it) },
                     listState,
-                ) {
-                    play(queue.skipTo(it))
-                }
+                    controller,
+                )
             }
         }
     }

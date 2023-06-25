@@ -48,29 +48,40 @@ data class SongListOptions(
 }
 
 sealed interface SongListItem {
-    data class ArtistListItem(val artist: Artist, val songs: List<Song>) : SongListItem
-    data class AlbumListItem(val album: Album, val songs: List<Song>) : SongListItem
-    data class SingleSongListItem(
-        val song: Song
-    ) : SongListItem
+
+    data class ArtistListItem(
+        val artist: Artist, val songs: List<Song>
+    ) : io.github.mmarco94.tambourine.data.SongListItem
+
+    data class AlbumListItem(
+        val album: Album, val songs: List<Song>
+    ) : io.github.mmarco94.tambourine.data.SongListItem
+
+    data class SongListItem(val song: Song) : io.github.mmarco94.tambourine.data.SongListItem
+    data class QueuedSongListItem(val indexInQueue: Int, val song: Song) :
+        io.github.mmarco94.tambourine.data.SongListItem
 }
 
 fun Library.filter(options: SongListOptions): Library {
     return filter(options.artistFilter, options.albumFilter, options.queryFilter)
 }
 
-fun Library.filterAndSort(options: SongListOptions): Library {
+fun Library.sort(options: SongListOptions): Library {
     val ss = if (options.isInAlbumMode) {
         options.songSorterInAlbum
     } else {
         options.songSorter
     }
-    return filter(options)
-        .sort(
-            options.artistSorter.comparator,
-            options.albumSorter.comparator,
-            ss.comparator,
-        )
+    return sort(
+        options.artistSorter.comparator,
+        options.albumSorter.comparator,
+        ss.comparator,
+    )
+}
+
+
+fun Library.filterAndSort(options: SongListOptions): Library {
+    return filter(options).sort(options)
 }
 
 fun Library.toListItems(
@@ -92,7 +103,7 @@ fun Library.toListItems(
         }
     } else {
         songs.map { song ->
-            SongListItem.SingleSongListItem(song)
+            SongListItem.SongListItem(song)
         }
     }
 }

@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -25,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.TextUnit
 
@@ -36,6 +38,9 @@ fun Float.toDpApprox(): Dp = with(LocalDensity.current) { toDp() }
 
 @Composable
 fun Size.toDpApprox() = DpSize(width.toDpApprox(), height.toDpApprox())
+
+@Composable
+fun Offset.toDpApprox() = DpOffset(x.toDpApprox(), y.toDpApprox())
 
 @Composable
 fun SingleLineText(

@@ -16,12 +16,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.data.Album
 import io.github.mmarco94.tambourine.data.Song
+import io.github.mmarco94.tambourine.data.SongQueueController
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AlbumRow(
     maxTrackNumber: Int?,
-    album: Album, songs: List<Song>, sideOffset: Int, onSongSelected: (Song) -> Unit,
+    album: Album, songs: List<Song>,
+    sideOffset: Int,
+    controller: SongQueueController,
 ) {
     val showAlbumInfo = songs.size > 3
     val showAlbumStats = songs.size > 6
@@ -40,7 +43,7 @@ fun AlbumRow(
         maxTrackNumber,
         songs = songs,
         sideOffset = sideOffset,
-        onSongSelected = onSongSelected,
+        controller = controller,
         showTrackNumber = true,
         showAlbumInfo = !showAlbumInfo,
         showArtistInfo = !showAlbumInfo,

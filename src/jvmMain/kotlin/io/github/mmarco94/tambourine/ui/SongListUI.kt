@@ -10,16 +10,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongListItem
+import io.github.mmarco94.tambourine.data.SongQueueController
 
 @Composable
 fun SongListUI(
     maxTrackNumber: Int?,
     items: List<SongListItem>,
     state: LazyListState,
+    controller: SongQueueController,
     contentPadding: PaddingValues = PaddingValues(bottom = 128.dp),
-    onSongSelected: (Song) -> Unit,
 ) {
     Box {
         LazyColumn(
@@ -31,21 +31,33 @@ fun SongListUI(
                 val offset = if (index == state.firstVisibleItemIndex) state.firstVisibleItemScrollOffset else 0
                 when (item) {
                     is SongListItem.ArtistListItem -> {
-                        ArtistRow(maxTrackNumber, item.artist, item.songs, offset, onSongSelected)
+                        ArtistRow(maxTrackNumber, item.artist, item.songs, offset, controller)
                     }
 
                     is SongListItem.AlbumListItem -> {
-                        AlbumRow(maxTrackNumber, item.album, item.songs, offset, onSongSelected)
+                        AlbumRow(maxTrackNumber, item.album, item.songs, offset, controller)
                     }
 
-                    is SongListItem.SingleSongListItem -> {
+                    is SongListItem.SongListItem -> {
                         SongRow(
                             Modifier.padding(horizontal = 16.dp),
                             maxTrackNumber,
-                            item.song,
+                            item,
                             showAlbumInfo = true,
-                            showArtistInfo = true
-                        ) { onSongSelected(item.song) }
+                            showArtistInfo = true,
+                            controller = controller,
+                        )
+                    }
+
+                    is SongListItem.QueuedSongListItem -> {
+                        SongRow(
+                            Modifier.padding(horizontal = 16.dp),
+                            maxTrackNumber,
+                            item,
+                            showAlbumInfo = true,
+                            showArtistInfo = true,
+                            controller = controller,
+                        )
                     }
                 }
             }

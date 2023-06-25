@@ -7,11 +7,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import io.github.mmarco94.tambourine.data.Artist
 import io.github.mmarco94.tambourine.data.Song
+import io.github.mmarco94.tambourine.data.SongQueueController
 
 @Composable
 fun ArtistRow(
     maxTrackNumber: Int?,
-    artist: Artist, songs: List<Song>, sideOffset: Int, onSongSelected: (Song) -> Unit
+    artist: Artist, songs: List<Song>,
+    sideOffset: Int,
+    controller: SongQueueController,
 ) {
     val showArtistStats = songs.size > 6
 
@@ -22,7 +25,7 @@ fun ArtistRow(
         showArtistInfo = false,
         songs = songs,
         sideOffset = sideOffset,
-        onSongSelected = onSongSelected,
+        controller = controller,
     ) {
         Text(artist.name, textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium)
         if (showArtistStats) {

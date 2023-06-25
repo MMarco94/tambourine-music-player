@@ -4,6 +4,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.LocalContextMenuRepresentation
 import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.defaultScrollbarStyle
 import androidx.compose.foundation.layout.*
@@ -22,12 +23,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import io.github.mmarco94.tambourine.audio.Position
 import io.github.mmarco94.tambourine.data.*
 import io.github.mmarco94.tambourine.playerController
 import io.github.mmarco94.tambourine.ui.LibraryUIState.*
 import io.github.mmarco94.tambourine.ui.Panel.*
-import kotlinx.coroutines.launch
 
 
 enum class Panel(
@@ -79,7 +78,8 @@ fun App(
                 shape = RoundedCornerShape(6.dp),
                 unhoverColor = Color.White.copy(alpha = .12f),
                 hoverColor = Color.White.copy(alpha = .5f),
-            )
+            ),
+            LocalContextMenuRepresentation provides MenuContextRepresentation,
         ) {
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 BlurredFadeAlbumCover(mainImage, Modifier.fillMaxSize())
@@ -153,12 +153,18 @@ private fun MainContent(
                 library,
                 openSettings
             ) { library ->
-                val lib = remember(library, listOptions) {
-                    library.filterAndSort(listOptions)
+                val sortedLib = remember(library, listOptions) {
+                    library.sort(listOptions)
+                }
+                val lib = remember(sortedLib, listOptions) {
+                    sortedLib.filter(listOptions)
                 }
                 val items = remember(lib, listOptions) {
                     lib.toListItems(listOptions)
                 }
+                val controller = SongQueueController(cs, lib.songs, sortedLib, player, onAction = {
+                    selectLibraryTab(null)
+                })
                 LibraryHeader(
                     Modifier.fillMaxSize(),
                     library,
@@ -173,24 +179,19 @@ private fun MainContent(
                         if (it) {
                             LibraryNoSearchResultsComposable { setListOptions(listOptions.removeSearch()) }
                         } else {
-                            SongListUI(lib.stats.maxTrackNumber, items, libraryScrollState) { song ->
-                                selectLibraryTab(null)
-                                cs.launch {
-                                    player.changeQueue(SongQueue.of(player.queue, lib, song), Position.Beginning)
-                                    player.play()
-                                }
-                            }
+                            SongListUI(lib.stats.maxTrackNumber, items, libraryScrollState, controller)
                         }
                     }
                 }
             }
 
-            QUEUE -> SongQueueUI(Modifier.fillMaxSize(), showSettings, openSettings) { queue ->
-                cs.launch {
-                    player.changeQueue(queue, Position.Beginning)
-                    player.play()
+            QUEUE ->
+                LibraryContainer(library.toUIState(false), library, openSettings) { library ->
+                    val sortedLib = remember(library, listOptions) {
+                        (library as Library).sort(listOptions)
+                    }
+                    SongQueueUI(Modifier.fillMaxSize(), sortedLib, showSettings, openSettings)
                 }
-            }
 
             PLAYER -> {
                 Box(Modifier.fillMaxSize()) {
@@ -253,10 +254,10 @@ private enum class LibraryUIState {
     EMPTY, LOADING, NORMAL
 }
 
-private fun LibraryState?.toUIState(): LibraryUIState {
+private fun LibraryState?.toUIState(handleEmpty: Boolean = true): LibraryUIState {
     return when (this) {
         null -> LOADING
-        is Library -> if (songs.isEmpty()) EMPTY else NORMAL
+        is Library -> if (handleEmpty && songs.isEmpty()) EMPTY else NORMAL
         is Library.Companion.LoadingProgress -> LOADING
     }
 }

@@ -30,7 +30,6 @@ Browse your music collection; play a song; that's it really.
 
 Blockers for V1:
  - Use Flatpak file portal
- - Option to add a song to current queue
  - Dynamically reload library if files change
 
 Other non-blocking features:

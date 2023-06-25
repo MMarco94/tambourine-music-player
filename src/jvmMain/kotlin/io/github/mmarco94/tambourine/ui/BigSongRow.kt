@@ -12,6 +12,8 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.data.Song
+import io.github.mmarco94.tambourine.data.SongListItem
+import io.github.mmarco94.tambourine.data.SongQueueController
 
 val BIG_SONG_ROW_DESIRED_WIDTH = 480.dp
 
@@ -25,7 +27,7 @@ fun BigSongRow(
     sidePanelPadding: Dp = 16.dp,
     songs: List<Song>,
     sideOffset: Int,
-    onSongSelected: (Song) -> Unit,
+    controller: SongQueueController,
     sideContent: @Composable () -> Unit
 ) {
     val sidePanelW = 128.dp + 32.dp
@@ -52,12 +54,13 @@ fun BigSongRow(
                         SongRow(
                             Modifier.padding(end = 8.dp), // Space for scrollbar
                             maxTrackNumber,
-                            song,
+                            SongListItem.SongListItem(song),
                             showTrackNumber = showTrackNumber,
                             showAlbumInfo = showAlbumInfo,
                             showArtistInfo = showArtistInfo,
                             showAlbumCover = showAlbumCover,
-                            onSongSelected = { onSongSelected(song) })
+                            controller = controller,
+                        )
                     }
                 }
             }
