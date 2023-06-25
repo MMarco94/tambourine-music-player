@@ -37,7 +37,7 @@ class MPRISPlayerController(
             canRaise = true,
             hasTrackList = false,
             identity = "Tambourine",
-            desktopEntry = "TODO",//TODO
+            desktopEntry = "io.github.mmarco94.tambourine",
             supportedUriSchemes = listOf("file"),
             supportedMimeTypes = listOf("audio/mpeg", "audio/mp3"),//TODO
         ),
