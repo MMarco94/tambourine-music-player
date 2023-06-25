@@ -24,7 +24,7 @@ fun PlayShuffleButtons(
     Row(modifier) {
         IconButtonWithBG({
             cs.launch {
-                player.changeQueue(SongQueue.of(songs, songs.first()), Position.Beginning)
+                player.changeQueue(SongQueue.of(player.queue, songs, songs.first()).unshuffled(), Position.Beginning)
                 player.play()
             }
         }) {
@@ -32,7 +32,7 @@ fun PlayShuffleButtons(
         }
         IconButtonWithBG({
             cs.launch {
-                player.changeQueue(SongQueue.of(songs, songs.random()).shuffled(), Position.Beginning)
+                player.changeQueue(SongQueue.of(player.queue, songs, songs.random()).shuffled(), Position.Beginning)
                 player.play()
             }
         }) {

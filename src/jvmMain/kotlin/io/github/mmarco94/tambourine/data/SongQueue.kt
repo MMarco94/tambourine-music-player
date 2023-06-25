@@ -83,20 +83,23 @@ data class SongQueue(
     }
 
     companion object {
-        fun of(library: Library, song: Song): SongQueue {
-            return SongQueue(
-                library.songs,
-                library.songs,
-                library.songs.indexOf(song)
-            )
+        fun of(currentQueue: SongQueue?, library: Library, song: Song): SongQueue {
+            return of(currentQueue, library.songs, song)
         }
 
-        fun of(songs: List<Song>, song: Song): SongQueue {
-            return SongQueue(
-                songs,
-                songs,
-                songs.indexOf(song)
-            )
+        fun of(currentQueue: SongQueue?, songs: List<Song>, song: Song): SongQueue {
+            return if (currentQueue != null && currentQueue.originalSongs.toSet() == songs.toSet()) {
+                currentQueue.copy(
+                    originalSongs = songs,
+                    position = currentQueue.songs.indexOf(song),
+                )
+            } else {
+                SongQueue(
+                    songs,
+                    songs,
+                    songs.indexOf(song)
+                )
+            }
         }
     }
 }

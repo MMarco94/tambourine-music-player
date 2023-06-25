@@ -176,7 +176,7 @@ private fun MainContent(
                             SongListUI(lib.stats.maxTrackNumber, items, libraryScrollState) { song ->
                                 selectLibraryTab(null)
                                 cs.launch {
-                                    player.changeQueue(SongQueue.of(lib, song), Position.Beginning)
+                                    player.changeQueue(SongQueue.of(player.queue, lib, song), Position.Beginning)
                                     player.play()
                                 }
                             }
