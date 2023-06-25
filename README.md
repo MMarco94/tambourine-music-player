@@ -40,7 +40,8 @@ Other non-blocking features:
   - Lyrics
 - Translations
 - Persist filter/sort
-- Drag&drop and open files to open them 
+- Keep scrolling position when removing filters
+- Drag&drop and open files to open them
 - Skip "zeros" at the beginning of the song
 - Drag & drop in queue UI
 - Spectrometer

@@ -20,22 +20,14 @@ private val logger = KotlinLogging.logger {}
 data class Artist(
     val name: String,
     val stats: SongCollectionStats,
-) {
-    fun matches(queryFilter: String): Boolean {
-        return name.contains(queryFilter, ignoreCase = true)
-    }
-}
+)
 
 data class Album(
     val title: String,
     val artist: Artist,
     val cover: AlbumCover?,
     val stats: SongCollectionStats,
-) {
-    fun matches(queryFilter: String): Boolean {
-        return title.contains(queryFilter, ignoreCase = true)
-    }
-}
+)
 
 data class Song(
     val file: File,
@@ -49,14 +41,16 @@ data class Song(
 
     val artist get() = album.artist
 
-    fun matches(artist: Artist?, album: Album?, queryFilter: String): Boolean {
+    private fun matches(queryFilter: String): Boolean {
+        return title.contains(queryFilter, ignoreCase = true) ||
+                this.album.title.contains(queryFilter, ignoreCase = true) ||
+                this.artist.name.contains(queryFilter, ignoreCase = true)
+    }
+
+    fun matches(artist: Artist?, album: Album?, queryFilter: List<String>): Boolean {
         return (artist == null || this.artist == artist) &&
                 (album == null || this.album == album) &&
-                (queryFilter.isBlank() ||
-                        title.contains(queryFilter, ignoreCase = true) ||
-                        this.album.matches(queryFilter) ||
-                        this.artist.matches(queryFilter)
-                        )
+                (queryFilter.all { matches(it) })
     }
 
     fun audioStream(): AudioInputStream {
@@ -87,7 +81,8 @@ data class Library(
 
     val stats = SongCollectionStats.of(songs)
 
-    fun filter(artist: Artist?, album: Album?, queryFilter: String): Library {
+    fun filter(artist: Artist?, album: Album?, query: String): Library {
+        val queryFilter = query.split(queryStringDelimiters)
         val songs = songs.filter { it.matches(artist, album, queryFilter) }
         val songsByAlbum = songs.groupBy { it.album }
         val songsByArtist = songs.groupBy { it.artist }
@@ -128,6 +123,7 @@ data class Library(
     }
 
     companion object {
+        private val queryStringDelimiters = "\\s+".toRegex()
 
         private fun buildArtists(metadata: Collection<RawMetadataSong>): Map<String, Artist> {
             return metadata
