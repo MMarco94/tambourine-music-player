@@ -45,6 +45,21 @@ enum class LibrarySearchBarMode {
     }
 }
 
+private val floatTransitionSpec: @Composable Transition.Segment<LibrarySearchBarMode>.() -> FiniteAnimationSpec<Float> =
+    {
+        if (this.targetState == this.initialState) snap() else spring()
+    }
+private val offsetTransitionSpec: @Composable Transition.Segment<LibrarySearchBarMode>.() -> FiniteAnimationSpec<Offset> =
+    {
+        if (this.targetState == this.initialState) snap() else spring(visibilityThreshold = Offset.VisibilityThreshold)
+    }
+private val sizeTransitionSpec: @Composable Transition.Segment<LibrarySearchBarMode>.() -> FiniteAnimationSpec<Size> = {
+    if (this.targetState == this.initialState) snap() else spring(visibilityThreshold = Size.VisibilityThreshold)
+}
+private val dpTransitionSpec: @Composable Transition.Segment<LibrarySearchBarMode>.() -> FiniteAnimationSpec<Dp> = {
+    if (this.targetState == this.initialState) snap() else spring(visibilityThreshold = Dp.VisibilityThreshold)
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun BoxScope.LibrarySearchBar(
@@ -68,39 +83,39 @@ fun BoxScope.LibrarySearchBar(
             delay(5000)
         }
     }
-    val bgAlpha by mode.animateFloat { if (it == ICON) 0f else 1f }
-    val closeAlpha by mode.animateFloat { if (it == ICON) 0f else 1f }
-    val realTextFieldAlpha by mode.animateFloat { if (it == EXPANDED) 1f else 0f }
-    val offset by mode.animateOffset {
+    val bgAlpha by mode.animateFloat(floatTransitionSpec) { if (it == ICON) 0f else 1f }
+    val closeAlpha by mode.animateFloat(floatTransitionSpec) { if (it == ICON) 0f else 1f }
+    val realTextFieldAlpha by mode.animateFloat(floatTransitionSpec) { if (it == EXPANDED) 1f else 0f }
+    val offset by mode.animateOffset(offsetTransitionSpec) {
         when (it) {
             EXPANDED -> Offset.Zero
             ICON -> iconOffset
             TAG -> tagOffset
         }
     }
-    val size by mode.animateSize {
+    val size by mode.animateSize(sizeTransitionSpec) {
         when (it) {
             EXPANDED -> expandedSize.toSize()
             ICON -> Size(48.dp.toPxApprox(), 48.dp.toPxApprox())
             TAG -> tagSize.toSize()
         }
     }
-    val textSize by mode.animateFloat {
+    val textSize by mode.animateFloat(floatTransitionSpec) {
         it.textStyle().fontSize.value
     }
-    val fontWeight by mode.animateFloat {
+    val fontWeight by mode.animateFloat(floatTransitionSpec) {
         it.textStyle().fontWeight?.weight?.toFloat() ?: 0f
     }
-    val lineHeight by mode.animateFloat {
+    val lineHeight by mode.animateFloat(floatTransitionSpec) {
         it.textStyle().lineHeight.value
     }
-    val letterSpacing by mode.animateFloat {
+    val letterSpacing by mode.animateFloat(floatTransitionSpec) {
         it.textStyle().letterSpacing.value
     }
-    val iconPadding by mode.animateDp {
+    val iconPadding by mode.animateDp(dpTransitionSpec) {
         if (it == EXPANDED) 8.dp else 0.dp
     }
-    val textPadding by mode.animateDp {
+    val textPadding by mode.animateDp(dpTransitionSpec) {
         if (it == EXPANDED) 12.dp else 0.dp
     }
     if (mode.targetState == EXPANDED || mode.currentState == EXPANDED) {
