@@ -42,7 +42,12 @@ fun SongQueueUI(
                 Modifier.heightIn(min = 64.dp).padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(Modifier.padding(horizontal = 16.dp)) {
+                SmallSpectrometers(
+                    Modifier.size(64.dp).padding(16.dp),
+                    player.frequencyAnalyzer.lastFrequency,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Column(Modifier.weight(1f)) {
                     // TODO: plurals
                     SingleLineText(
                         "${queue.songs.size} songs in the queue • ${
@@ -56,7 +61,7 @@ fun SongQueueUI(
                         }", style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.width(16.dp))
                 RepeatIcon(cs, queue)
                 ShuffleIcon(cs, queue)
                 if (showSettingsButton) {
