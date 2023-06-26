@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.github.mmarco94"
-version = "0.2"
+version = "0.3"
 
 repositories {
     google()
