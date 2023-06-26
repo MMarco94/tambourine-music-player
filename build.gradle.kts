@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.github.mmarco94"
-version = "0.3"
+version = "0.4"
 
 repositories {
     google()
@@ -29,7 +29,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
 
-                // Native file fialog
+                // Native file dialog
                 val lwjglVersion = "3.3.2"
                 listOf("lwjgl", "lwjgl-nfd").forEach { lwjglDep ->
                     implementation("org.lwjgl:${lwjglDep}:${lwjglVersion}")

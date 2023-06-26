@@ -15,6 +15,7 @@ import io.github.mmarco94.tambourine.ui.App
 import io.github.mmarco94.tambourine.ui.LibraryHeaderTab
 import io.github.mmarco94.tambourine.ui.Panel
 import io.github.mmarco94.tambourine.utils.Preferences
+import io.github.mmarco94.tambourine.utils.skikoWorkaround731
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -41,41 +42,48 @@ private val musicLibrary: Flow<LibraryState?> = Preferences.libraryFolder
 
 val playerController = staticCompositionLocalOf<PlayerController> { throw IllegalStateException() }
 
-fun main(): Unit = runBlocking {
-    // Start loading ASAP
-    val ml = musicLibrary.stateIn(this, started = SharingStarted.Eagerly, null)
+fun main(args: Array<String>) {
+    // TODO: remove when https://github.com/JetBrains/skiko/issues/731 is fixed
+    if (args.singleOrNull() == "--initialize-skiko") {
+        skikoWorkaround731()
+    } else {
+        runBlocking {
+            // Start loading ASAP
+            val ml = musicLibrary.stateIn(this, started = SharingStarted.Eagerly, null)
 
-    // Uncomment to get all logs from ffsampledsp
-    // val root: Logger = Logger.getLogger(FFNativeLibraryLoader::class.java.name)
-    // root.level = Level.ALL
+            // Uncomment to get all logs from ffsampledsp
+            // val root: Logger = Logger.getLogger(FFNativeLibraryLoader::class.java.name)
+            // root.level = Level.ALL
 
-    SLF4JBridgeHandler.removeHandlersForRootLogger()
-    SLF4JBridgeHandler.install()
-    application {
-        val cs = rememberCoroutineScope()
-        // Using `alwaysOnTop` is the most reliable method. awt.Window.toFront() doesn't work :(
-        var bringToTop by remember { mutableStateOf(false) }
-        val player = PlayerController(
-            cs,
-            quit = { exitApplication() },
-            raise = { bringToTop = true }
-        )
-        CompositionLocalProvider(playerController provides player) {
-            var selectedPanel by remember { mutableStateOf(Panel.LIBRARY) }
-            var libraryTab: LibraryHeaderTab? by remember { mutableStateOf(null) }
-            Window(
-                title = "Tambourine",
-                onCloseRequest = ::exitApplication,
-                state = remember {
-                    WindowState(size = DpSize(1440.dp, 960.dp))
-                },
-                onPreviewKeyEvent = { event ->
-                    handleKeypress(cs, event, player, libraryTab, { selectedPanel = it }, { libraryTab = it })
-                },
-                alwaysOnTop = bringToTop.also { bringToTop = false }
-            ) {
-                val library by ml.collectAsState(null)
-                App(library, selectedPanel, { selectedPanel = it }, libraryTab, { libraryTab = it })
+            SLF4JBridgeHandler.removeHandlersForRootLogger()
+            SLF4JBridgeHandler.install()
+            application {
+                val cs = rememberCoroutineScope()
+                // Using `alwaysOnTop` is the most reliable method. awt.Window.toFront() doesn't work :(
+                var bringToTop by remember { mutableStateOf(false) }
+                val player = PlayerController(
+                    cs,
+                    quit = { exitApplication() },
+                    raise = { bringToTop = true }
+                )
+                CompositionLocalProvider(playerController provides player) {
+                    var selectedPanel by remember { mutableStateOf(Panel.LIBRARY) }
+                    var libraryTab: LibraryHeaderTab? by remember { mutableStateOf(null) }
+                    Window(
+                        title = "Tambourine",
+                        onCloseRequest = ::exitApplication,
+                        state = remember {
+                            WindowState(size = DpSize(1440.dp, 960.dp))
+                        },
+                        onPreviewKeyEvent = { event ->
+                            handleKeypress(cs, event, player, libraryTab, { selectedPanel = it }, { libraryTab = it })
+                        },
+                        alwaysOnTop = bringToTop.also { bringToTop = false }
+                    ) {
+                        val library by ml.collectAsState(null)
+                        App(library, selectedPanel, { selectedPanel = it }, libraryTab, { libraryTab = it })
+                    }
+                }
             }
         }
     }

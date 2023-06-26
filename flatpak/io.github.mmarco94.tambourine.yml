@@ -36,9 +36,11 @@ modules:
       # Installing the actual app
       - install -D tambourine-linux.jar /app/bin/tambourine.jar
       - install -D run.sh /app/bin/run.sh
+      # Workaround for https://github.com/JetBrains/skiko/issues/731
+      - /app/jre/bin/java -jar /app/bin/tambourine.jar --initialize-skiko
     sources:
       - type: file
-        path: ../build/compose/jars/tambourine-linux-x64-0.2.jar
+        path: ../build/compose/jars/tambourine-linux-x64-0.4.jar
         dest-filename: tambourine-linux.jar
       - type: file
         path: run.sh
