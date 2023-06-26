@@ -39,7 +39,7 @@ private sealed interface PlayerCommand {
     class WaveformComputed(val song: Song, val waveform: Waveform) : PlayerCommand
 }
 
-private val buffer = 64.milliseconds
+private val buffer = 150.milliseconds
 private val playLoopDelay = minOf(16.milliseconds, buffer / 2)
 
 class PlayerController(
