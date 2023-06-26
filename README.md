@@ -24,6 +24,7 @@ Browse your music collection; play a song; that's it really.
 ![s2](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s2.png)
 ![s3](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s3.png)
 ![s4](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s4.png)
+![s5](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s6.png)
 ![s5](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s5.png)
 
 ## Roadmap
