@@ -59,3 +59,7 @@ modules:
         path: io.github.mmarco94.tambourine.metainfo.xml
       - type: file
         path: icon.png
+      - type: file
+        path: icon_128.png
+      - type: file
+        path: icon_64.png
