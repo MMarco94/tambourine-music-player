@@ -250,7 +250,13 @@ class PlayerController(
                     }
                     var state = State.initial
                     while (true) {
-                        val (newState, shouldPause) = when (val command = commandChannel.tryReceive().getOrNull()) {
+                        val command = if (state.pause) {
+                            // If I don't need to play, I can idle waiting for commands
+                            commandChannel.receive()
+                        } else {
+                            commandChannel.tryReceive().getOrNull()
+                        }
+                        val (newState, shouldPause) = when (command) {
                             is ChangeQueue -> state
                                 .changeQueue(
                                     coroutineScope,
