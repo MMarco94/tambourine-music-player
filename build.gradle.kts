@@ -54,7 +54,7 @@ kotlin {
                 // - ffsampledsp-x86_64-unix
                 // - ffsampledsp-i386-win
                 // - ffsampledsp-x86_64-win
-                implementation("com.tagtraum:ffsampledsp-complete:0.9.50")
+                implementation("com.tagtraum:ffsampledsp-complete:0.9.52")
                 // music metadata reader
                 implementation("net.jthink:jaudiotagger:3.0.1")
                 // FFT
