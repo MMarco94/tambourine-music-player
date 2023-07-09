@@ -9,15 +9,14 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import io.github.mmarco94.tambourine.audio.PlayerController
-import io.github.mmarco94.tambourine.data.Library
 import io.github.mmarco94.tambourine.data.LibraryState
+import io.github.mmarco94.tambourine.data.LiveLibrary
 import io.github.mmarco94.tambourine.ui.App
 import io.github.mmarco94.tambourine.ui.LibraryHeaderTab
 import io.github.mmarco94.tambourine.ui.Panel
 import io.github.mmarco94.tambourine.utils.Preferences
 import io.github.mmarco94.tambourine.utils.skikoWorkaround731
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -27,13 +26,15 @@ import org.slf4j.bridge.SLF4JBridgeHandler
 
 @OptIn(ExperimentalCoroutinesApi::class)
 private val musicLibrary: Flow<LibraryState?> = Preferences.libraryFolder
-    .transformLatest {
+    .transformLatest { libraryRoot ->
         emit(null)
-        val c = Channel<LibraryState>(Channel.CONFLATED)
-        coroutineScope {
-            launch(Dispatchers.Default) { Library.fromFolder(it, c) }
+        withContext(Dispatchers.Default) {
+            val liveLibrary = LiveLibrary(this, libraryRoot)
             launch {
-                for (lib in c) {
+                liveLibrary.start()
+            }
+            launch {
+                for (lib in liveLibrary.channel) {
                     emit(lib)
                 }
             }

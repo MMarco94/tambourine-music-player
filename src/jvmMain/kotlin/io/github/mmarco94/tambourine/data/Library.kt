@@ -147,7 +147,7 @@ data class Library(
                 }
         }
 
-        private suspend fun from(metadata: Collection<RawMetadataSong>): Library {
+        suspend fun from(metadata: Collection<RawMetadataSong>): Library {
             val artists = buildArtists(metadata)
             val albums = buildAlbums(metadata, artists)
 
