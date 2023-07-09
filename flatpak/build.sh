@@ -8,9 +8,7 @@ set -ex
 # Build JAR
 ./gradlew packageReleaseUberJarForCurrentOS
 # Create flatpak
-flatpak-builder --repo=repo --force-clean build-dir flatpak/io.github.mmarco94.tambourine.yml
-# Update Flatpak with the local repository
-flatpak build-update-repo repo
+flatpak-builder --force-clean build-dir flatpak/io.github.mmarco94.tambourine.yml
 # Install flatpak
 flatpak-builder --user --install --force-clean build-dir flatpak/io.github.mmarco94.tambourine.yml
 
