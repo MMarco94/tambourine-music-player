@@ -25,8 +25,8 @@ object Preferences {
     fun getLibraryFolder() = File(prefs.get(KEY_LIBRARY, System.getProperty("user.home") + "/Music"))
 
     fun setLibraryFolder(library: File) {
-        signals.value = Any()
         prefs.put(KEY_LIBRARY, library.absolutePath)
         prefs.flush()
+        signals.value = Any()
     }
 }

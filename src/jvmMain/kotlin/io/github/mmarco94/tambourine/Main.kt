@@ -62,11 +62,13 @@ fun main(args: Array<String>) {
                 val cs = rememberCoroutineScope()
                 // Using `alwaysOnTop` is the most reliable method. awt.Window.toFront() doesn't work :(
                 var bringToTop by remember { mutableStateOf(false) }
-                val player = PlayerController(
-                    cs,
-                    quit = { exitApplication() },
-                    raise = { bringToTop = true }
-                )
+                val player = remember {
+                    PlayerController(
+                        cs,
+                        quit = { exitApplication() },
+                        raise = { bringToTop = true }
+                    )
+                }
                 CompositionLocalProvider(playerController provides player) {
                     var selectedPanel by remember { mutableStateOf(Panel.LIBRARY) }
                     var libraryTab: LibraryHeaderTab? by remember { mutableStateOf(null) }

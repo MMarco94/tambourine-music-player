@@ -31,7 +31,6 @@ Browse your music collection; play a song; that's it really.
 
 Blockers for V1:
  - Use Flatpak file portal
- - Dynamically reload library if files change
 
 Other non-blocking features:
 - Metadata

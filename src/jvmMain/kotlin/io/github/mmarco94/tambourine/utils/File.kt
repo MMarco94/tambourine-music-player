@@ -1,32 +1,11 @@
 package io.github.mmarco94.tambourine.utils
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.util.nfd.NativeFileDialog
 import java.io.File
 
-
-suspend fun readFolder(folder: File, onFile: suspend (File) -> Unit) {
-    coroutineScope {
-        readFolder(this, folder, onFile)
-    }
-}
-
-private suspend fun readFolder(
-    cs: CoroutineScope,
-    folder: File,
-    onFile: suspend (File) -> Unit,
-) {
-    folder.listFiles()?.forEach { file ->
-        if (file.isFile) {
-            onFile(file)
-        } else if (file.isDirectory) {
-            cs.launch {
-                readFolder(cs, file, onFile)
-            }
-        }
-    }
-}
 
 suspend fun nativeFileChooser(
     pickFiles: Boolean,

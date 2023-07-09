@@ -1,23 +1,13 @@
 package io.github.mmarco94.tambourine.data
 
-import io.github.mmarco94.tambourine.utils.debugElapsed
 import io.github.mmarco94.tambourine.utils.mostCommonOrNull
 import io.github.mmarco94.tambourine.utils.orNoop
-import io.github.mmarco94.tambourine.utils.readFolder
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.toList
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import mu.KotlinLogging
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 import kotlin.time.Duration
-
-private val logger = KotlinLogging.logger {}
 
 data class Artist(
     val name: String,
@@ -172,41 +162,5 @@ data class Library(
         }
 
         data class LoadingProgress(val loaded: Int) : LibraryState
-
-        suspend fun fromFolder(
-            folder: File,
-            progress: Channel<LibraryState>,
-        ): Library = coroutineScope {
-            val decoder = CoversDecoder(this)
-
-            val songs = logger.debugElapsed("Loading songs") {
-                val songsChannel = Channel<RawMetadataSong>(Channel.UNLIMITED)
-                val loaded = AtomicInteger(0)
-                launch {
-                    coroutineScope {
-                        readFolder(folder) { file ->
-                            launch {
-                                try {
-                                    val song = RawMetadataSong.fromMusicFile(file, decoder)
-                                    songsChannel.send(song)
-                                    progress.send(LoadingProgress(loaded.incrementAndGet()))
-                                } catch (e: Exception) {
-                                    logger.error("Error while parsing music file: ${e.message}")
-                                }
-                            }
-                        }
-                    }
-                    songsChannel.close()
-                }
-                songsChannel.toList()
-            }
-
-            val library = logger.debugElapsed("Creating library") {
-                from(songs)
-            }
-            progress.send(library)
-            progress.close()
-            library
-        }
     }
 }
