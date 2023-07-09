@@ -106,12 +106,14 @@ class LiveLibrary(
         }
         watchServiceMutex.withLock {
             registeredKeys.remove(folder)?.cancel()
-            registeredKeys[folder] = folder.toPath().register(
-                watchService,
-                StandardWatchEventKinds.ENTRY_CREATE,
-                StandardWatchEventKinds.ENTRY_MODIFY,
-                StandardWatchEventKinds.ENTRY_DELETE
-            )
+            if (folder.exists()) {
+                registeredKeys[folder] = folder.toPath().register(
+                    watchService,
+                    StandardWatchEventKinds.ENTRY_CREATE,
+                    StandardWatchEventKinds.ENTRY_MODIFY,
+                    StandardWatchEventKinds.ENTRY_DELETE
+                )
+            }
         }
         eventChannel.send(InternalEvent.FolderProcessed)
     }
