@@ -4,6 +4,8 @@ A music player for your local music library.
 
 **THIS IS A PRE-RELEASE**, the project is still in development.
 
+<a href='https://flathub.org/apps/io.github.mmarco94.tambourine'><img width='240' alt='Download on Flathub' src='https://dl.flathub.org/assets/badges/flathub-badge-en.png'/></a>
+
 ![Main screen](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s1.png)
 
 Tenets:
@@ -30,7 +32,10 @@ Browse your music collection; play a song; that's it really.
 ## Roadmap
 
 Blockers for V1:
- - Use Flatpak file portal
+
+- Use Flatpak file portal
+- About window
+- https://github.com/MMarco94/tambourine-music-player/issues/5
 
 Other non-blocking features:
 - Metadata
