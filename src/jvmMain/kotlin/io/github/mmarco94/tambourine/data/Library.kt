@@ -61,15 +61,13 @@ data class Song(
     }
 }
 
-sealed interface LibraryState
-
 data class Library(
     val songs: List<Song>,
     val albums: List<Album>,
     val artists: List<Artist>,
     val songsByAlbum: Map<Album, List<Song>> = songs.groupBy { it.album },
     val songsByArtist: Map<Artist, List<Song>> = songs.groupBy { it.artist },
-) : LibraryState {
+) {
 
     val stats = SongCollectionStats.of(songs)
 
@@ -160,7 +158,5 @@ data class Library(
                 artists.values.toList(),
             )
         }
-
-        data class LoadingProgress(val loaded: Int) : LibraryState
     }
 }

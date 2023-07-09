@@ -1,7 +1,8 @@
 [Desktop Entry]
 Categories=Audio;
-Exec=run.sh
+Exec=run.sh %U
 Icon=io.github.mmarco94.tambourine
 Name=Tambourine Music Player
 Comment=A simple music player for your library
 Type=Application
+MimeType=inode/directory;audio/ogg;audio/mpeg;audio/x-flac;audio/flac;audio/x-m4a;audio/m4a;audio/mp4;audio/x-ms-wma;audio/wav;audio/x-pn-realaudio;audio/x-aiff;audio/aifc;audio/x-dsf;audio/x-dff;

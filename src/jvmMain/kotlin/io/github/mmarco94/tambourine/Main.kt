@@ -9,37 +9,24 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import io.github.mmarco94.tambourine.audio.PlayerController
-import io.github.mmarco94.tambourine.data.LibraryState
-import io.github.mmarco94.tambourine.data.LiveLibrary
+import io.github.mmarco94.tambourine.data.Library
+import io.github.mmarco94.tambourine.data.SongQueue
+import io.github.mmarco94.tambourine.data.toLibrary
 import io.github.mmarco94.tambourine.ui.App
 import io.github.mmarco94.tambourine.ui.LibraryHeaderTab
 import io.github.mmarco94.tambourine.ui.Panel
 import io.github.mmarco94.tambourine.utils.Preferences
 import io.github.mmarco94.tambourine.utils.skikoWorkaround731
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.slf4j.bridge.SLF4JBridgeHandler
+import java.io.File
 
-
-@OptIn(ExperimentalCoroutinesApi::class)
-private val musicLibrary: Flow<LibraryState?> = Preferences.libraryFolder
-    .transformLatest { libraryRoot ->
-        emit(null)
-        withContext(Dispatchers.Default) {
-            val liveLibrary = LiveLibrary(this, libraryRoot)
-            launch {
-                liveLibrary.start()
-            }
-            launch {
-                for (lib in liveLibrary.channel) {
-                    emit(lib)
-                }
-            }
-        }
-    }
 
 val playerController = staticCompositionLocalOf<PlayerController> { throw IllegalStateException() }
 
@@ -48,9 +35,13 @@ fun main(args: Array<String>) {
     if (args.singleOrNull() == "--initialize-skiko") {
         skikoWorkaround731()
     } else {
+        val filesFromArgs = args.map { File(it) }
         runBlocking {
             // Start loading ASAP
-            val ml = musicLibrary.stateIn(this, started = SharingStarted.Eagerly, null)
+            val musicLibrary = Preferences.libraryFolder
+                .map { lib -> setOf(lib) + filesFromArgs }
+                .toLibrary()
+                .stateIn(this, started = SharingStarted.Eagerly, null)
 
             // Uncomment to get all logs from ffsampledsp
             // val root: Logger = Logger.getLogger(FFNativeLibraryLoader::class.java.name)
@@ -83,13 +74,35 @@ fun main(args: Array<String>) {
                         },
                         alwaysOnTop = bringToTop.also { bringToTop = false }
                     ) {
-                        val library by ml.collectAsState(null)
+                        val library by remember {
+                            var done = false
+                            musicLibrary.onEach {
+                                if (it != null && !done && filesFromArgs.isNotEmpty()) {
+                                    done = true
+                                    cs.launch {
+                                        val queue = createQueue(it, filesFromArgs)
+                                        if (queue != null) {
+                                            player.changeQueue(queue)
+                                            player.play()
+                                        }
+                                    }
+                                }
+                            }
+                        }.collectAsState(null)
                         App(library, selectedPanel, { selectedPanel = it }, libraryTab, { libraryTab = it })
                     }
                 }
             }
         }
     }
+}
+
+private fun createQueue(library: Library, filesFromArgs: List<File>): SongQueue? {
+    val songs = filesFromArgs.flatMap { arg ->
+        library.songs.filter { s -> s.file.path.startsWith(arg.path) }
+    }
+    return if (songs.isEmpty()) null
+    else SongQueue.of(null, songs, songs.first())
 }
 
 @OptIn(ExperimentalComposeUiApi::class)

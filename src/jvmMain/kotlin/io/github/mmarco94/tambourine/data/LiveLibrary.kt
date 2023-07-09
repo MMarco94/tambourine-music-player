@@ -2,6 +2,8 @@ package io.github.mmarco94.tambourine.data
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
@@ -13,7 +15,7 @@ private val logger = KotlinLogging.logger {}
 
 class LiveLibrary(
     private val scope: CoroutineScope,
-    private val root: File
+    private val roots: Set<File>
 ) {
     private val watchService: WatchService = FileSystems.getDefault().newWatchService()
     private val watchServiceMutex = Mutex()
@@ -27,8 +29,10 @@ class LiveLibrary(
     suspend fun start() {
         suspendCancellableCoroutine<Unit> { cont ->
             scope.launch {
-                pendingEvents.incrementAndGet()
-                onNewFolder(root)
+                roots.forEach { root ->
+                    pendingEvents.incrementAndGet()
+                    onNew(root)
+                }
                 while (true) {
                     val monitorKey = runInterruptible(Dispatchers.IO) {
                         watchService.take()
@@ -168,5 +172,23 @@ class LiveLibrary(
 
         object FileIgnored : InternalEvent
         object FolderProcessed : InternalEvent
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+fun Flow<Set<File>>.toLibrary(): Flow<Library?> {
+    return transformLatest { roots ->
+        emit(null)
+        withContext(Dispatchers.Default) {
+            val liveLibrary = LiveLibrary(this, roots)
+            launch {
+                liveLibrary.start()
+            }
+            launch {
+                for (lib in liveLibrary.channel) {
+                    emit(lib)
+                }
+            }
+        }
     }
 }

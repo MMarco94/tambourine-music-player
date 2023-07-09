@@ -250,7 +250,7 @@ class PlayerController(
                     }
                     var state = State.initial
                     while (true) {
-                        val command = if (state.pause) {
+                        val command = if (state.pause || state.currentlyPlaying == null) {
                             // If I don't need to play, I can idle waiting for commands
                             commandChannel.receive()
                         } else {

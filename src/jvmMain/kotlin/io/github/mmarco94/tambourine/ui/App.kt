@@ -56,16 +56,16 @@ private fun DelayDraw(f: @Composable (shouldRenderQuickly: Boolean) -> Unit) {
 
 @Composable
 fun App(
-    library: LibraryState?,
+    library: Library?,
     selectedPanel: Panel,
     selectPanel: (Panel) -> Unit,
     libraryTab: LibraryHeaderTab?,
     selectLibraryTab: (LibraryHeaderTab?) -> Unit,
 ) {
-    var listOptions by remember(library as? Library) { mutableStateOf(SongListOptions()) }
+    var listOptions by remember(library) { mutableStateOf(SongListOptions()) }
     var openSettings by remember { mutableStateOf(false) }
     val player = playerController.current
-    val mainImage = player.queue?.currentSong?.cover ?: (library as? Library)?.songs?.firstOrNull()?.cover
+    val mainImage = player.queue?.currentSong?.cover ?: library?.songs?.firstOrNull()?.cover
 
     MaterialTheme(
         typography = MusicPlayerTheme.typography,
@@ -136,7 +136,7 @@ private fun MainContent(
     selectedPanel: Panel,
     visiblePanels: List<Panel>,
     selectPanel: (Panel) -> Unit,
-    library: LibraryState?,
+    library: Library?,
     listOptions: SongListOptions,
     setListOptions: (SongListOptions) -> Unit,
     openSettings: () -> Unit,
@@ -254,11 +254,11 @@ private enum class LibraryUIState {
     EMPTY, LOADING, NORMAL
 }
 
-private fun LibraryState?.toUIState(handleEmpty: Boolean = true): LibraryUIState {
-    return when (this) {
-        null -> LOADING
-        is Library -> if (handleEmpty && songs.isEmpty()) EMPTY else NORMAL
-        is Library.Companion.LoadingProgress -> LOADING
+private fun Library?.toUIState(handleEmpty: Boolean = true): LibraryUIState {
+    return when {
+        this == null -> LOADING
+        handleEmpty && songs.isEmpty() -> EMPTY
+        else -> NORMAL
     }
 }
 
@@ -266,15 +266,15 @@ private fun LibraryState?.toUIState(handleEmpty: Boolean = true): LibraryUIState
 @Composable
 private fun LibraryContainer(
     state: LibraryUIState,
-    library: LibraryState?,
+    library: Library?,
     openSettings: () -> Unit,
-    f: @Composable (LibraryState?) -> Unit
+    f: @Composable (Library?) -> Unit
 ) {
     val transition = updateTransition(state to library)
     transition.Crossfade(contentKey = { it.first }) { (state, lib) ->
         when (state) {
             EMPTY -> LibraryEmptyComposable(openSettings)
-            LOADING -> LoadingLibraryComposable(library, openSettings)
+            LOADING -> LoadingLibraryComposable(openSettings)
             NORMAL -> f(lib)
         }
     }
@@ -282,7 +282,7 @@ private fun LibraryContainer(
 
 @Composable
 private fun LibraryContainer(
-    library: LibraryState?,
+    library: Library?,
     openSettings: () -> Unit,
     f: @Composable (Library) -> Unit
 ) {
@@ -292,17 +292,13 @@ private fun LibraryContainer(
 }
 
 @Composable
-private fun LoadingLibraryComposable(library: LibraryState?, openSettings: () -> Unit) {
+private fun LoadingLibraryComposable(openSettings: () -> Unit) {
     Box {
         BigMessage(
             Modifier.fillMaxSize(),
             Icons.Default.LibraryMusic,
             "Loading...",
-        ) {
-            if (library is Library.Companion.LoadingProgress) {
-                SingleLineText("${library.loaded} songs loaded", style = MaterialTheme.typography.labelMedium)
-            }
-        }
+        ) {}
         SettingsButton(Modifier.align(Alignment.TopEnd), openSettings)
     }
 }
