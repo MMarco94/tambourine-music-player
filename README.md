@@ -40,7 +40,6 @@ Blockers for V1:
 Other non-blocking features:
 - Metadata
   - Disk n°
-  - Lyrics
 - Translations
 - Persist filter/sort
 - Keep scrolling position when removing filters

@@ -69,7 +69,7 @@ fun App(
 
     MaterialTheme(
         typography = MusicPlayerTheme.typography,
-        colorScheme = MusicPlayerTheme.colors(mainImage),
+        colorScheme = mainImage?.colorScheme ?: MusicPlayerTheme.defaultScheme,
         shapes = MusicPlayerTheme.shapes,
     ) {
         CompositionLocalProvider(

@@ -1,8 +1,11 @@
 package io.github.mmarco94.tambourine.data
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import io.github.mmarco94.tambourine.ui.MusicPlayerTheme
+import io.github.mmarco94.tambourine.utils.hsb
 import io.github.mmarco94.tambourine.utils.palette
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -19,7 +22,9 @@ private val logger = KotlinLogging.logger {}
 data class AlbumCover(
     val image: ImageBitmap,
 ) {
-    val palette = image.palette()
+    val palette: List<Color> = image.palette()
+    val colorScheme = MusicPlayerTheme.colorSchemeFromPalette(palette.map { it.hsb().pastel() })
+
     val file: File? by lazy {
         try {
             val f = File.createTempFile("album-cover-", ".png")

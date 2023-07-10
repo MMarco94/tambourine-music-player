@@ -27,6 +27,7 @@ data class Song(
     val title: String,
     val album: Album,
     val cover: AlbumCover?,
+    val lyrics: Lyrics?,
     override val length: Duration,
     override val year: Int?,
 ) : BaseSong {
@@ -150,6 +151,7 @@ data class Library(
                     cover = song.cover.await(),
                     length = song.length,
                     year = song.year,
+                    lyrics = song.lyrics,
                 )
             }
             return Library(

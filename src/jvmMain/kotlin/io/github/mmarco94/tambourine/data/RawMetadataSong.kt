@@ -19,6 +19,7 @@ data class RawMetadataSong(
     val albumArtist: String?,
     override val year: Int?,
     val cover: Deferred<AlbumCover?>,
+    val lyrics: Lyrics?,
 ) : BaseSong {
     val nnTitle get() = title ?: file.nameWithoutExtension
     val nnAlbum get() = album ?: "Unknown"
@@ -41,7 +42,8 @@ data class RawMetadataSong(
                 artist = tag.getFirst(FieldKey.ARTIST)?.trimToNull(),
                 albumArtist = tag.getFirst(FieldKey.ALBUM_ARTIST)?.trimToNull(),
                 year = tag.getFirst(FieldKey.YEAR)?.toIntOrNull(),
-                cover = tag.firstArtwork?.binaryData?.let { decoder.decode(it) } ?: CompletableDeferred(value = null)
+                cover = tag.firstArtwork?.binaryData?.let { decoder.decode(it) } ?: CompletableDeferred(value = null),
+                lyrics = Lyrics.of(tag.getFirst(FieldKey.LYRICS)),
             )
         }
     }

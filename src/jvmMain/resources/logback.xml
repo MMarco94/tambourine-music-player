@@ -10,7 +10,7 @@
     <logger name="org.jaudiotagger.tag" level="WARN" />
     <logger name="org.freedesktop.dbus" level="INFO" />
     <logger name="com.tagtraum.ffsampledsp" level="TRACE" />
-    <root level="TRACE">
+    <root level="DEBUG">
         <appender-ref ref="CONSOLE" />
     </root>
 </configuration>

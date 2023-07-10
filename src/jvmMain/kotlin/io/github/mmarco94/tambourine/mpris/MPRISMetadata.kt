@@ -9,7 +9,6 @@ import kotlin.time.Duration
 
 // See https://specifications.freedesktop.org/mpris-spec/2.2/Track_List_Interface.html#Mapping:Metadata_Map
 data class MPRISMetadata(
-    // TODO: this supports lyrics!
     val trackId: TrackId,
     val length: Duration,
     val artist: List<String>,
@@ -18,6 +17,7 @@ data class MPRISMetadata(
     val title: String,
     val discNumber: Long?,
     val artUrl: File?,
+    val lyrics: String?,
 ) {
 
     val variant: Variant<*> = buildMap {
@@ -35,6 +35,9 @@ data class MPRISMetadata(
             //val artUri = "file://${artUrl.absolutePath}"
             put("mpris:artUrl", artUri.variant())
         }
+        if (lyrics != null) {
+            put("xesam:asText", lyrics.variant())
+        }
     }.variant()
 }
 
@@ -50,5 +53,6 @@ fun Song.mprisMetadata(): MPRISMetadata {
         title = title,
         discNumber = track?.toLong(),
         artUrl = cover?.file,
+        lyrics = lyrics?.rawString,
     )
 }

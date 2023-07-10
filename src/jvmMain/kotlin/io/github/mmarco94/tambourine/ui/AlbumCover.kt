@@ -18,6 +18,37 @@ import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.data.AlbumCover
 
 @Composable
+fun AlbumContainer(
+    modifier: Modifier,
+    shape: Shape = RectangleShape,
+    elevation: Dp = 0.dp,
+    content: @Composable () -> Unit,
+) {
+    Surface(
+        modifier.aspectRatio(1f),
+        shape = shape,
+        tonalElevation = elevation,
+        shadowElevation = elevation,
+        content = content,
+    )
+}
+
+@Composable
+fun AlbumCoverContent(cover: AlbumCover?) {
+    if (cover != null) {
+        key(cover) {
+            Image(
+                cover.image,
+                null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                filterQuality = FilterQuality.High,
+            )
+        }
+    }
+}
+
+@Composable
 fun AlbumCover(
     cover: AlbumCover?,
     modifier: Modifier,
@@ -25,18 +56,8 @@ fun AlbumCover(
     elevation: Dp = 0.dp,
     overlay: @Composable () -> Unit = {},
 ) {
-    Surface(modifier.aspectRatio(1f), shape = shape, tonalElevation = elevation, shadowElevation = elevation) {
-        if (cover != null) {
-            key(cover) {
-                Image(
-                    cover.image,
-                    null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    filterQuality = FilterQuality.High,
-                )
-            }
-        }
+    AlbumContainer(modifier, shape, elevation) {
+        AlbumCoverContent(cover)
         overlay()
     }
 }

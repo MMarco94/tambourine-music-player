@@ -2,7 +2,11 @@ package io.github.mmarco94.tambourine.ui
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -12,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -66,9 +71,8 @@ fun PlayerUI(
                 Modifier.fillMaxSize().padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(Modifier.weight(1f))
-
-                AlbumCover(song.cover, Modifier.size(256.dp), MaterialTheme.shapes.large, elevation = 16.dp)
+                Spacer(Modifier.height(24.dp))
+                CoverOrLyrics(Modifier.weight(3f), song)
                 Spacer(Modifier.height(24.dp))
 
                 Text(song.title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
@@ -119,6 +123,63 @@ fun PlayerUI(
         }
         if (showSettingsButton) {
             SettingsButton(Modifier.align(Alignment.TopEnd), openSettings)
+        }
+    }
+}
+
+@Composable
+private fun CoverOrLyrics(modifier: Modifier, song: Song) {
+    val cs = rememberCoroutineScope()
+    var showLyrics by remember { mutableStateOf(true) }
+    val actualSong = if (showLyrics) song else null
+    val hasLyrics = actualSong?.lyrics != null
+    Column(modifier.padding(horizontal = 96.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        val spacerH by animateFloatAsState(if (hasLyrics) 0f else 1f)
+        if (spacerH > 0) {
+            Spacer(Modifier.weight(spacerH))
+        }
+        AlbumContainer(Modifier.weight(1f), MaterialTheme.shapes.large, elevation = 16.dp) {
+            val blur by animateDpAsState(if (hasLyrics) 16.dp else 0.dp)
+            Crossfade(song.cover, Modifier.blur(blur)) {
+                AlbumCoverContent(it)
+            }
+            val bg by animateColorAsState(
+                (song.cover?.colorScheme ?: MusicPlayerTheme.defaultScheme)
+                    .primary
+                    .copy(if (hasLyrics) .8f else 0f)
+            )
+            val content by animateColorAsState(
+                (song.cover?.colorScheme ?: MusicPlayerTheme.defaultScheme)
+                    .onPrimary
+            )
+            Box(Modifier.background(bg)) {
+                Crossfade(
+                    actualSong,
+                    modifier = Modifier.fillMaxSize().clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) { showLyrics = !showLyrics }
+                ) { s ->
+                    if (s?.lyrics != null) {
+                        val player = playerController.current
+                        var pos by remember { mutableStateOf(ZERO) }
+                        if (player.queue?.currentSong == s) {
+                            pos = player.position
+                        }
+                        CompositionLocalProvider(LocalContentColor provides content) {
+                            LyricsComposable(
+                                s.lyrics,
+                                getPosition = { pos },
+                                setPosition = { position ->
+                                    cs.launch {
+                                        player.changeQueue(player.queue, Position.Specific(position))
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

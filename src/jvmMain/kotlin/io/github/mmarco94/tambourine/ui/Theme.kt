@@ -6,7 +6,7 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import io.github.mmarco94.tambourine.data.AlbumCover
+import io.github.mmarco94.tambourine.utils.HSLColor
 import io.github.mmarco94.tambourine.utils.hsb
 
 
@@ -33,8 +33,9 @@ object MusicPlayerTheme {
         Color(red = 239, green = 184, blue = 200),
     ).map { it.hsb() }
 
-    fun colors(mainImage: AlbumCover?): ColorScheme {
-        val palette = mainImage?.palette?.map { it.hsb().pastel() } ?: defaultPalette
+    val defaultScheme = colorSchemeFromPalette(defaultPalette)
+
+    fun colorSchemeFromPalette(palette: List<HSLColor>): ColorScheme {
         val primary = palette[0]
         val secondary = palette[1]
         val tertiary = palette[2]
@@ -55,7 +56,6 @@ object MusicPlayerTheme {
             tertiaryContainer = tertiaryContainer.color,
             onTertiaryContainer = tertiaryContainer.contrast().color,
             outlineVariant = Color.White.copy(alpha = 0.2f),
-            //surface = Color(0xFF242424)
         )
     }
 
