@@ -1,12 +1,15 @@
 package io.github.mmarco94.tambourine.audio
 
 import io.github.mmarco94.tambourine.utils.durationToFrames
+import io.github.mmarco94.tambourine.utils.progress
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
+import javax.sound.sampled.FloatControl
 import javax.sound.sampled.SourceDataLine
 import kotlin.math.roundToInt
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+
 
 class Player private constructor(
     val format: AudioFormat,
@@ -52,12 +55,17 @@ class Player private constructor(
         source.seekTo(format.durationToFrames(position))
     }
 
+    fun setLevel(level: Float) {
+        output.setLevel(level)
+    }
+
     companion object {
         fun create(
             format: AudioFormat,
             input: AsyncAudioInputStream.Reader,
             older: Player?,
             bufferLength: Duration,
+            level: Float,
         ): Player {
             return if (
                 older != null &&
@@ -77,9 +85,16 @@ class Player private constructor(
                 val bps: Float = format.frameRate * format.frameSize
                 val buffer = ByteArray((bps * (bufferLength / 1.seconds)).roundToInt())
                 line.open(format, buffer.size)
+                line.setLevel(level)
                 line.start()
                 Player(format, input, line)
             }
+        }
+
+        private fun SourceDataLine.setLevel(level: Float) {
+            val masterGain = getControl(FloatControl.Type.MASTER_GAIN) as FloatControl
+            val progress = (masterGain.minimum..masterGain.maximum).progress(level)
+            masterGain.value = progress
         }
     }
 }

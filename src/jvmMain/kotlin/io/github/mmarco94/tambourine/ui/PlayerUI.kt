@@ -118,6 +118,8 @@ fun PlayerUI(
                     Spacer(Modifier.width(16.dp))
                     RepeatIcon(cs, queue)
                 }
+                Spacer(Modifier.height(24.dp))
+                VolumeSlider(cs, player)
                 Spacer(Modifier.weight(1f))
             }
         }
@@ -384,5 +386,39 @@ private fun PlayerIcon(
         }
     }, enabled = enabled) {
         Icon(icon, label, iconModifier.padding(4.dp).alpha(alpha))
+    }
+}
+
+@Composable
+fun VolumeSlider(cs: CoroutineScope, player: PlayerController) {
+    val level = player.level
+    var nonZeroLevel by remember { mutableStateOf(level) }
+    if (level > 0) {
+        nonZeroLevel = level
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        PlayerIcon(
+            cs,
+            if (level == 0f) Icons.Default.VolumeOff else Icons.Default.VolumeDown,
+            "Mute"
+        ) {
+            player.setLevel(if (player.level == 0f) nonZeroLevel else 0f)
+        }
+        Slider(
+            value = level,
+            onValueChange = { player.setLevel(it) },
+            modifier = Modifier.width(176.dp),
+            colors = SliderDefaults.colors(
+                thumbColor = Color.White,
+                activeTrackColor = Color.White,
+            )
+        )
+        PlayerIcon(
+            cs,
+            Icons.Default.VolumeUp,
+            "Max volume"
+        ) {
+            player.setLevel(1f)
+        }
     }
 }

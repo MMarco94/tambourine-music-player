@@ -36,6 +36,7 @@ private sealed interface PlayerCommand {
     class Pause(val event: Long) : PlayerCommand
     class Seeking(val event: Long) : PlayerCommand
     class SeekDone(val event: Long) : PlayerCommand
+    class SetLevel(val event: Long, val level: Float) : PlayerCommand
     class WaveformComputed(val song: Song, val waveform: Waveform) : PlayerCommand
 }
 
@@ -74,15 +75,16 @@ class PlayerController(
     )
 
     data class State(
-        val processedEvents: Long,
+        val event: Long,
         val currentlyPlaying: CurrentlyPlaying?,
         val position: Duration,
         val pause: Boolean,
         val seeking: Boolean,
+        val level: Float,
     ) {
 
         companion object {
-            val initial = State(0L, null, ZERO, true, false)
+            val initial = State(0L, null, ZERO, true, false, 1f)
         }
 
         data class StateChangeResult(
@@ -134,7 +136,7 @@ class PlayerController(
                     bufferer.cancel()
                     waveformCreator.cancel()
                 }
-                return StateChangeResult(State(processedEvents, null, ZERO, true, seeking), true)
+                return StateChangeResult(State(event, null, ZERO, true, seeking, level), true)
             }
 
             val new = queue.currentSong
@@ -146,7 +148,7 @@ class PlayerController(
                 currentlyPlaying?.bufferer?.cancel()
                 currentlyPlaying?.waveformCreator?.cancel()
                 val input = AsyncAudioInputStream(stream, 2)
-                val player = Player.create(stream.format, input.readers[0], currentlyPlaying?.player, buffer)
+                val player = Player.create(stream.format, input.readers[0], currentlyPlaying?.player, buffer, level)
                 val bufferer = cs.launch(Dispatchers.IO) {
                     logger.debugElapsed("Reading ${new.title}") {
                         input.bufferAll()
@@ -180,23 +182,37 @@ class PlayerController(
                 shouldPause = false
             )
         }
+
+        fun setLevel(level: Float): State {
+            currentlyPlaying?.player?.setLevel(level)
+            return copy(level = level)
+        }
+    }
+
+    private data class PendingEvent<T>(val value: T, val event: Long)
+
+    private inline fun <T> PendingEvent<T>?.resolve(f: (State) -> T): T {
+        val os = observableState
+        return if (this != null && os.event < this.event) {
+            this.value
+        } else {
+            f(os)
+        }
     }
 
     private var sentEvents = 0L
-    private var pendingSeek by mutableStateOf<Pair<Long, Duration>?>(null)
+    private var pendingSeek by mutableStateOf<PendingEvent<Duration>?>(null)
+    private var pendingLevel by mutableStateOf<PendingEvent<Float>?>(null)
 
     private var observableState by mutableStateOf(State.initial)
+    val level by derivedStateOf {
+        pendingLevel.resolve { it.level }
+    }
     val queue get() = observableState.currentlyPlaying?.queue
     val waveform get() = observableState.currentlyPlaying?.waveform
     val pause get() = observableState.pause
     val position by derivedStateOf {
-        val ps = pendingSeek
-        val os = observableState
-        if (ps != null && os.processedEvents < ps.first) {
-            ps.second
-        } else {
-            os.position
-        }
+        pendingSeek.resolve { it.position }
     }
 
     suspend fun play() {
@@ -217,7 +233,7 @@ class PlayerController(
     fun startSeek(queue: SongQueue?, position: Duration) {
         val se = sentEvents
         sentEvents += 2
-        pendingSeek = se + 1 to position
+        pendingSeek = PendingEvent(position, se + 1)
         coroutineScope.launch {
             sendCommand(Seeking(se))
             sendCommand(ChangeQueue(se + 1, queue, Position.Specific(position)))
@@ -226,6 +242,15 @@ class PlayerController(
 
     suspend fun endSeek() {
         sendCommand(SeekDone(sentEvents++))
+    }
+
+    fun setLevel(level: Float) {
+        val se = sentEvents
+        sentEvents++
+        pendingLevel = PendingEvent(level, se)
+        coroutineScope.launch {
+            sendCommand(SetLevel(se, level))
+        }
     }
 
     private suspend fun sendCommand(command: PlayerCommand) {
@@ -264,12 +289,16 @@ class PlayerController(
                                     command.position,
                                     onWaveformComputed,
                                 )
-                                .change { copy(processedEvents = command.event + 1) }
+                                .change { copy(event = command.event + 1) }
 
-                            is Pause -> state.change { copy(processedEvents = command.event + 1, pause = true) }
-                            is Play -> state.change { copy(processedEvents = command.event + 1, pause = false) }
-                            is Seeking -> state.change { copy(processedEvents = command.event + 1, seeking = true) }
-                            is SeekDone -> state.change { copy(processedEvents = command.event + 1, seeking = false) }
+                            is Pause -> state.change { copy(event = command.event + 1, pause = true) }
+                            is Play -> state.change { copy(event = command.event + 1, pause = false) }
+                            is Seeking -> state.change { copy(event = command.event + 1, seeking = true) }
+                            is SeekDone -> state.change { copy(event = command.event + 1, seeking = false) }
+                            is SetLevel -> state.change {
+                                state.setLevel(command.level).copy(event = command.event + 1)
+                            }
+
                             is WaveformComputed -> state.change {
                                 copy(
                                     currentlyPlaying = if (currentlyPlaying?.queue?.currentSong == command.song) {
