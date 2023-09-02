@@ -255,7 +255,7 @@ private fun Seeker(
                 WaveformUI(
                     Modifier.fillMaxWidth(),
                     player.waveform,
-                    { pos.positionFraction },
+                    { pos.activeRange.endInclusive },
                     if (p == null) null else { size -> (p - thumbRadius.toPx()) / size.width },
                 )
             },

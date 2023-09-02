@@ -25,9 +25,9 @@ kotlin {
                 implementation(compose.desktop.currentOs)
                 api(compose.materialIconsExtended)
                 api(compose.material3)
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
 
                 // Native file dialog
                 val lwjglVersion = "3.3.2"
@@ -44,7 +44,7 @@ kotlin {
 
                 // Logging
                 implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
-                implementation("ch.qos.logback:logback-classic:1.4.7")
+                implementation("ch.qos.logback:logback-classic:1.4.11")
                 implementation("org.slf4j:jul-to-slf4j:2.0.7")
 
                 // ffmpeg-based audio decoder
@@ -54,7 +54,7 @@ kotlin {
                 // - ffsampledsp-x86_64-unix
                 // - ffsampledsp-i386-win
                 // - ffsampledsp-x86_64-win
-                implementation("com.tagtraum:ffsampledsp-complete:0.9.52")
+                implementation("com.tagtraum:ffsampledsp-complete:0.9.53")
                 // music metadata reader
                 implementation("net.jthink:jaudiotagger:3.0.1")
                 // FFT

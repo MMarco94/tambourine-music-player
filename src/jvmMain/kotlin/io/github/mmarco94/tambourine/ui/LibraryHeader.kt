@@ -210,7 +210,7 @@ fun LibraryHeader(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 FlowRow(
                     Modifier.padding(2.dp).weight(1f),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.Center
                 ) {
                     artistRenderer.Tag(tab, setTab)
                     albumRenderer.Tag(tab, setTab)
