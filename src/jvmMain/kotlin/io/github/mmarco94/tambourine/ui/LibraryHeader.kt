@@ -428,7 +428,7 @@ private class ArtistOptionsRenderer(
         options.artistSorter.comparator ?: compareBy { it.name },
         noopComparator(), noopComparator()
     )
-    private val artistsSorters = ArtistSorter.values().associateWith { sorter ->
+    private val artistsSorters = ArtistSorter.entries.associateWith { sorter ->
         SortFilterOption.Sort(sorter) {
             it.withArtistFilter(null).copy(artistSorter = sorter)
         }
@@ -472,7 +472,7 @@ private class AlbumOptionsRenderer(
         options.albumSorter.comparator ?: compareBy { it.title },
         noopComparator()
     ).filter(options.artistFilter, null, "")
-    private val albumsSorters = AlbumSorter.values().associateWith { sorter ->
+    private val albumsSorters = AlbumSorter.entries.associateWith { sorter ->
         SortFilterOption.Sort(sorter) {
             it.withAlbumFilter(null).copy(albumSorter = sorter)
         }
@@ -527,7 +527,7 @@ private class SongOptionsRenderer(
     override val withoutFilter = options
     private val isGroupingByAlbum = options.isInAlbumMode
     private val songSorters =
-        SongSorter.values().filter { !it.inAlbumOnly || isGroupingByAlbum }.associateWith { sorter ->
+        SongSorter.entries.filter { !it.inAlbumOnly || isGroupingByAlbum }.associateWith { sorter ->
             SortFilterOption.Sort(sorter) {
                 it.withSongSorter(sorter)
             }

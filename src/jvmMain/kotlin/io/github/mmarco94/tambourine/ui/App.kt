@@ -146,7 +146,7 @@ private fun MainContent(
     val cs = rememberCoroutineScope()
     val player = playerController.current
     val libraryScrollState = rememberLazyListState()
-    PanelContainer(modifier, Panel.values().toSet(), visiblePanels) { panel ->
+    PanelContainer(modifier, Panel.entries.toSet(), visiblePanels) { panel ->
         val showSettings = !large || panel == PLAYER
         when (panel) {
             LIBRARY -> LibraryContainer(
@@ -214,7 +214,7 @@ private fun RailBar(
         Modifier.padding(vertical = 8.dp),
         containerColor = Color.Transparent,
     ) {
-        Panel.values().forEach { panel ->
+        Panel.entries.forEach { panel ->
             if (panel != PLAYER) {
                 NavigationRailItem(
                     panel == selectedPanel,
@@ -232,7 +232,7 @@ private fun BottomBar(
     selectPanel: (Panel) -> Unit,
 ) {
     NavigationBar {
-        Panel.values().forEach { panel ->
+        Panel.entries.forEach { panel ->
             NavigationBarItem(
                 panel == selectedPanel,
                 onClick = { selectPanel(panel) },

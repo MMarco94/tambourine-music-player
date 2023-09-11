@@ -5,8 +5,6 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -71,10 +69,8 @@ fun PlayerUI(
                 Modifier.fillMaxSize().padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(Modifier.height(24.dp))
-                CoverOrLyrics(Modifier.weight(3f), song)
-                Spacer(Modifier.height(24.dp))
-
+                var showLyrics by remember { mutableStateOf(true) }
+                CoverOrLyrics(Modifier.weight(3f), song, showLyrics)
                 Text(song.title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(8.dp))
                 SingleLineText(song.album.title, style = MaterialTheme.typography.titleMedium)
@@ -86,6 +82,9 @@ fun PlayerUI(
                 Spacer(Modifier.height(24.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (song.lyrics != null) {
+                        Spacer(Modifier.width(56.dp))
+                    }
                     ShuffleIcon(cs, queue)
                     Spacer(Modifier.width(16.dp))
                     PlayerIcon(
@@ -117,6 +116,10 @@ fun PlayerUI(
                     }
                     Spacer(Modifier.width(16.dp))
                     RepeatIcon(cs, queue)
+                    if (song.lyrics != null) {
+                        Spacer(Modifier.width(16.dp))
+                        LyricsIcon(cs, showLyrics) { showLyrics = !showLyrics }
+                    }
                 }
                 Spacer(Modifier.height(24.dp))
                 VolumeSlider(cs, player)
@@ -130,17 +133,15 @@ fun PlayerUI(
 }
 
 @Composable
-private fun CoverOrLyrics(modifier: Modifier, song: Song) {
+private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
     val cs = rememberCoroutineScope()
-    var showLyrics by remember { mutableStateOf(true) }
     val actualSong = if (showLyrics) song else null
     val hasLyrics = actualSong?.lyrics != null
-    Column(modifier.padding(horizontal = 96.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        val spacerH by animateFloatAsState(if (hasLyrics) 0f else 1f)
-        if (spacerH > 0) {
-            Spacer(Modifier.weight(spacerH))
-        }
-        AlbumContainer(Modifier.weight(1f), MaterialTheme.shapes.large, elevation = 16.dp) {
+    Box(
+        modifier.padding(horizontal = 96.dp).padding(top = 72.dp, bottom = 32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        AlbumContainer(Modifier.fillMaxHeight(), MaterialTheme.shapes.large, elevation = 16.dp) {
             val blur by animateDpAsState(if (hasLyrics) 16.dp else 0.dp)
             Crossfade(song.cover, Modifier.blur(blur)) {
                 AlbumCoverContent(it)
@@ -157,10 +158,7 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song) {
             Box(Modifier.background(bg)) {
                 Crossfade(
                     actualSong,
-                    modifier = Modifier.fillMaxSize().clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) { showLyrics = !showLyrics }
+                    modifier = Modifier.fillMaxSize()
                 ) { s ->
                     if (s?.lyrics != null) {
                         val player = playerController.current
@@ -183,6 +181,19 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song) {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun LyricsIcon(
+    cs: CoroutineScope,
+    showLyrics: Boolean,
+    onClick: () -> Unit,
+) {
+    PlayerIcon(
+        cs, Icons.Default.Lyrics, "Lyrics", active = showLyrics,
+    ) {
+        onClick()
     }
 }
 
