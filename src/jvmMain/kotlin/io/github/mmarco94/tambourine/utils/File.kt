@@ -34,7 +34,7 @@ suspend fun nativeFileChooser(
                 }
 
                 NativeFileDialog.NFD_CANCEL -> null
-                NativeFileDialog.NFD_ERROR -> error("An error occurred while executing NativeFileDialog.NFD_PickFolder")
+                NativeFileDialog.NFD_ERROR -> null
                 else -> error("Unknown return code '${code}' from NativeFileDialog.NFD_PickFolder")
             }
         }

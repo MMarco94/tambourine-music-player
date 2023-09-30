@@ -7,8 +7,6 @@ add-extensions:
     version: '22.08'
     add-ld-path: .
 sdk: org.freedesktop.Sdk
-sdk-extensions:
-  - org.freedesktop.Sdk.Extension.openjdk17
 command: run.sh
 finish-args:
   - --filesystem=xdg-music:ro
@@ -22,25 +20,20 @@ finish-args:
   - --env=PATH=/app/jre/bin:/app/bin:/usr/bin
   - --env=JAVA_HOME=/app/jre
 modules:
-  - name: openjdk
-    buildsystem: simple
-    build-commands:
-      - /usr/lib/sdk/openjdk17/install.sh
   - name: tambourine
     buildsystem: simple
     build-commands:
-      # ffsampledsp requires libbz2.so.1.0, however Flatpak only provides libbz2.so.1.0.8
-      - ln -s /usr/lib/x86_64-linux-gnu/libbz2.so.1.0.8 /app/jre/lib/libbz2.so.1.0
-      - mkdir -p /app/lib/ffmpeg
       # Installing the actual app
-      - install -D tambourine-linux.jar /app/bin/tambourine.jar
+      - tar -xzf tambourine.tar.gz -C /app/
       - install -D run.sh /app/bin/run.sh
-      # Workaround for https://github.com/JetBrains/skiko/issues/731
-      - /app/jre/bin/java -jar /app/bin/tambourine.jar --initialize-skiko
+      # ffsampledsp requires libbz2.so.1.0, however Flatpak only provides libbz2.so.1.0.8
+      - mkdir -p /app/lib/ffmpeg
+      - mkdir -p /app/tambourine/lib/os
+      - ln -s /usr/lib/x86_64-linux-gnu/libbz2.so.1.0.8 /app/tambourine/lib/os/libbz2.so.1.0
     sources:
       - type: file
-        path: ../build/compose/jars/tambourine-linux-x64-0.5.jar
-        dest-filename: tambourine-linux.jar
+        path: ../build/tmp/tambourine.tar.gz
+        dest-filename: tambourine.tar.gz
       - type: file
         path: run.sh
   - name: extras
