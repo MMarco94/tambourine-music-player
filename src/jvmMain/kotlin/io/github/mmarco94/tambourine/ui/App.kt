@@ -146,6 +146,7 @@ private fun MainContent(
     val cs = rememberCoroutineScope()
     val player = playerController.current
     val libraryScrollState = rememberLazyListState()
+    var showLyrics by remember { mutableStateOf(true) }
     PanelContainer(modifier, Panel.entries.toSet(), visiblePanels) { panel ->
         val showSettings = !large || panel == PLAYER
         when (panel) {
@@ -195,7 +196,12 @@ private fun MainContent(
 
             PLAYER -> {
                 Box(Modifier.fillMaxSize()) {
-                    PlayerUI(Modifier.fillMaxSize(), showSettings, openSettings)
+                    PlayerUI(
+                        modifier = Modifier.fillMaxSize(),
+                        showSettingsButton = showSettings,
+                        showLyrics = showLyrics,
+                        openSettings = openSettings,
+                        setShowLyrics = { showLyrics = it })
                     if (large) {
                         RailBar(selectedPanel, selectPanel)
                     }

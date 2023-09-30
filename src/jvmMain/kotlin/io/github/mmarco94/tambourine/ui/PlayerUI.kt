@@ -50,7 +50,9 @@ import kotlin.time.DurationUnit
 fun PlayerUI(
     modifier: Modifier,
     showSettingsButton: Boolean,
+    showLyrics: Boolean,
     openSettings: () -> Unit,
+    setShowLyrics: (Boolean) -> Unit,
 ) {
     val cs = rememberCoroutineScope()
     val player = playerController.current
@@ -69,7 +71,6 @@ fun PlayerUI(
                 Modifier.fillMaxSize().padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                var showLyrics by remember { mutableStateOf(true) }
                 CoverOrLyrics(Modifier.weight(3f), song, showLyrics)
                 Text(song.title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(8.dp))
@@ -118,7 +119,7 @@ fun PlayerUI(
                     RepeatIcon(cs, queue)
                     if (song.lyrics != null) {
                         Spacer(Modifier.width(16.dp))
-                        LyricsIcon(cs, showLyrics) { showLyrics = !showLyrics }
+                        LyricsIcon(cs, showLyrics) { setShowLyrics(!showLyrics) }
                     }
                 }
                 Spacer(Modifier.height(24.dp))
