@@ -23,7 +23,6 @@ data class MPRISState(
 ) {
 
     companion object {
-        const val objectPath = "/org/mpris/MediaPlayer2"
         const val interfaceName = "org.mpris.MediaPlayer2"
     }
 
@@ -38,15 +37,6 @@ data class MPRISState(
         "SupportedUriSchemes" to supportedUriSchemes.variant(),
         "SupportedMimeTypes" to supportedMimeTypes.variant(),
     )
-
-    fun diff(old: MPRISState): PropertiesChanged {
-        return PropertiesChanged(
-            objectPath,
-            interfaceName,
-            variants.diff(old.variants),
-            emptyList(),
-        )
-    }
 }
 
 

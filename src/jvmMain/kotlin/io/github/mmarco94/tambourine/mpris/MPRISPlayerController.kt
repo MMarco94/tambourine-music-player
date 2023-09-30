@@ -84,7 +84,11 @@ class MPRISPlayerController(
         },
         setFullscreen = { },
         setRate = { },
-        setVolume = { },
+        setVolume = { level ->
+            cs.launch {
+                playerController.setLevel(level.toFloat())
+            }
+        },
     )
 ) : MediaPlayer2, MediaPlayer2Player, Properties by properties {
 
@@ -140,7 +144,7 @@ class MPRISPlayerController(
             rate = 1.0,
             shuffle = state.currentlyPlaying != null && state.currentlyPlaying.queue.isShuffled,
             metadata = currentSong?.mprisMetadata(),
-            volume = 1.0,
+            volume = state.level.toDouble(),
             position = state.position,
             minimumRate = 1.0,
             maximumRate = 1.0,
