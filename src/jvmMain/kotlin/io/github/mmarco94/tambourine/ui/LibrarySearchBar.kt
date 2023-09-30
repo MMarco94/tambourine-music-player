@@ -167,8 +167,10 @@ fun BoxScope.LibrarySearchBar(
                             placeholder = { Crossfade(placeholder) { Text(it) } },
                             shape = RectangleShape,
                             singleLine = true,
-                            colors = TextFieldDefaults.textFieldColors(
-                                containerColor = Color.Transparent,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
                             ),
                             keyboardActions = KeyboardActions { collapse() },
                         )

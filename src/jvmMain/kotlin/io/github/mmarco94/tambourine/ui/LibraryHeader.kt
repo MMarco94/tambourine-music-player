@@ -238,7 +238,7 @@ fun LibraryHeader(
                     queryTransition.AnimatedContent(
                         contentKey = { it.isEmpty() },
                         transitionSpec = {
-                            fadeIn() with fadeOut() using SizeTransform()
+                            fadeIn() togetherWith fadeOut() using SizeTransform()
                         }) { q ->
                         Box(Modifier.height(48.dp)) {
                             if (q.isEmpty()) {
@@ -260,7 +260,7 @@ fun LibraryHeader(
                 val secondButtonTransition = updateTransition(otherButtonState)
                 secondButtonTransition.AnimatedContent(
                     transitionSpec = {
-                        fadeIn() with fadeOut() using SizeTransform()
+                        fadeIn() togetherWith fadeOut() using SizeTransform()
                     },
                     contentKey = { (tab, _) -> tab != null },
                 ) { (tab, showSettingsButton) ->
@@ -290,10 +290,10 @@ fun LibraryHeader(
 
         AnimatedContent(tab, transitionSpec = {
             if (this.initialState == null || this.targetState == null) {
-                fadeIn() with fadeOut()
+                fadeIn() togetherWith fadeOut()
             } else {
                 val mult = if (this.initialState!! < this.targetState!!) 1 else -1
-                slideInHorizontally { mult * it } with slideOutHorizontally { mult * -it }
+                slideInHorizontally { mult * it } togetherWith slideOutHorizontally { mult * -it }
             } using SizeTransform(sizeAnimationSpec = { _, _ -> spring(stiffness = Spring.StiffnessLow) })
         }) { t ->
             if (t != null) {

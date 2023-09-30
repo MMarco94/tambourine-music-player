@@ -32,7 +32,3 @@ To run:
 flatpak run io.github.mmarco94.tambourine
 ```
 
-## TODO
-
-- Access the FS through the file portal;
-  see https://github.com/ATLauncher/ATLauncher/issues/564 https://github.com/ATLauncher/ATLauncher/blob/master/src/main/java/com/atlauncher/dbus/DBusUtils.java
