@@ -93,7 +93,7 @@ class Player private constructor(
 
         private fun SourceDataLine.setLevel(level: Float) {
             val masterGain = getControl(FloatControl.Type.MASTER_GAIN) as FloatControl
-            val progress = (masterGain.minimum..masterGain.maximum.coerceAtMost(0f)).progress(level)
+            val progress = (masterGain.minimum..masterGain.maximum.coerceAtMost(0f)).progress(level.coerceIn(0f, 1f))
             masterGain.value = progress
         }
     }
