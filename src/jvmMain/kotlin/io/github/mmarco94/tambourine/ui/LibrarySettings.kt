@@ -14,7 +14,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -56,7 +55,6 @@ fun SettingsButton(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun LibrarySettings(close: () -> Unit) {
     var library by remember { mutableStateOf(Preferences.getLibraryFolder()) }
@@ -102,7 +100,6 @@ fun LibrarySettings(close: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LibraryDirectorySetting(library: File, changeLibrary: (File) -> Unit) {
     val cs = rememberCoroutineScope()

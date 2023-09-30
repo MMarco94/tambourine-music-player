@@ -30,7 +30,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
 
                 // Native file dialog
-                val lwjglVersion = "3.3.2"
+                val lwjglVersion = "3.3.3"
                 listOf("lwjgl", "lwjgl-nfd").forEach { lwjglDep ->
                     implementation("org.lwjgl:${lwjglDep}:${lwjglVersion}")
                     listOf(

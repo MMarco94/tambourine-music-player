@@ -20,13 +20,13 @@ Make sure you have the following installed:
   flatpak install flathub runtime/org.freedesktop.Sdk.Extension.openjdk17//22.08 
   ```
 
-To build and package:
+To build and install:
 
 ```
 ./flatpak/build.sh
 ```
 
-To install:
+To run:
 
 ```
 flatpak run io.github.mmarco94.tambourine

@@ -2,6 +2,7 @@ package io.github.mmarco94.tambourine.utils
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.lwjgl.system.Configuration
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.util.nfd.NativeFileDialog
 import java.io.File
@@ -11,8 +12,7 @@ suspend fun nativeFileChooser(
     pickFiles: Boolean,
     initialDirectory: File? = null,
 ): File? = withContext(Dispatchers.IO) {
-    // TODO: this for some reasons doesn't use the file portal on Flatpak.
-    // I've opened https://github.com/LWJGL/lwjgl3/issues/893
+    Configuration.NFD_LINUX_PORTAL.set(true)
     val id = initialDirectory?.absolutePath.orEmpty()
     require(NativeFileDialog.NFD_Init() == NativeFileDialog.NFD_OKAY)
     try {

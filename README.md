@@ -33,9 +33,7 @@ Browse your music collection; play a song; that's it really.
 
 Blockers for V1:
 
-- Use Flatpak file portal
 - About window
-- https://github.com/MMarco94/tambourine-music-player/issues/5
 
 Other non-blocking features:
 - Metadata
