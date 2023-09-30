@@ -46,4 +46,3 @@ Other non-blocking features:
 - Drag & drop in queue UI
 - Spectrometer
 - Background API?
-- Reduce `.jar` size

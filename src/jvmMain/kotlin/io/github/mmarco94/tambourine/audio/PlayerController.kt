@@ -11,6 +11,7 @@ import io.github.mmarco94.tambourine.mpris.MPRISPlayerController
 import io.github.mmarco94.tambourine.utils.debugElapsed
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.swing.Swing
 import mu.KotlinLogging
 import kotlin.concurrent.thread
 import kotlin.time.Duration
@@ -258,7 +259,7 @@ class PlayerController(
     }
 
     init {
-        coroutineScope.launch(Dispatchers.Main) {
+        coroutineScope.launch(Dispatchers.Swing) {
             for (state in stateChannel) {
                 observableState = state
                 mprisPlayer?.setState(state)

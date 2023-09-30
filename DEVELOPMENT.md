@@ -17,7 +17,6 @@ Make sure you have the following installed:
   ```
   flatpak install flathub org.freedesktop.Platform//22.08 org.freedesktop.Sdk//22.08 
   flatpak install flathub org.freedesktop.Platform.ffmpeg-full//22.08
-  flatpak install flathub runtime/org.freedesktop.Sdk.Extension.openjdk17//22.08 
   ```
 
 To build and install:

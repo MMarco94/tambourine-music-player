@@ -49,13 +49,14 @@ kotlin {
                 implementation("org.slf4j:jul-to-slf4j:2.0.7")
 
                 // ffmpeg-based audio decoder
-                // We could speed up by using platform specific artifacts:
+                // Artifacts:
+                // - ffsampledsp-complete
                 // - ffsampledsp-x86_64-macos
                 // - ffsampledsp-aarch64-macos
                 // - ffsampledsp-x86_64-linux
                 // - ffsampledsp-i386-win
                 // - ffsampledsp-x86_64-win
-                implementation("com.tagtraum:ffsampledsp-complete:0.9.53")
+                implementation("com.tagtraum:ffsampledsp-x86_64-linux:0.9.53")
                 // music metadata reader
                 implementation("net.jthink:jaudiotagger:3.0.1")
                 // FFT
@@ -79,6 +80,9 @@ compose.desktop {
             packageVersion = version.toString()
 
             modules("java.naming", "jdk.security.auth", "jdk.unsupported")
+        }
+        buildTypes.release.proguard {
+            configurationFiles.from(project.file("compose-desktop.pro"))
         }
     }
 }
