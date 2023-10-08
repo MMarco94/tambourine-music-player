@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.github.mmarco94"
-version = "1.0"
+version = "1.0.1"
 
 repositories {
     google()
@@ -56,7 +56,7 @@ kotlin {
                 // - ffsampledsp-x86_64-linux
                 // - ffsampledsp-i386-win
                 // - ffsampledsp-x86_64-win
-                implementation("com.tagtraum:ffsampledsp-x86_64-linux:0.9.53")
+                implementation("com.tagtraum:ffsampledsp-complete:0.9.53")
                 // music metadata reader
                 implementation("net.jthink:jaudiotagger:3.0.1")
                 // FFT

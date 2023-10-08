@@ -10,7 +10,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
@@ -60,7 +59,6 @@ private val dpTransitionSpec: @Composable Transition.Segment<LibrarySearchBarMod
     if (this.targetState == this.initialState) snap() else spring(visibilityThreshold = Dp.VisibilityThreshold)
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun BoxScope.LibrarySearchBar(
     mode: Transition<LibrarySearchBarMode>,
