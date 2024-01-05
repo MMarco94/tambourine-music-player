@@ -90,10 +90,7 @@ data class MPRISPlayerState(
         return if (diffs.isEmpty()) {
             null
         } else {
-            PropertiesChanged(objectPath, interfaceName, diffs, emptyList()).also {
-                // TODO LOL
-                DBusSignal("", "", "", "", "")
-            }
+            PropertiesChanged(objectPath, interfaceName, diffs, emptyList())
         }
     }
 }
