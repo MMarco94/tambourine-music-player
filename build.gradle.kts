@@ -27,7 +27,7 @@ kotlin {
                 api(compose.material3)
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
 
                 // Native file dialog
                 val lwjglVersion = "3.3.3"
@@ -45,8 +45,8 @@ kotlin {
 
                 // Logging
                 implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
-                implementation("ch.qos.logback:logback-classic:1.4.11")
-                implementation("org.slf4j:jul-to-slf4j:2.0.7")
+                implementation("ch.qos.logback:logback-classic:1.4.14")
+                implementation("org.slf4j:jul-to-slf4j:2.0.10")
 
                 // ffmpeg-based audio decoder
                 // Artifacts:
@@ -62,8 +62,8 @@ kotlin {
                 // FFT
                 implementation("com.tambapps.fft4j:fft4j:2.0")
                 // DBUS APIs
-                implementation("com.github.hypfvieh:dbus-java-core:4.3.0")
-                implementation("com.github.hypfvieh:dbus-java-transport-native-unixsocket:4.3.0")
+                implementation("com.github.hypfvieh:dbus-java-core:4.3.1")
+                implementation("com.github.hypfvieh:dbus-java-transport-native-unixsocket:4.3.1")
                 // Dominant color from image
                 implementation("com.github.SvenWoltmann:color-thief-java:v1.1.2")
             }

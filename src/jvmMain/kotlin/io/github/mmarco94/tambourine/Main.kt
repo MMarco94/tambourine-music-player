@@ -1,7 +1,6 @@
 package io.github.mmarco94.tambourine
 
 import androidx.compose.runtime.*
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -99,7 +98,6 @@ private fun createQueue(library: Library, filesFromArgs: List<File>): SongQueue?
     else SongQueue.of(null, songs, songs.first())
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 private fun handleKeypress(
     cs: CoroutineScope,
     event: KeyEvent,
