@@ -10,4 +10,5 @@
 -keep public class com.tagtraum.ffsampledsp.** { *; }
 # DBus
 -keep public class org.freedesktop.dbus.** { *; }
--keep public class org.mpris.** { *; }
+-keep public class * implements org.freedesktop.dbus.interfaces.DBusInterface { *; }
+-keep public class * extends org.freedesktop.dbus.messages.Message { *; }

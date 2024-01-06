@@ -29,19 +29,8 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
 
-                // Native file dialog
-                val lwjglVersion = "3.3.3"
-                listOf("lwjgl", "lwjgl-nfd").forEach { lwjglDep ->
-                    implementation("org.lwjgl:${lwjglDep}:${lwjglVersion}")
-//                    listOf(
-//                        "natives-windows", "natives-windows-x86", "natives-windows-arm64",
-//                        "natives-macos", "natives-macos-arm64",
-//                        "natives-linux", "natives-linux-arm64", "natives-linux-arm32"
-//                    )
-                    listOf("natives-linux").forEach { native ->
-                        runtimeOnly("org.lwjgl:${lwjglDep}:${lwjglVersion}:${native}")
-                    }
-                }
+                // Portals
+                implementation("com.github.MMarco94:klib-portal:5c9c921550")
 
                 // Logging
                 implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")

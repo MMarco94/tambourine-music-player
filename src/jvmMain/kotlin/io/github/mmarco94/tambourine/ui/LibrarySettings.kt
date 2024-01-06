@@ -24,11 +24,14 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.rememberWindowState
+import io.github.mmarco94.klibportal.portals.openFile
 import io.github.mmarco94.tambourine.utils.Preferences
-import io.github.mmarco94.tambourine.utils.nativeFileChooser
 import kotlinx.coroutines.launch
+import mu.KotlinLogging
+import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder
 import java.io.File
 
+private val logger = KotlinLogging.logger {}
 
 @Composable
 fun SettingsButton(
@@ -129,12 +132,20 @@ private fun LibraryDirectorySetting(library: File, changeLibrary: (File) -> Unit
         ) {
             Box(Modifier.fillMaxSize().clickable {
                 cs.launch {
-                    val file = nativeFileChooser(
-                        pickFiles = false,
-                        initialDirectory = library,
-                    )
-                    if (file != null) {
-                        changeLibrary(file)
+                    DBusConnectionBuilder.forSessionBus().build().use { conn ->
+                        try {
+                            val file = openFile(
+                                conn,
+                                title = "Choose library",
+                                directory = true,
+                                multiple = false,
+                            ).singleOrNull()?.toFile()
+                            if (file != null) {
+                                changeLibrary(file)
+                            }
+                        } catch (e: Exception) {
+                            logger.error(e) { "Error while picking file" }
+                        }
                     }
                 }
             }) {
