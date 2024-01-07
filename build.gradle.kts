@@ -30,7 +30,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
 
                 // Portals
-                implementation("com.github.MMarco94:klib-portal:5c9c921550")
+                implementation("com.github.MMarco94:klib-portal:0.1")
 
                 // Logging
                 implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
