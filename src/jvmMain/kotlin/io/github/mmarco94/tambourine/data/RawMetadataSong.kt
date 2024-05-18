@@ -3,6 +3,7 @@ package io.github.mmarco94.tambourine.data
 import io.github.mmarco94.tambourine.utils.trimToNull
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
+import kotlinx.datetime.LocalDate
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
 import java.io.File
@@ -33,6 +34,15 @@ data class RawMetadataSong(
             val tag = f.tag
             val header = f.audioHeader
 
+            val yearStr = tag.getFirst(FieldKey.YEAR)
+            val year = if (yearStr.isNotBlank()) {
+                yearStr.toIntOrNull() ?: try {
+                    LocalDate.parse(yearStr)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }?.year
+            } else null
+
             return RawMetadataSong(
                 file = file,
                 track = tag.getFirst(FieldKey.TRACK)?.toIntOrNull(),
@@ -41,7 +51,7 @@ data class RawMetadataSong(
                 album = tag.getFirst(FieldKey.ALBUM)?.trimToNull(),
                 artist = tag.getFirst(FieldKey.ARTIST)?.trimToNull(),
                 albumArtist = tag.getFirst(FieldKey.ALBUM_ARTIST)?.trimToNull(),
-                year = tag.getFirst(FieldKey.YEAR)?.toIntOrNull(),
+                year = year,
                 cover = tag.firstArtwork?.binaryData?.let { decoder.decode(it) } ?: CompletableDeferred(value = null),
                 lyrics = Lyrics.of(tag.getFirst(FieldKey.LYRICS)),
             )
