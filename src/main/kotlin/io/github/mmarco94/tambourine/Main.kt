@@ -9,6 +9,7 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import io.github.mmarco94.tambourine.audio.PlayerController
 import io.github.mmarco94.tambourine.data.Library
+import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongQueue
 import io.github.mmarco94.tambourine.data.toLibrary
 import io.github.mmarco94.tambourine.ui.App
@@ -91,9 +92,12 @@ fun main(args: Array<String>) {
 }
 
 private fun createQueue(library: Library, filesFromArgs: List<File>): SongQueue? {
-    val songs = filesFromArgs.flatMap { arg ->
-        library.songs.filter { s -> s.file.path.startsWith(arg.path) }
-    }
+    val songs = filesFromArgs
+        .flatMap { arg ->
+            library.songs
+                .filter { s -> s.file.path.startsWith(arg.path) }
+                .sortedWith(compareBy<Song> { it.track }.thenBy { it.file.path })
+        }
     return if (songs.isEmpty()) null
     else SongQueue.of(null, songs, songs.first())
 }

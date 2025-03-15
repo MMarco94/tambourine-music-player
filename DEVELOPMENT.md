@@ -13,7 +13,7 @@ Tambourine uses Flatpak as the main packaging system.
 Make sure you have the following installed:
 
 - `flatpak-builder`
-- Flatpack runtimes:
+- Flatpak runtimes:
   ```
   flatpak install flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08 org.freedesktop.Platform.ffmpeg-full//24.08
   ```
