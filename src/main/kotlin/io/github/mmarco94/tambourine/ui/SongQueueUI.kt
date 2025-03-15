@@ -3,9 +3,9 @@ package io.github.mmarco94.tambourine.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.QueueMusic
-import androidx.compose.material3.Divider
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -33,7 +33,7 @@ fun SongQueueUI(
     if (queue == null) {
         BigMessage(
             modifier,
-            Icons.Filled.QueueMusic,
+            Icons.AutoMirrored.Default.QueueMusic,
             "Empty queue",
             "To begin, select a song from your library",
         )
@@ -72,7 +72,7 @@ fun SongQueueUI(
                     SettingsButton(Modifier, openSettings)
                 }
             }
-            Divider()
+            VerticalDivider()
             BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
                 val approxRowHeight = 64.dp
                 val pos = queue.position

@@ -26,8 +26,8 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.rememberWindowState
 import io.github.mmarco94.klibportal.portals.openFile
 import io.github.mmarco94.tambourine.utils.Preferences
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
-import mu.KotlinLogging
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder
 import java.io.File
 

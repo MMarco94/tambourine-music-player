@@ -12,3 +12,5 @@
 -keep public class org.freedesktop.dbus.** { *; }
 -keep public class * implements org.freedesktop.dbus.interfaces.DBusInterface { *; }
 -keep public class * extends org.freedesktop.dbus.messages.Message { *; }
+# Flow is wrongly removed
+-keep class kotlinx.coroutines.flow.** { *; }

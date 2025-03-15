@@ -6,7 +6,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.automirrored.filled.ReadMore
+import androidx.compose.material.icons.filled.Album
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -99,10 +104,10 @@ private fun BaseSongRow(
             ContextMenuItemWithIcon(Icons.Default.Shuffle, "Shuffle from here") {
                 play(true)
             },
-            ContextMenuItemWithIcon(Icons.Default.ReadMore, "Play next") {
+            ContextMenuItemWithIcon(Icons.AutoMirrored.Default.ReadMore, "Play next") {
                 controller.playNext(song)
             },
-            ContextMenuItemWithIcon(Icons.Default.PlaylistAdd, "Add to queue") {
+            ContextMenuItemWithIcon(Icons.AutoMirrored.Default.PlaylistAdd, "Add to queue") {
                 controller.addToQueue(song)
             },
             ContextMenuItemWithIcon(Icons.Default.Album, "Play album") {

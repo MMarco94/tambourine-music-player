@@ -286,7 +286,7 @@ fun LibraryHeader(
                 setOptions(options.copy(queryFilter = it))
             }
         }
-        Divider()
+        HorizontalDivider()
 
         AnimatedContent(tab, transitionSpec = {
             if (this.initialState == null || this.targetState == null) {
@@ -307,7 +307,7 @@ fun LibraryHeader(
                     Layout(content = {
                         Box {
                             with(renderer) { Render { setTab(null) } }
-                            Divider(Modifier.align(Alignment.BottomCenter))
+                            HorizontalDivider(Modifier.align(Alignment.BottomCenter))
                         }
                     }) { measurables, constraints ->
                         val newC = constraints.copy(

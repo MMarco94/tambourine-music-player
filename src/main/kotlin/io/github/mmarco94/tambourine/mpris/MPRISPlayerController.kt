@@ -4,13 +4,13 @@ import io.github.mmarco94.tambourine.audio.PlayerController
 import io.github.mmarco94.tambourine.audio.Position
 import io.github.mmarco94.tambourine.data.RepeatMode.*
 import io.github.mmarco94.tambourine.data.Song
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import mu.KotlinLogging
 import org.freedesktop.dbus.connections.impl.DBusConnection
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder
 import org.freedesktop.dbus.interfaces.Properties

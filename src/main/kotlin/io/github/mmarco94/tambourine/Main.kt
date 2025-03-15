@@ -38,8 +38,8 @@ fun main(args: Array<String>) {
             .stateIn(this, started = SharingStarted.Eagerly, null)
 
         // Uncomment to get all logs from ffsampledsp
-        // val root: Logger = Logger.getLogger(FFNativeLibraryLoader::class.java.name)
-        // root.level = Level.ALL
+//         val root = java.util.logging.Logger.getLogger(com.tagtraum.ffsampledsp.FFNativeLibraryLoader::class.java.name)
+//         root.level = java.util.logging.Level.WARNING
 
         SLF4JBridgeHandler.removeHandlersForRootLogger()
         SLF4JBridgeHandler.install()

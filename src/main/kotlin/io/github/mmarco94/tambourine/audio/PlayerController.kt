@@ -9,10 +9,10 @@ import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongQueue
 import io.github.mmarco94.tambourine.mpris.MPRISPlayerController
 import io.github.mmarco94.tambourine.utils.debugElapsed
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.swing.Swing
-import mu.KotlinLogging
 import kotlin.concurrent.thread
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO

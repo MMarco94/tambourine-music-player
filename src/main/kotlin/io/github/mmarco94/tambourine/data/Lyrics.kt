@@ -1,7 +1,7 @@
 package io.github.mmarco94.tambourine.data
 
 import io.github.mmarco94.tambourine.utils.trimToNull
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.text.ParseException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds

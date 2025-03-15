@@ -11,9 +11,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.PlayCircleFilled
-import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,7 +34,7 @@ enum class Panel(
     val label: String,
 ) {
     LIBRARY(Icons.Filled.LibraryMusic, "Library"),
-    QUEUE(Icons.Filled.QueueMusic, "Queue"),
+    QUEUE(Icons.AutoMirrored.Default.QueueMusic, "Queue"),
     PLAYER(Icons.Filled.PlayCircleFilled, "Player"),
 }
 
@@ -114,7 +114,7 @@ fun App(
                                     selectLibraryTab,
                                 )
                                 if (!large) {
-                                    Divider()
+                                    HorizontalDivider()
                                     BottomBar(selectedPanel, selectPanel)
                                 }
                             }

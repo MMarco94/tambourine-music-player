@@ -1,12 +1,12 @@
 package io.github.mmarco94.tambourine.data
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import mu.KotlinLogging
 import java.io.File
 import java.nio.file.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -132,7 +132,9 @@ class LiveLibrary(
             )
         } catch (e: Exception) {
             eventChannel.send(InternalEvent.FileIgnored)
-            logger.error("Error while parsing music file: ${e.message}")
+            logger.error {
+                "Error while parsing music file: ${e.message}"
+            }
         }
     }
 

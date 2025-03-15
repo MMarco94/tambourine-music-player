@@ -7,12 +7,12 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import io.github.mmarco94.tambourine.ui.MusicPlayerTheme
 import io.github.mmarco94.tambourine.utils.hsb
 import io.github.mmarco94.tambourine.utils.palette
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import mu.KotlinLogging
 import org.jetbrains.skia.Image
 import java.io.File
 import javax.imageio.ImageIO

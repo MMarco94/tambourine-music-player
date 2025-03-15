@@ -1,10 +1,11 @@
 plugins {
-    kotlin("multiplatform")
+    kotlin("jvm") version "2.1.10"
     id("org.jetbrains.compose")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 group = "io.github.mmarco94"
-version = "1.0.1"
+version = "1.0.2"
 
 repositories {
     google()
@@ -14,51 +15,45 @@ repositories {
 }
 
 kotlin {
-    jvm {
-        jvmToolchain(17)
-        withJava()
-    }
-    sourceSets {
-        val jvmMain by getting {
-            dependencies {
-                implementation(compose.foundation)
-                implementation(compose.desktop.currentOs)
-                api(compose.materialIconsExtended)
-                api(compose.material3)
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
+    jvmToolchain(21)
+}
 
-                // Portals
-                implementation("com.github.MMarco94:klib-portal:0.1")
+dependencies {
+    implementation(compose.foundation)
+    implementation(compose.desktop.currentOs)
+    api(compose.materialIconsExtended)
+    api(compose.material3)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
 
-                // Logging
-                implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
-                implementation("ch.qos.logback:logback-classic:1.4.14")
-                implementation("org.slf4j:jul-to-slf4j:2.0.10")
+    // Portals
+    implementation("com.github.MMarco94:klib-portal:0.1")
 
-                // ffmpeg-based audio decoder
-                // Artifacts:
-                // - ffsampledsp-complete
-                // - ffsampledsp-x86_64-macos
-                // - ffsampledsp-aarch64-macos
-                // - ffsampledsp-x86_64-linux
-                // - ffsampledsp-i386-win
-                // - ffsampledsp-x86_64-win
-                implementation("com.tagtraum:ffsampledsp-complete:0.9.53")
-                // music metadata reader
-                implementation("net.jthink:jaudiotagger:3.0.1")
-                // FFT
-                implementation("com.tambapps.fft4j:fft4j:2.0")
-                // DBUS APIs
-                implementation("com.github.hypfvieh:dbus-java-core:4.3.1")
-                implementation("com.github.hypfvieh:dbus-java-transport-native-unixsocket:4.3.1")
-                // Dominant color from image
-                implementation("com.github.SvenWoltmann:color-thief-java:v1.1.2")
-            }
-        }
-        val jvmTest by getting
-    }
+    // Logging
+    implementation("io.github.oshai:kotlin-logging-jvm:7.0.5")
+    implementation("ch.qos.logback:logback-classic:1.5.17")
+    implementation("org.slf4j:jul-to-slf4j:2.0.17")
+
+    // ffmpeg-based audio decoder
+    // Artifacts:
+    // - ffsampledsp-complete
+    // - ffsampledsp-x86_64-macos
+    // - ffsampledsp-aarch64-macos
+    // - ffsampledsp-x86_64-linux
+    // - ffsampledsp-i386-win
+    // - ffsampledsp-x86_64-win
+    implementation("com.tagtraum:ffsampledsp-complete:0.9.53")
+    // music metadata reader
+    implementation("net.jthink:jaudiotagger:3.0.1")
+    // FFT
+    implementation("com.tambapps.fft4j:fft4j:2.0")
+    // DBUS APIs
+    implementation("com.github.hypfvieh:dbus-java-core:5.1.0")
+    implementation("com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.1.0")
+    // Dominant color from image
+    implementation("com.github.SvenWoltmann:color-thief-java:v1.1.2")
 }
 
 compose.desktop {
@@ -71,6 +66,8 @@ compose.desktop {
             modules("java.naming", "jdk.security.auth", "jdk.unsupported")
         }
         buildTypes.release.proguard {
+            version.set("7.6.0")
+            optimize = false
             configurationFiles.from(project.file("compose-desktop.pro"))
         }
     }

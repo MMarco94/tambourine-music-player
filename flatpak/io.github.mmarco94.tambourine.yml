@@ -1,10 +1,10 @@
 app-id: io.github.mmarco94.tambourine
 runtime: org.freedesktop.Platform
-runtime-version: '23.08'
+runtime-version: '24.08'
 add-extensions:
   org.freedesktop.Platform.ffmpeg-full:
     directory: lib/ffmpeg
-    version: '23.08'
+    version: '24.08'
     add-ld-path: .
 sdk: org.freedesktop.Sdk
 command: run.sh

@@ -8,6 +8,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeDown
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -267,7 +270,7 @@ private fun Seeker(
                 WaveformUI(
                     Modifier.fillMaxWidth(),
                     player.waveform,
-                    { pos.activeRange.endInclusive },
+                    { pos.value / pos.valueRange.endInclusive },
                     if (p == null) null else { size -> (p - thumbRadius.toPx()) / size.width },
                 )
             },
@@ -411,7 +414,7 @@ fun VolumeSlider(cs: CoroutineScope, player: PlayerController) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         PlayerIcon(
             cs,
-            if (level == 0f) Icons.Default.VolumeOff else Icons.Default.VolumeDown,
+            if (level == 0f) Icons.AutoMirrored.Default.VolumeOff else Icons.AutoMirrored.Default.VolumeDown,
             "Mute"
         ) {
             player.setLevel(if (player.level == 0f) nonZeroLevel else 0f)
@@ -427,7 +430,7 @@ fun VolumeSlider(cs: CoroutineScope, player: PlayerController) {
         )
         PlayerIcon(
             cs,
-            Icons.Default.VolumeUp,
+            Icons.AutoMirrored.Default.VolumeUp,
             "Max volume"
         ) {
             player.setLevel(1f)

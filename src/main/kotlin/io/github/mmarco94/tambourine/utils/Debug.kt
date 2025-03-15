@@ -1,6 +1,6 @@
 package io.github.mmarco94.tambourine.utils
 
-import mu.KLogger
+import io.github.oshai.kotlinlogging.KLogger
 import kotlin.system.measureTimeMillis
 import kotlin.time.Duration.Companion.milliseconds
 
