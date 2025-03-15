@@ -21,7 +21,7 @@ jobs:
         run: |
           ./gradlew createReleaseDistributable
           tar -czf build/tmp/tambourine.tar.gz -C build/compose/binaries/main-release/app tambourine
-        uses: "marvinpinto/action-automatic-releases@latest"
+      - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
