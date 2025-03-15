@@ -23,9 +23,13 @@ jobs:
       - name: "Package"
         run: |
           tar -czf build/tmp/tambourine.tar.gz -C build/compose/binaries/main-release/app tambourine
+      - name: "Compute sha256"
+        run: |
+          sha256sum build/tmp/tambourine.tar.gz | cut -d' ' -f1 > build/tmp/tambourine.tar.gz.sha256
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
             build/tmp/tambourine.tar.gz
+            build/tmp/tambourine.tar.gz.sha256
