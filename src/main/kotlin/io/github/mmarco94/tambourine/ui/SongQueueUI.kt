@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -72,7 +72,7 @@ fun SongQueueUI(
                     SettingsButton(Modifier, openSettings)
                 }
             }
-            VerticalDivider()
+            HorizontalDivider()
             BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
                 val approxRowHeight = 64.dp
                 val pos = queue.position
