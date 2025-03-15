@@ -1,0 +1,29 @@
+name: "tagged-release"
+
+on:
+    push:
+        tags:
+            - "v*"
+
+jobs:
+    tagged-release:
+        name: "Tagged Release"
+        runs-on: "ubuntu-latest"
+        steps:
+        - name: Set up Java
+            uses: actions/setup-java@v4
+            with:
+                java-version: '21'
+                distribution: 'temurin'
+        - name: Setup Gradle
+            uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+        - name: "Build & test"
+            run: |
+                ./gradlew createReleaseDistributable
+                tar -czf build/tmp/tambourine.tar.gz -C build/compose/binaries/main-release/app tambourine
+            uses: "marvinpinto/action-automatic-releases@latest"
+            with:
+                repo_token: "${{ secrets.GITHUB_TOKEN }}"
+                prerelease: false
+                files: |
+                    build/tmp/tambourine.tar.gz
