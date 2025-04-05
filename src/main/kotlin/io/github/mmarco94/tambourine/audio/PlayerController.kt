@@ -1,6 +1,5 @@
 package io.github.mmarco94.tambourine.audio
 
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -17,12 +16,17 @@ import kotlin.concurrent.thread
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.logger {}
 
+private val BUFFER = 10.seconds
+private val SONG_SWITCH_THRESHOLD = 100.milliseconds
+private val PLAY_LOOP_DELAY = minOf(10.milliseconds, BUFFER / 2)
+
 sealed interface Position {
-    object Current : Position
-    object Beginning : Position
+    data object Current : Position
+    data object Beginning : Position
     data class Specific(val time: Duration) : Position
 }
 
@@ -35,14 +39,11 @@ private sealed interface PlayerCommand {
 
     class Play(val event: Long) : PlayerCommand
     class Pause(val event: Long) : PlayerCommand
-    class Seeking(val event: Long) : PlayerCommand
+    class SeekingStart(val event: Long) : PlayerCommand
     class SeekDone(val event: Long) : PlayerCommand
     class SetLevel(val event: Long, val level: Float) : PlayerCommand
     class WaveformComputed(val song: Song, val waveform: Waveform) : PlayerCommand
 }
-
-private val buffer = 150.milliseconds
-private val playLoopDelay = minOf(16.milliseconds, buffer / 2)
 
 class PlayerController(
     private val coroutineScope: CoroutineScope,
@@ -85,7 +86,14 @@ class PlayerController(
     ) {
 
         companion object {
-            val initial = State(0L, null, ZERO, true, false, 1f)
+            val initial = State(
+                event = 0L,
+                currentlyPlaying = null,
+                position = ZERO,
+                pause = true,
+                seeking = false,
+                level = 1f,
+            )
         }
 
         data class StateChangeResult(
@@ -109,9 +117,18 @@ class PlayerController(
                 if (result is Player.PlayResult.Played) {
                     frequencyAnalyzer.push(result.chunk, currentlyPlaying.player.format)
                 }
-                if (result == Player.PlayResult.Finished && !seeking) {
+                if (
+                    result == Player.PlayResult.Finished &&
+                    !seeking &&
+                    currentlyPlaying.player.pendingFlush() < SONG_SWITCH_THRESHOLD
+                ) {
                     val (next, keepPlaying) = currentlyPlaying.queue.nextInQueue()
-                    changeQueue(cs, next, Position.Beginning, onWaveformComputed)
+                    changeQueue(
+                        cs = cs,
+                        queue = next,
+                        position = Position.Beginning,
+                        onWaveformComputed = onWaveformComputed,
+                    )
                         .change { copy(pause = this.pause || !keepPlaying) }
                 } else {
                     StateChangeResult(
@@ -132,12 +149,20 @@ class PlayerController(
         ): StateChangeResult {
             if (queue == null) {
                 currentlyPlaying?.apply {
-                    player.flush()
                     player.stop()
                     bufferer.cancel()
                     waveformCreator.cancel()
                 }
-                return StateChangeResult(State(event, null, ZERO, true, seeking, level), true)
+                return StateChangeResult(
+                    State(
+                        event = event,
+                        currentlyPlaying = null,
+                        position = ZERO,
+                        pause = true,
+                        seeking = seeking,
+                        level = level
+                    ), true
+                )
             }
 
             val new = queue.currentSong
@@ -146,34 +171,41 @@ class PlayerController(
                 val stream = logger.debugElapsed("Opening song ${new.title}") {
                     new.audioStream()
                 }
-                currentlyPlaying?.bufferer?.cancel()
-                currentlyPlaying?.waveformCreator?.cancel()
-                val input = AsyncAudioInputStream(stream, 2)
-                val player = Player.create(stream.format, input.readers[0], currentlyPlaying?.player, buffer, level)
-                val bufferer = cs.launch(Dispatchers.IO) {
-                    logger.debugElapsed("Reading ${new.title}") {
-                        input.bufferAll()
+                logger.debugElapsed("Preparing song ${new.title}") {
+                    currentlyPlaying?.bufferer?.cancel()
+                    currentlyPlaying?.waveformCreator?.cancel()
+                    val bufferSize = Player.optimalBufferSize(stream.format, BUFFER)
+                    val input = AsyncAudioInputStream(stream, 2, bufferSize)
+                    val bufferer = cs.launch(Dispatchers.IO) {
+                        logger.debugElapsed("Reading ${new.title}") {
+                            input.bufferAll()
+                        }
                     }
-                }
-                val waveformCreator = cs.launch(Dispatchers.Default) {
-                    logger.debugElapsed("Computing waveform for ${new.title}") {
-                        val waveform = Waveform.fromStream(input.readers[1], stream.format, new)
-                        onWaveformComputed(new, waveform)
+                    val player = Player.create(
+                        format = stream.format,
+                        input = input.readers[0],
+                        older = currentlyPlaying?.player,
+                        bufferSize = bufferSize,
+                        level = level,
+                        position = position,
+                    )
+                    val waveformCreator = cs.launch(Dispatchers.Default) {
+                        logger.debugElapsed("Computing waveform for ${new.title}") {
+                            val waveform = Waveform.fromStream(input.readers[1], stream.format, new)
+                            onWaveformComputed(new, waveform)
+                        }
                     }
+                    CurrentlyPlaying(
+                        queue,
+                        player,
+                        bufferer,
+                        waveformCreator,
+                    )
                 }
-                CurrentlyPlaying(
-                    queue,
-                    player,
-                    bufferer,
-                    waveformCreator,
-                )
             } else {
-                currentlyPlaying.copy(queue = queue)
-            }
-            when (position) {
-                Position.Current -> {}
-                Position.Beginning -> newCp.player.seekToStart()
-                is Position.Specific -> newCp.player.seekTo(position.time)
+                currentlyPlaying.copy(queue = queue).apply {
+                    player.seekTo(position)
+                }
             }
             return StateChangeResult(
                 copy(
@@ -184,37 +216,19 @@ class PlayerController(
             )
         }
 
-        fun setLevel(level: Float): State {
+        suspend fun setLevel(level: Float): State {
             currentlyPlaying?.player?.setLevel(level)
             return copy(level = level)
         }
     }
 
-    private data class PendingEvent<T>(val value: T, val event: Long)
-
-    private inline fun <T> PendingEvent<T>?.resolve(f: (State) -> T): T {
-        val os = observableState
-        return if (this != null && os.event < this.event) {
-            this.value
-        } else {
-            f(os)
-        }
-    }
-
     private var sentEvents = 0L
-    private var pendingSeek by mutableStateOf<PendingEvent<Duration>?>(null)
-    private var pendingLevel by mutableStateOf<PendingEvent<Float>?>(null)
-
     private var observableState by mutableStateOf(State.initial)
-    val level by derivedStateOf {
-        pendingLevel.resolve { it.level }
-    }
+    val level get() = observableState.level
     val queue get() = observableState.currentlyPlaying?.queue
     val waveform get() = observableState.currentlyPlaying?.waveform
     val pause get() = observableState.pause
-    val position by derivedStateOf {
-        pendingSeek.resolve { it.position }
-    }
+    val position get() = observableState.position
 
     suspend fun play() {
         sendCommand(Play(sentEvents++))
@@ -231,27 +245,20 @@ class PlayerController(
         sendCommand(ChangeQueue(sentEvents++, queue, position))
     }
 
-    fun startSeek(queue: SongQueue?, position: Duration) {
-        val se = sentEvents
-        sentEvents += 2
-        pendingSeek = PendingEvent(position, se + 1)
-        coroutineScope.launch {
-            sendCommand(Seeking(se))
-            sendCommand(ChangeQueue(se + 1, queue, Position.Specific(position)))
-        }
+    suspend fun startSeek() {
+        sendCommand(SeekingStart(sentEvents++))
+    }
+
+    suspend fun seek(queue: SongQueue?, position: Duration) {
+        sendCommand(ChangeQueue(sentEvents++, queue, Position.Specific(position)))
     }
 
     suspend fun endSeek() {
         sendCommand(SeekDone(sentEvents++))
     }
 
-    fun setLevel(level: Float) {
-        val se = sentEvents
-        sentEvents++
-        pendingLevel = PendingEvent(level, se)
-        coroutineScope.launch {
-            sendCommand(SetLevel(se, level))
-        }
+    suspend fun setLevel(level: Float) {
+        sendCommand(SetLevel(sentEvents++, level))
     }
 
     private suspend fun sendCommand(command: PlayerCommand) {
@@ -268,7 +275,7 @@ class PlayerController(
         coroutineScope.launch(Dispatchers.Default) {
             frequencyAnalyzer.start()
         }
-        thread {
+        thread(name = "PlayerControllerLoop") {
             runBlocking {
                 launch {
                     val onWaveformComputed: suspend (Song, Waveform) -> Unit = { song, waveform ->
@@ -292,10 +299,28 @@ class PlayerController(
                                 )
                                 .change { copy(event = command.event + 1) }
 
-                            is Pause -> state.change { copy(event = command.event + 1, pause = true) }
+                            is Pause -> state.change {
+                                currentlyPlaying?.player?.stop()
+                                copy(event = command.event + 1, pause = true)
+                            }
+
                             is Play -> state.change { copy(event = command.event + 1, pause = false) }
-                            is Seeking -> state.change { copy(event = command.event + 1, seeking = true) }
-                            is SeekDone -> state.change { copy(event = command.event + 1, seeking = false) }
+                            is SeekingStart -> state.change {
+                                logger.debug { "Seeking started" }
+                                copy(
+                                    event = command.event + 1,
+                                    seeking = true,
+                                )
+                            }
+
+                            is SeekDone -> state.change {
+                                logger.debug { "Seeking done" }
+                                copy(
+                                    event = command.event + 1,
+                                    seeking = false,
+                                )
+                            }
+
                             is SetLevel -> state.change {
                                 state.setLevel(command.level).copy(event = command.event + 1)
                             }
@@ -321,7 +346,7 @@ class PlayerController(
                             stateChannel.send(state)
                         }
                         if (shouldPause) {
-                            delay(playLoopDelay)
+                            delay(PLAY_LOOP_DELAY)
                         }
                     }
                 }

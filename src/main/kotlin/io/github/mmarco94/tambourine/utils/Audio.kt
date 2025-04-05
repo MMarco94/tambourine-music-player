@@ -12,7 +12,9 @@ val humanHearingRange = (20..20000)
 val humanHearingRangeLog = humanHearingRange.toLogRange()
 
 fun AudioFormat.framesToDuration(frames: Long) = (frames / frameRate * 1000000000L).roundToLong().nanoseconds
+fun AudioFormat.bytesToDuration(bytes: Long) = framesToDuration(bytes / frameSize)
 fun AudioFormat.durationToFrames(duration: Duration) = ((duration / 1.seconds) * frameRate).roundToLong()
+fun AudioFormat.durationToBytes(duration: Duration) = durationToFrames(duration) * frameSize
 
 
 fun decodeToArray(bytes: ByteArray, offset: Int, length: Int, format: AudioFormat, channel: Int = 0): DoubleArray {

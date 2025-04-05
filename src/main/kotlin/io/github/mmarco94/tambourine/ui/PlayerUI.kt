@@ -82,7 +82,7 @@ fun PlayerUI(
                 SingleLineText(song.album.artist.name, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(24.dp))
 
-                Seeker(Modifier.widthIn(max = 480.dp), player, song, queue, cs)
+                Seeker(Modifier.widthIn(max = 480.dp), player, song, queue)
                 Spacer(Modifier.height(24.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -126,7 +126,7 @@ fun PlayerUI(
                     }
                 }
                 Spacer(Modifier.height(24.dp))
-                VolumeSlider(cs, player)
+                VolumeSlider(player)
                 Spacer(Modifier.weight(1f))
             }
         }
@@ -176,7 +176,7 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
                                 getPosition = { pos },
                                 setPosition = { position ->
                                     cs.launch {
-                                        player.changeQueue(player.queue, Position.Specific(position))
+                                        player.seek(player.queue, position)
                                     }
                                 }
                             )
@@ -227,7 +227,7 @@ fun RepeatIcon(
         active = queue.repeatMode != RepeatMode.DO_NOT_REPEAT
     ) {
         player.changeQueue(
-            queue.toggleRepeat()
+            queue.toggleRepeat(),
         )
     }
 }
@@ -238,9 +238,10 @@ private fun Seeker(
     modifier: Modifier,
     player: PlayerController,
     song: Song,
-    queue: SongQueue?,
-    cs: CoroutineScope
+    queue: SongQueue?
 ) {
+    val cs = rememberCoroutineScope()
+    var seeking by remember { mutableStateOf(false) }
     var mousePositionX by remember { mutableStateOf<Float?>(null) }
     Column(modifier) {
         val thumbRadius = 10.dp
@@ -260,10 +261,21 @@ private fun Seeker(
             value = player.position.toFloat(DurationUnit.MILLISECONDS),
             valueRange = 0f..song.length.toFloat(DurationUnit.MILLISECONDS),
             onValueChange = {
-                player.startSeek(queue, it.roundToInt().milliseconds)
+                val newPosition = it.roundToInt().milliseconds
+                val startSeek = !seeking
+                seeking = true
+                cs.launch {
+                    if (startSeek) {
+                        player.startSeek()
+                    }
+                    player.seek(queue, newPosition)
+                }
             },
             onValueChangeFinished = {
-                cs.launch { player.endSeek() }
+                seeking = false
+                cs.launch {
+                    player.endSeek()
+                }
             },
             track = { pos ->
                 val p = mousePositionX
@@ -405,8 +417,10 @@ private fun PlayerIcon(
 }
 
 @Composable
-fun VolumeSlider(cs: CoroutineScope, player: PlayerController) {
-    val level = player.level
+fun VolumeSlider(player: PlayerController) {
+    var overriddenLevel by remember { mutableStateOf<Float?>(null) }
+    val level = overriddenLevel ?: player.level
+    val cs = rememberCoroutineScope()
     var nonZeroLevel by remember { mutableStateOf(level) }
     if (level > 0) {
         nonZeroLevel = level
@@ -417,11 +431,19 @@ fun VolumeSlider(cs: CoroutineScope, player: PlayerController) {
             if (level == 0f) Icons.AutoMirrored.Default.VolumeOff else Icons.AutoMirrored.Default.VolumeDown,
             "Mute"
         ) {
-            player.setLevel(if (player.level == 0f) nonZeroLevel else 0f)
+            player.setLevel(if (level == 0f) nonZeroLevel else 0f)
         }
         Slider(
             value = level,
-            onValueChange = { player.setLevel(it) },
+            onValueChange = {
+                overriddenLevel = it
+                cs.launch {
+                    player.setLevel(it)
+                }
+            },
+            onValueChangeFinished = {
+                overriddenLevel = null
+            },
             modifier = Modifier.width(176.dp),
             colors = SliderDefaults.colors(
                 thumbColor = Color.White,

@@ -67,7 +67,7 @@ class MPRISPlayerController(
                             LoopStatus.Track -> REPEAT_SONG
                             Playlist -> REPEAT_QUEUE
                         }
-                    )
+                    ),
                 )
             }
         },
@@ -78,7 +78,7 @@ class MPRISPlayerController(
                         playerController.queue?.shuffled()
                     } else {
                         playerController.queue?.unshuffled()
-                    }
+                    },
                 )
             }
         },
@@ -235,7 +235,7 @@ class MPRISPlayerController(
                 if (pos > current.currentSong.length) {
                     playerController.changeQueue(current.next(), Position.Beginning)
                 } else {
-                    playerController.changeQueue(current, Position.Specific(pos))
+                    playerController.seek(current, pos)
                 }
             }
         }
@@ -244,7 +244,7 @@ class MPRISPlayerController(
     override fun SetPosition(trackId: TrackId, x: Long) {
         cs.launch {
             if (playerController.queue?.currentSong?.mprisTrackId() == trackId) {
-                playerController.changeQueue(playerController.queue, Position.Specific(x.microseconds))
+                playerController.seek(playerController.queue, x.microseconds)
             }
         }
     }
