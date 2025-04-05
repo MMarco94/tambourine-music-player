@@ -126,6 +126,7 @@ class MPRISPlayerController(
         state: PlayerController.State,
     ): LastSentPositionData? {
         val currentSong = state.currentlyPlaying?.queue?.currentSong
+        val position = state.calculateCurrentPosition(Clock.System.now())
         val mprisPlayerState = MPRISPlayerState(
             playbackStatus = if (state.currentlyPlaying == null) {
                 PlaybackStatus.Stopped
@@ -145,7 +146,7 @@ class MPRISPlayerController(
             shuffle = state.currentlyPlaying != null && state.currentlyPlaying.queue.isShuffled,
             metadata = currentSong?.mprisMetadata(),
             volume = state.level.toDouble(),
-            position = state.position,
+            position = position,
             minimumRate = 1.0,
             maximumRate = 1.0,
             canControl = state.currentlyPlaying != null,
@@ -159,9 +160,10 @@ class MPRISPlayerController(
         val now = Clock.System.now()
         val skipPosition =
             if (lastPositionData != null && lastPositionData.song == state.currentlyPlaying?.queue?.currentSong) {
+                // TODO: do we even need this optimization now that the loop loops slower?
                 val elapsed = now - lastPositionData.eventTime
                 val expectedPosition = lastPositionData.position + elapsed
-                val diff = (state.position - expectedPosition).absoluteValue
+                val diff = (position - expectedPosition).absoluteValue
                 diff < 250.milliseconds
             } else false
         val old = properties.mprisPlayerState
@@ -178,7 +180,7 @@ class MPRISPlayerController(
             lastPositionData
         } else {
             if (state.currentlyPlaying != null) {
-                LastSentPositionData(state.currentlyPlaying.queue.currentSong, state.position, now)
+                LastSentPositionData(state.currentlyPlaying.queue.currentSong, position, now)
             } else {
                 null
             }
@@ -231,7 +233,8 @@ class MPRISPlayerController(
         cs.launch {
             val current = playerController.queue
             if (current != null) {
-                val pos = (playerController.position + x.microseconds).coerceAtLeast(ZERO)
+                val position = playerController.position(Clock.System.now())
+                val pos = (position + x.microseconds).coerceAtLeast(ZERO)
                 if (pos > current.currentSong.length) {
                     playerController.changeQueue(current.next(), Position.Beginning)
                 } else {

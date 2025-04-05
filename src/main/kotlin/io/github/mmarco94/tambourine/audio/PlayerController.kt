@@ -1,8 +1,6 @@
 package io.github.mmarco94.tambourine.audio
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import io.github.mmarco94.tambourine.audio.PlayerCommand.*
 import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongQueue
@@ -12,6 +10,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.swing.Swing
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlin.concurrent.thread
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
@@ -22,7 +22,7 @@ private val logger = KotlinLogging.logger {}
 
 private val BUFFER = 10.seconds
 private val SONG_SWITCH_THRESHOLD = 100.milliseconds
-private val PLAY_LOOP_DELAY = minOf(10.milliseconds, BUFFER / 2)
+private val PLAY_LOOP_DELAY = minOf(10000.milliseconds, BUFFER / 2)
 
 sealed interface Position {
     data object Current : Position
@@ -32,16 +32,15 @@ sealed interface Position {
 
 private sealed interface PlayerCommand {
     class ChangeQueue(
-        val event: Long,
         val queue: SongQueue?,
         val position: Position,
     ) : PlayerCommand
 
-    class Play(val event: Long) : PlayerCommand
-    class Pause(val event: Long) : PlayerCommand
-    class SeekingStart(val event: Long) : PlayerCommand
-    class SeekDone(val event: Long) : PlayerCommand
-    class SetLevel(val event: Long, val level: Float) : PlayerCommand
+    data object Play : PlayerCommand
+    data object Pause : PlayerCommand
+    data object SeekingStart : PlayerCommand
+    data object SeekDone : PlayerCommand
+    class SetLevel(val level: Float) : PlayerCommand
     class WaveformComputed(val song: Song, val waveform: Waveform) : PlayerCommand
 }
 
@@ -76,10 +75,14 @@ class PlayerController(
         val waveform: Waveform? = null,
     )
 
-    data class State(
-        val event: Long,
-        val currentlyPlaying: CurrentlyPlaying?,
+    data class PositionState(
         val position: Duration,
+        val informationAge: Instant = Clock.System.now(),
+    )
+
+    data class State(
+        val currentlyPlaying: CurrentlyPlaying?,
+        val position: PositionState,
         val pause: Boolean,
         val seeking: Boolean,
         val level: Float,
@@ -87,9 +90,8 @@ class PlayerController(
 
         companion object {
             val initial = State(
-                event = 0L,
                 currentlyPlaying = null,
-                position = ZERO,
+                position = PositionState(ZERO),
                 pause = true,
                 seeking = false,
                 level = 1f,
@@ -98,14 +100,20 @@ class PlayerController(
 
         data class StateChangeResult(
             val newState: State,
-            val shouldPause: Boolean,
-        ) {
-            inline fun change(f: State.() -> State) = copy(newState = newState.f())
-        }
+            val maxAllowedPause: Duration,
+        )
 
         inline fun change(f: State.() -> State) = StateChangeResult(
-            this.f(), false
+            this.f(), ZERO
         )
+
+        fun calculateCurrentPosition(now: Instant): Duration {
+            if (pause || currentlyPlaying == null) {
+                return position.position
+            }
+            val elapsed = (now - position.informationAge).coerceAtLeast(ZERO)
+            return (position.position + elapsed).coerceAtMost(currentlyPlaying.queue.currentSong.length)
+        }
 
         suspend fun play(
             cs: CoroutineScope,
@@ -127,17 +135,29 @@ class PlayerController(
                         cs = cs,
                         queue = next,
                         position = Position.Beginning,
+                        keepBufferedContent = true,
                         onWaveformComputed = onWaveformComputed,
-                    )
-                        .change { copy(pause = this.pause || !keepPlaying) }
+                    ).change { copy(pause = this.pause || !keepPlaying) }
                 } else {
+                    val maxAllowedPause = when (result) {
+                        is Player.PlayResult.Played -> ZERO
+                        is Player.PlayResult.NotPlayed -> PLAY_LOOP_DELAY
+                        is Player.PlayResult.Finished -> {
+                            // I'll resume playing only when the "if" above will become true
+                            if (seeking) {
+                                Duration.INFINITE
+                            } else {
+                                currentlyPlaying.player.pendingFlush() - SONG_SWITCH_THRESHOLD
+                            }
+                        }
+                    }
                     StateChangeResult(
-                        copy(position = currentlyPlaying.player.position),
-                        shouldPause = result !is Player.PlayResult.Played
+                        copy(position = PositionState(currentlyPlaying.player.position)),
+                        maxAllowedPause = maxAllowedPause,
                     )
                 }
             } else {
-                StateChangeResult(this, true)
+                StateChangeResult(this, Duration.INFINITE)
             }
         }
 
@@ -145,23 +165,21 @@ class PlayerController(
             cs: CoroutineScope,
             queue: SongQueue?,
             position: Position,
+            keepBufferedContent: Boolean,
             onWaveformComputed: suspend (Song, Waveform) -> Unit,
-        ): StateChangeResult {
+        ): State {
             if (queue == null) {
                 currentlyPlaying?.apply {
                     player.stop()
                     bufferer.cancel()
                     waveformCreator.cancel()
                 }
-                return StateChangeResult(
-                    State(
-                        event = event,
-                        currentlyPlaying = null,
-                        position = ZERO,
-                        pause = true,
-                        seeking = seeking,
-                        level = level
-                    ), true
+                return State(
+                    currentlyPlaying = null,
+                    position = PositionState(ZERO),
+                    pause = true,
+                    seeking = seeking,
+                    level = level
                 )
             }
 
@@ -188,6 +206,7 @@ class PlayerController(
                         bufferSize = bufferSize,
                         level = level,
                         position = position,
+                        keepBufferedContent = keepBufferedContent,
                     )
                     val waveformCreator = cs.launch(Dispatchers.Default) {
                         logger.debugElapsed("Computing waveform for ${new.title}") {
@@ -204,15 +223,12 @@ class PlayerController(
                 }
             } else {
                 currentlyPlaying.copy(queue = queue).apply {
-                    player.seekTo(position)
+                    player.seekTo(position, keepBufferedContent)
                 }
             }
-            return StateChangeResult(
-                copy(
-                    currentlyPlaying = newCp,
-                    position = newCp.player.position,
-                ),
-                shouldPause = false
+            return copy(
+                currentlyPlaying = newCp,
+                position = PositionState(newCp.player.position),
             )
         }
 
@@ -222,7 +238,6 @@ class PlayerController(
         }
     }
 
-    private var sentEvents = 0L
     private var observableState by mutableStateOf(State.initial)
     val level get() = observableState.level
     val queue get() = observableState.currentlyPlaying?.queue
@@ -230,35 +245,52 @@ class PlayerController(
     val pause get() = observableState.pause
     val position get() = observableState.position
 
+    fun position(now: Instant): Duration {
+        return observableState.calculateCurrentPosition(now)
+    }
+
+    @Composable
+    fun Position(): Duration {
+        var instant by remember { mutableStateOf(observableState.calculateCurrentPosition(Clock.System.now())) }
+        LaunchedEffect(Unit) {
+            while (true) {
+                instant = withFrameNanos {
+                    observableState.calculateCurrentPosition(Clock.System.now())
+                }
+            }
+        }
+        return instant
+    }
+
     suspend fun play() {
-        sendCommand(Play(sentEvents++))
+        sendCommand(Play)
     }
 
     suspend fun pause() {
-        sendCommand(Pause(sentEvents++))
+        sendCommand(Pause)
     }
 
     suspend fun changeQueue(
         queue: SongQueue?,
         position: Position = Position.Current,
     ) {
-        sendCommand(ChangeQueue(sentEvents++, queue, position))
+        sendCommand(ChangeQueue(queue, position))
     }
 
     suspend fun startSeek() {
-        sendCommand(SeekingStart(sentEvents++))
+        sendCommand(SeekingStart)
     }
 
     suspend fun seek(queue: SongQueue?, position: Duration) {
-        sendCommand(ChangeQueue(sentEvents++, queue, Position.Specific(position)))
+        sendCommand(ChangeQueue(queue, Position.Specific(position)))
     }
 
     suspend fun endSeek() {
-        sendCommand(SeekDone(sentEvents++))
+        sendCommand(SeekDone)
     }
 
     suspend fun setLevel(level: Float) {
-        sendCommand(SetLevel(sentEvents++, level))
+        sendCommand(SetLevel(level))
     }
 
     private suspend fun sendCommand(command: PlayerCommand) {
@@ -282,47 +314,47 @@ class PlayerController(
                         commandChannel.send(WaveformComputed(song, waveform))
                     }
                     var state = State.initial
+                    var desiredPause = ZERO
                     while (true) {
-                        val command = if (state.pause || state.currentlyPlaying == null) {
-                            // If I don't need to play, I can idle waiting for commands
-                            commandChannel.receive()
+                        val command: PlayerCommand? = if (desiredPause.isPositive()) {
+                            withTimeoutOrNull(desiredPause) {
+                                commandChannel.receive()
+                            }
                         } else {
                             commandChannel.tryReceive().getOrNull()
                         }
-                        val (newState, shouldPause) = when (command) {
-                            is ChangeQueue -> state
-                                .changeQueue(
+                        val (newState, maxAllowedPause) = when (command) {
+                            is ChangeQueue -> state.change {
+                                changeQueue(
                                     coroutineScope,
                                     command.queue,
                                     command.position,
+                                    keepBufferedContent = false,
                                     onWaveformComputed,
                                 )
-                                .change { copy(event = command.event + 1) }
+                            }
 
                             is Pause -> state.change {
                                 currentlyPlaying?.player?.stop()
-                                copy(event = command.event + 1, pause = true)
+                                copy(
+                                    position = PositionState(currentlyPlaying?.player?.position ?: ZERO),
+                                    pause = true,
+                                )
                             }
 
-                            is Play -> state.change { copy(event = command.event + 1, pause = false) }
+                            is Play -> state.change { copy(pause = false) }
                             is SeekingStart -> state.change {
                                 logger.debug { "Seeking started" }
-                                copy(
-                                    event = command.event + 1,
-                                    seeking = true,
-                                )
+                                copy(seeking = true)
                             }
 
                             is SeekDone -> state.change {
                                 logger.debug { "Seeking done" }
-                                copy(
-                                    event = command.event + 1,
-                                    seeking = false,
-                                )
+                                copy(seeking = false)
                             }
 
                             is SetLevel -> state.change {
-                                state.setLevel(command.level).copy(event = command.event + 1)
+                                state.setLevel(command.level)
                             }
 
                             is WaveformComputed -> state.change {
@@ -345,9 +377,7 @@ class PlayerController(
                             state = newState
                             stateChannel.send(state)
                         }
-                        if (shouldPause) {
-                            delay(PLAY_LOOP_DELAY)
-                        }
+                        desiredPause = maxAllowedPause
                     }
                 }
             }

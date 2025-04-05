@@ -167,8 +167,9 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
                     if (s?.lyrics != null) {
                         val player = playerController.current
                         var pos by remember { mutableStateOf(ZERO) }
+                        val position = player.Position()
                         if (player.queue?.currentSong == s) {
-                            pos = player.position
+                            pos = position
                         }
                         CompositionLocalProvider(LocalContentColor provides content) {
                             LyricsComposable(
@@ -243,6 +244,7 @@ private fun Seeker(
     val cs = rememberCoroutineScope()
     var seeking by remember { mutableStateOf(false) }
     var mousePositionX by remember { mutableStateOf<Float?>(null) }
+    val position = player.Position()
     Column(modifier) {
         val thumbRadius = 10.dp
         Slider(
@@ -258,7 +260,7 @@ private fun Seeker(
                     }
                 }
             },
-            value = player.position.toFloat(DurationUnit.MILLISECONDS),
+            value = position.toFloat(DurationUnit.MILLISECONDS),
             valueRange = 0f..song.length.toFloat(DurationUnit.MILLISECONDS),
             onValueChange = {
                 val newPosition = it.roundToInt().milliseconds
@@ -303,9 +305,9 @@ private fun Seeker(
         )
         Row(Modifier.padding(horizontal = thumbRadius), verticalAlignment = Alignment.CenterVertically) {
             val style = MaterialTheme.typography.labelMedium
-            SingleLineText(player.position.format(), style = style)
+            SingleLineText(position.format(), style = style)
             Spacer(Modifier.weight(1f))
-            SingleLineText((player.position - song.length).coerceAtMost(ZERO).format(), style = style)
+            SingleLineText((position - song.length).coerceAtMost(ZERO).format(), style = style)
         }
     }
 }

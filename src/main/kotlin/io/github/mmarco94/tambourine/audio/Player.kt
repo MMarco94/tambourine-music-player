@@ -19,14 +19,18 @@ class Player private constructor(
     val format: AudioFormat,
     input: AsyncAudioInputStream.Reader,
     private val output: SourceDataLine,
-    val bufferSize: Int,
 ) {
     private val source = SeekableAudioInputStream(format, input)
     val position: Duration get() = format.framesToDuration(precisePositionInFrames())
     private var cleanOutputtedBytes = 0L
 
-    init {
-        require(bufferSize in 1..output.bufferSize)
+    private fun drainOrFlush() {
+        if (output.isRunning) {
+            logger.debug { "Draining audio sink" }
+            output.drain()
+        } else {
+            flush()
+        }
     }
 
     private fun flush() {
@@ -65,17 +69,11 @@ class Player private constructor(
     }
 
     suspend fun playFrame(): PlayResult {
-        val desiredBufferSize = bufferSize
         val available = output.available()
-        val filled = output.bufferSize - available
-        val toSend = (desiredBufferSize - filled).coerceAtLeast(0)
         output.start()
-        if (toSend > 0) {
-            val chunk = source.read(toSend)
+        if (available > 0) {
+            val chunk = source.read(available)
             return if (chunk != null) {
-                if (filled == 0) {
-                    logger.debug { "Audio sink's buffer is empty. A stutter might have happened" }
-                }
                 cleanOutputtedBytes += chunk.length
                 output.write(chunk.readData, chunk.offset, chunk.length)
                 PlayResult.Played(chunk)
@@ -86,21 +84,22 @@ class Player private constructor(
         return PlayResult.NotPlayed
     }
 
-    suspend fun seekTo(position: Position) {
+    suspend fun seekTo(position: Position, keepBufferedContent: Boolean) {
         when (position) {
             Position.Current -> {}
-            Position.Beginning -> seekTo(0)
-            is Position.Specific -> seekTo(format.durationToFrames(position.time))
+            Position.Beginning -> seekTo(0, keepBufferedContent)
+            is Position.Specific -> seekTo(format.durationToFrames(position.time), keepBufferedContent)
         }
     }
 
-    private suspend fun seekTo(positionInFrames: Long) {
-        if (output.isRunning) {
+    private suspend fun seekTo(positionInFrames: Long, keepBufferedContent: Boolean) {
+        if (!keepBufferedContent) {
             // Making sure the new data is ready
-            source.seekTo(positionInFrames + bufferSize / format.frameSize)
+            if (output.isRunning) {
+                source.seekTo(positionInFrames + output.bufferSize / format.frameSize)
+            }
+            flush()
         }
-
-        flush()
 
         cleanOutputtedBytes = 0
         source.seekTo(positionInFrames)
@@ -108,7 +107,7 @@ class Player private constructor(
 
     suspend fun setLevel(level: Float) {
         output.setLevel(level)
-        seekTo(precisePositionInFrames())
+        seekTo(precisePositionInFrames(), false)
     }
 
     companion object {
@@ -128,6 +127,7 @@ class Player private constructor(
             bufferSize: Int,
             level: Float,
             position: Position,
+            keepBufferedContent: Boolean,
         ): Player {
             return if (
                 older != null &&
@@ -139,8 +139,8 @@ class Player private constructor(
                 older.format.isBigEndian == format.isBigEndian &&
                 older.output.bufferSize == bufferSize
             ) {
-                Player(format, input, older.output, bufferSize).apply {
-                    this.seekTo(position)
+                Player(format, input, older.output).apply {
+                    this.seekTo(position, keepBufferedContent)
                 }
             } else {
                 logger.debug { "Creating a new audio source data line" }
@@ -148,9 +148,13 @@ class Player private constructor(
                 line.open(format, bufferSize)
                 line.setLevel(level)
                 line.start()
-                val ret = Player(format, input, line, bufferSize)
-                ret.seekTo(position)
-                older?.flush()
+                val ret = Player(format, input, line)
+                ret.seekTo(position, keepBufferedContent)
+                if (keepBufferedContent) {
+                    older?.drainOrFlush()
+                } else {
+                    older?.flush()
+                }
                 older?.stop()
                 ret
             }
