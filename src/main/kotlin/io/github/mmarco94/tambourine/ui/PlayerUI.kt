@@ -344,14 +344,14 @@ private fun SingleWaveformUI(
     // This is the most efficient way to do this. 10/10 would do again
     val transition = updateTransition(wf, label = "Waveform")
     val spring = spring<Float>(stiffness = Spring.StiffnessVeryLow)
-    val animations = (0 until Waveform.summaryLength).map { index ->
+    val animations = (0 until Waveform.WAVEFORM_LOW_RES_SIZE).map { index ->
         transition.animateFloat({ spring }) { state ->
             val h = state?.getOrZero(index) ?: fakeHeight
             val baseHeight = fakeHeight / 2
             (baseHeight + h * (1 - baseHeight)).toFloat()
         }
     }
-    val animatedWaveform = DoubleArray(Waveform.summaryLength) { index ->
+    val animatedWaveform = DoubleArray(Waveform.WAVEFORM_LOW_RES_SIZE) { index ->
         animations[index].value.toDouble()
     }
     val modifier = Modifier.fillMaxWidth().height(waveformHeight)

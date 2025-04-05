@@ -1,8 +1,14 @@
 package io.github.mmarco94.tambourine.ui
 
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -12,12 +18,17 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import io.github.mmarco94.tambourine.audio.PlayerController
 import io.github.mmarco94.tambourine.ui.SpectrometerStyle.AREA
 import io.github.mmarco94.tambourine.ui.SpectrometerStyle.BOXES
 import io.github.mmarco94.tambourine.utils.avgInRange
 import io.github.mmarco94.tambourine.utils.humanHearingRangeLog
 import io.github.mmarco94.tambourine.utils.progress
 import kotlin.math.pow
+import kotlin.math.roundToInt
+import kotlin.math.sqrt
+import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 enum class SpectrometerStyle {
     BOXES, AREA
@@ -87,18 +98,43 @@ private inline fun DrawScope.spectrometerDrawer(
 }
 
 @Composable
-fun SmallSpectrometers(
+fun SmallFakeSpectrometers(
     modifier: Modifier,
-    frequencies: DoubleArray,
+    player: PlayerController,
     color: Color = Color.White,
 ) {
-    val boost = 2f
-    val chunks = 3
+    val position = player.Position()
+    val songLength = player.queue?.currentSong?.length
+    val waveform = player.waveform
+    val amplitude: Float = if (player.pause) {
+        0f
+    } else
+        if (songLength != null && waveform != null) {
+            val percent = position / songLength
+            val realAmpl = waveform.waveformsPerChannelHiRes.maxOf {
+                val index = (it.size * percent).roundToInt().coerceIn(it.indices)
+                it[index].toFloat()
+            }
+            0.1f + sqrt(realAmpl) * 0.9f
+        } else {
+            0.2f
+        }
+
+    val ampl by animateFloatAsState(amplitude)
+    val low by FakeAnimatedValue(position / 400.milliseconds, spring(stiffness = Spring.StiffnessVeryLow))
+    val mid by FakeAnimatedValue(position / 200.milliseconds, spring(stiffness = Spring.StiffnessMedium))
+    val high by FakeAnimatedValue(position / 100.milliseconds, spring(stiffness = Spring.StiffnessHigh))
+    val values = listOf(low * ampl, mid * ampl, high * ampl)
+
     val padding = 2.dp
     Canvas(modifier.padding(padding)) {
         val paddingPx = padding.toPx()
-        spectrometerDrawer(chunks, frequencies, boost) { s, e, a ->
-            val h = (.1f + a * .9f) * (size.height - 2 * paddingPx)
+        for ((index, height) in values.withIndex()) {
+            val start = index.toFloat() / values.size
+            val end = (index + 1).toFloat() / values.size
+            val s = start * size.width
+            val e = end * size.width
+            val h = height * size.height
             drawRect(
                 color,
                 topLeft = Offset(s + paddingPx, size.height - h - paddingPx),
@@ -106,4 +142,13 @@ fun SmallSpectrometers(
             )
         }
     }
+}
+
+@Composable
+private fun FakeAnimatedValue(
+    seed: Double,
+    animationSpec: AnimationSpec<Float> = spring(),
+): State<Float> {
+    val value = Random(seed.roundToInt()).nextFloat()
+    return animateFloatAsState(value, animationSpec)
 }

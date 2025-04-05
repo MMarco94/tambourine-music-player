@@ -34,7 +34,7 @@ class Player private constructor(
     }
 
     private fun flush() {
-        logger.debug { "Flushing audio sink" }
+//        logger.debug { "Flushing audio sink" }
         output.flush()
     }
 

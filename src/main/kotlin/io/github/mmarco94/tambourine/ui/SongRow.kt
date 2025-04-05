@@ -154,9 +154,9 @@ private fun BaseSongRow(
                                         Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        SmallSpectrometers(
+                                        SmallFakeSpectrometers(
                                             Modifier.fillMaxSize().padding(10.dp),
-                                            player.frequencyAnalyzer.lastFrequency,
+                                            player,
                                             color = MaterialTheme.colorScheme.onPrimary,
                                         )
                                     }
@@ -169,10 +169,7 @@ private fun BaseSongRow(
                 Box(Modifier.height(24.dp).animateContentSize()) {
                     if (isCurrentSong && !showAlbumCover) {
                         Row {
-                            SmallSpectrometers(
-                                Modifier.size(24.dp),
-                                player.frequencyAnalyzer.lastFrequency
-                            )
+                            SmallFakeSpectrometers(Modifier.size(24.dp), player)
                             Spacer(Modifier.width(8.dp))
                         }
                     }

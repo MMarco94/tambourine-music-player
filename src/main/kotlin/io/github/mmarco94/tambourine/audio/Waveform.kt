@@ -11,21 +11,25 @@ import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
 
+
 data class Waveform(
     val waveformsPerChannel: List<DoubleArray>,
+    val waveformsPerChannelHiRes: List<DoubleArray>,
 ) {
     companion object {
-        const val summaryLength = 240
+        const val WAVEFORM_LOW_RES_SIZE = 240
+        private const val WAVEFORM_HIGH_RES_MULTIPLIER = 20
 
         suspend fun fromStream(
             audio: AsyncAudioInputStream.Reader,
             format: AudioFormat,
             song: Song,
         ): Waveform {
+            val resolution = WAVEFORM_LOW_RES_SIZE * WAVEFORM_HIGH_RES_MULTIPLIER
             val totalApproximateFrames = song.length.toDouble(DurationUnit.SECONDS) * format.sampleRate
-            val framesPerSample = totalApproximateFrames / summaryLength
+            val framesPerSample = totalApproximateFrames / resolution
             val summaries = List(format.channels) {
-                DoubleArray(summaryLength)
+                DoubleArray(resolution)
             }
             var decodedFrames = 0
             while (true) {
@@ -33,7 +37,7 @@ data class Waveform(
                 summaries.forEachIndexed { channel, waveform ->
                     decode(chunk.readData, chunk.offset, chunk.length, format, channel) { frame, _, value ->
                         val idx =
-                            ((decodedFrames + frame).toLong() * summaryLength / totalApproximateFrames).roundToInt()
+                            ((decodedFrames + frame).toLong() * resolution / totalApproximateFrames).roundToInt()
                         if (idx in waveform.indices) {
                             waveform[idx] += value.absoluteValue / framesPerSample
                         }
@@ -44,13 +48,22 @@ data class Waveform(
 
             // Rescaling, as the avg will bring the max down
             return coroutineScope {
-                val scaled = summaries.map {
+                val hiRes = summaries.map {
                     async {
                         val max = maxOf(.5, it.max())
                         it.mapInPlace { it / max }
                     }
                 }.awaitAll()
-                Waveform(scaled)
+                val lowRes = hiRes.map {
+                    async {
+                        val compressed = DoubleArray(WAVEFORM_LOW_RES_SIZE)
+                        for ((index, d) in it.withIndex()) {
+                            compressed[index / WAVEFORM_HIGH_RES_MULTIPLIER] += d / WAVEFORM_HIGH_RES_MULTIPLIER
+                        }
+                        compressed
+                    }
+                }.awaitAll()
+                Waveform(lowRes, hiRes)
             }
         }
     }

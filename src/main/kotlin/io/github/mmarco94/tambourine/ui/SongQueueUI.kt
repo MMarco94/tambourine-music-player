@@ -45,9 +45,9 @@ fun SongQueueUI(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Spacer(Modifier.width(16.dp))
-                SmallSpectrometers(
+                SmallFakeSpectrometers(
                     Modifier.size(32.dp),
-                    player.frequencyAnalyzer.lastFrequency,
+                    player,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Spacer(Modifier.width(16.dp))

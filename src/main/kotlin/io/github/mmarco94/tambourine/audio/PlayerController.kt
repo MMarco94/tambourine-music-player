@@ -52,7 +52,6 @@ class PlayerController(
 
     private val commandChannel: Channel<PlayerCommand> = Channel(Channel.UNLIMITED)
     private val stateChannel = Channel<State>(Channel.CONFLATED)
-    val frequencyAnalyzer = FrequencyAnalyzer()
     private val mprisPlayer = run {
         try {
             MPRISPlayerController(
@@ -117,14 +116,10 @@ class PlayerController(
 
         suspend fun play(
             cs: CoroutineScope,
-            frequencyAnalyzer: FrequencyAnalyzer,
             onWaveformComputed: suspend (Song, Waveform) -> Unit,
         ): StateChangeResult {
             return if (currentlyPlaying != null && !pause) {
                 val result = currentlyPlaying.player.playFrame()
-                if (result is Player.PlayResult.Played) {
-                    frequencyAnalyzer.push(result.chunk, currentlyPlaying.player.format)
-                }
                 if (
                     result == Player.PlayResult.Finished &&
                     !seeking &&
@@ -304,9 +299,6 @@ class PlayerController(
                 mprisPlayer?.setState(state)
             }
         }
-        coroutineScope.launch(Dispatchers.Default) {
-            frequencyAnalyzer.start()
-        }
         thread(name = "PlayerControllerLoop") {
             runBlocking {
                 launch {
@@ -369,7 +361,6 @@ class PlayerController(
 
                             null -> state.play(
                                 coroutineScope,
-                                frequencyAnalyzer,
                                 onWaveformComputed,
                             )
                         }

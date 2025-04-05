@@ -47,13 +47,19 @@ dependencies {
     implementation("com.tagtraum:ffsampledsp-complete:0.9.53")
     // music metadata reader
     implementation("net.jthink:jaudiotagger:3.0.1")
-    // FFT
-    implementation("com.tambapps.fft4j:fft4j:2.0")
     // DBUS APIs
     implementation("com.github.hypfvieh:dbus-java-core:5.1.0")
     implementation("com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.1.0")
     // Dominant color from image
     implementation("com.github.SvenWoltmann:color-thief-java:v1.1.2")
+
+    val kotest = "5.9.1"
+    testImplementation("io.kotest:kotest-runner-junit5:$kotest")
+    testImplementation("io.kotest:kotest-assertions-core:$kotest")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 compose.desktop {
@@ -70,5 +76,11 @@ compose.desktop {
             optimize = false
             configurationFiles.from(project.file("compose-desktop.pro"))
         }
+    }
+}
+
+afterEvaluate {
+    tasks.named("createReleaseDistributable") {
+        dependsOn(tasks.test)
     }
 }
