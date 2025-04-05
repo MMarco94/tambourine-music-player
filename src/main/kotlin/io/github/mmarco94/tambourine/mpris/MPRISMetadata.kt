@@ -7,7 +7,7 @@ import org.mpris.MediaPlayer2.TrackId
 import java.io.File
 import kotlin.time.Duration
 
-// See https://specifications.freedesktop.org/mpris-spec/2.2/Track_List_Interface.html#Mapping:Metadata_Map
+// See https://www.freedesktop.org/wiki/Specifications/mpris-spec/metadata/
 data class MPRISMetadata(
     val trackId: TrackId,
     val length: Duration,
@@ -15,6 +15,7 @@ data class MPRISMetadata(
     val albumArtist: List<String>,
     val album: String,
     val title: String,
+    val trackNumber: Long?,
     val discNumber: Long?,
     val artUrl: File?,
     val lyrics: String?,
@@ -27,6 +28,9 @@ data class MPRISMetadata(
         put("xesam:albumArtist", albumArtist.variant())
         put("xesam:album", album.variant())
         put("xesam:title", title.variant())
+        if (trackNumber != null) {
+            put("xesam:trackNumber", trackNumber.variant())
+        }
         if (discNumber != null) {
             put("xesam:discNumber", discNumber.variant())
         }
@@ -51,7 +55,8 @@ fun Song.mprisMetadata(): MPRISMetadata {
         albumArtist = listOf(artist.name),
         album = album.title,
         title = title,
-        discNumber = track?.toLong(),
+        trackNumber = track?.toLong(),
+        discNumber = disk?.toLong(),
         artUrl = cover?.file,
         lyrics = lyrics?.rawString,
     )

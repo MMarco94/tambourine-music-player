@@ -12,6 +12,7 @@ import kotlin.time.Duration.Companion.seconds
 
 data class RawMetadataSong(
     val file: File,
+    override val disk: Int?,
     override val track: Int?,
     override val length: Duration,
     val title: String?,
@@ -45,6 +46,7 @@ data class RawMetadataSong(
 
             return RawMetadataSong(
                 file = file,
+                disk = tag.getFirst(FieldKey.DISC_NO)?.toIntOrNull(),
                 track = tag.getFirst(FieldKey.TRACK)?.toIntOrNull(),
                 length = header.preciseTrackLength.seconds,
                 title = tag.getFirst(FieldKey.TITLE)?.trimToNull(),

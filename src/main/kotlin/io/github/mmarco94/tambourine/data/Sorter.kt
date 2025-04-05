@@ -48,12 +48,18 @@ enum class SongSorter(
     override val comparator: Comparator<Song>,
     val inAlbumOnly: Boolean = false,
 ) : Sorter<Song> {
-    TRACK("Track", "By position in album", false, compareBy { it.track }, true),
+    TRACK(
+        "Track",
+        "By position in album",
+        false,
+        compareBy<Song> { it.disk }.thenBy { it.track },
+        true
+    ),
     TRACK_DESC(
         "Track",
         "By position in album (inverse)",
         true,
-        compareByDescending { it.track },
+        compareByDescending<Song> { it.disk }.thenByDescending { it.track },
         true
     ),
     ALPHABETICAL("Title", "By title", true, compareBy { it.title }),
@@ -65,9 +71,10 @@ enum class SongSorter(
     YEAR("Year",
         "By year (newest first)",
         true,
-        compareByDescending<Song> { it.year ?: Int.MIN_VALUE }.thenByDescending { it.track }),
+        compareByDescending<Song> { it.year ?: Int.MIN_VALUE }.thenByDescending { it.disk }
+            .thenByDescending { it.track }),
     YEAR_DESC("Year",
         "By year (oldest first)",
         false,
-        compareBy<Song> { it.year ?: Int.MAX_VALUE }.thenBy { it.track }), ;
+        compareBy<Song> { it.year ?: Int.MAX_VALUE }.thenBy { it.disk }.thenBy { it.track }), ;
 }

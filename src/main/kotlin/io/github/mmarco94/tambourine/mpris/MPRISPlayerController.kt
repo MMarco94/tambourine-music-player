@@ -160,7 +160,6 @@ class MPRISPlayerController(
         val now = Clock.System.now()
         val skipPosition =
             if (lastPositionData != null && lastPositionData.song == state.currentlyPlaying?.queue?.currentSong) {
-                // TODO: do we even need this optimization now that the loop loops slower?
                 val elapsed = now - lastPositionData.eventTime
                 val expectedPosition = lastPositionData.position + elapsed
                 val diff = (position - expectedPosition).absoluteValue

@@ -96,7 +96,7 @@ private fun createQueue(library: Library, filesFromArgs: List<File>): SongQueue?
         .flatMap { arg ->
             library.songs
                 .filter { s -> s.file.path.startsWith(arg.path) }
-                .sortedWith(compareBy<Song> { it.track }.thenBy { it.file.path })
+                .sortedWith(compareBy<Song> { it.disk }.thenBy { it.track }.thenBy { it.file.path })
         }
     return if (songs.isEmpty()) null
     else SongQueue.of(null, songs, songs.first())

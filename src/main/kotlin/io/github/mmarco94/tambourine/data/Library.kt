@@ -23,6 +23,7 @@ data class Album(
 
 data class Song(
     val file: File,
+    override val disk: Int?,
     override val track: Int?,
     val title: String,
     val album: Album,
@@ -145,6 +146,7 @@ data class Library(
                 val album = albums.getValue(albumArtist to song.nnAlbum)
                 Song(
                     file = song.file,
+                    disk = song.disk,
                     track = song.track,
                     title = song.nnTitle,
                     album = album,

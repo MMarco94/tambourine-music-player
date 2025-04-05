@@ -30,8 +30,6 @@ Browse your music collection; play a song; that's it really.
 ## Roadmap
 
 - About window
-- Metadata
-  - Disk n°
 - Translations
 - Persist filter/sort
 - Keep scrolling position when removing filters
