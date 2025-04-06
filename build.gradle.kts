@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.github.mmarco94"
-version = "1.1.0"
+version = "1.1.1"
 val debugBuild = false
 
 repositories {
