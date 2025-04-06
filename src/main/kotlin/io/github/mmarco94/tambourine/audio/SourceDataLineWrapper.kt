@@ -45,7 +45,8 @@ class SourceDataLineWrapper(
             pendingFrames = (pendingFrames - outputtedFrames).coerceAtLeast(0)
         }
         pendingTime = now
-        if (abs(pendingFrames - line) < allowedDelta) {
+        val delta = allowedDelta.coerceAtMost(pendingFrames / 10)
+        if (abs(pendingFrames - line) < delta) {
             pendingFrames = line
             return true
         } else {
@@ -89,18 +90,18 @@ class SourceDataLineWrapper(
 
     fun write(readData: ByteArray, offset: Int, length: Int) {
         val wrote = line.write(readData, offset, length)
-        logger.debug { "Writing ${format.bytesToDuration(wrote.toLong())} to line" }
+        logger.trace { "Writing ${format.bytesToDuration(wrote.toLong())} to line" }
         refreshPendingFrames()
         pendingFrames += wrote / format.frameSize
     }
 
     fun printDebugInfo() {
-        val now = TimeSource.Monotonic.markNow()
-        val available = available()
-        val lineBuffer = pendingLineFrames(available)
-        val precise = refreshPendingFrames(now, available)
-        val buffered = bufferedFrames(now)
-        logger.debug {
+        logger.trace {
+            val now = TimeSource.Monotonic.markNow()
+            val available = available()
+            val lineBuffer = pendingLineFrames(available)
+            val precise = refreshPendingFrames(now, available)
+            val buffered = bufferedFrames(now)
             "${format.framesToDuration(buffered)} ${if (precise) "precisely" else "estimate"} pending. " +
                     "counter=${format.framesToDuration(pendingFrames)}; " +
                     "line=${format.framesToDuration(lineBuffer)}"

@@ -420,13 +420,13 @@ private fun PlayerIcon(
 
 @Composable
 fun VolumeSlider(player: PlayerController) {
-    var overriddenLevel by remember { mutableStateOf<Float?>(null) }
-    val level = overriddenLevel ?: player.level
+    val level = player.level
     val cs = rememberCoroutineScope()
     var nonZeroLevel by remember { mutableStateOf(level) }
     if (level > 0) {
         nonZeroLevel = level
     }
+    var seeking by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically) {
         PlayerIcon(
             cs,
@@ -438,13 +438,20 @@ fun VolumeSlider(player: PlayerController) {
         Slider(
             value = level,
             onValueChange = {
-                overriddenLevel = it
+                val start = !seeking
+                seeking = true
                 cs.launch {
+                    if (start) {
+                        player.enterLowLatencyMode()
+                    }
                     player.setLevel(it)
                 }
             },
             onValueChangeFinished = {
-                overriddenLevel = null
+                cs.launch {
+                    player.exitLowLatencyMode()
+                }
+                seeking = false
             },
             modifier = Modifier.width(176.dp),
             colors = SliderDefaults.colors(

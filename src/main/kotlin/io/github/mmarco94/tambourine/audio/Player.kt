@@ -2,6 +2,7 @@ package io.github.mmarco94.tambourine.audio
 
 import io.github.mmarco94.tambourine.utils.durationToFrames
 import io.github.mmarco94.tambourine.utils.framesToDuration
+import io.github.mmarco94.tambourine.utils.toIntOrMax
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javax.sound.sampled.AudioFormat
 import kotlin.math.roundToInt
@@ -37,6 +38,10 @@ class Player private constructor(
         output.flush()
     }
 
+    private fun needsFlushingForLowLatency(): Boolean {
+        return pendingFlush() > LOW_LATENCY_BUFFER
+    }
+
     private fun precisePositionInFrames(now: ValueTimeMark = TimeSource.Monotonic.markNow()): Long {
         val buffered = output.bufferedFrames(now)
         val dirty = (buffered - cleanOutputtedFrames).coerceAtLeast(0)
@@ -57,9 +62,24 @@ class Player private constructor(
         data object Finished : PlayResult
     }
 
-    suspend fun playFrame(): PlayResult {
+    suspend fun playFrame(bufferingCap: Duration?): PlayResult {
         output.printDebugInfo()
-        val available = output.available()
+        val available = if (bufferingCap != null) {
+            val capFrames = format.durationToFrames(bufferingCap)
+            val buffered = output.bufferedFrames()
+            val softCap = (capFrames - buffered).toIntOrMax().coerceAtLeast(0)
+            // This has the potential of being a very small number.
+            // Sending excessively small frames might destroy performances
+            val softAvailable = output.available().coerceAtMost(softCap * format.frameSize)
+            if (softAvailable < capFrames * format.frameSize / 10) {
+                0
+            } else {
+                softAvailable
+            }
+        } else {
+            output.available()
+        }
+
         output.start()
         if (available > 0) {
             val chunk = source.read(available)
@@ -83,7 +103,7 @@ class Player private constructor(
     }
 
     private suspend fun seekTo(positionInFrames: Long, keepBufferedContent: Boolean) {
-        if (!keepBufferedContent) {
+        if (!keepBufferedContent && needsFlushingForLowLatency()) {
             // Making sure the new data is ready
             if (output.isRunning) {
                 source.seekTo(positionInFrames + output.bufferSize / format.frameSize)
@@ -97,7 +117,9 @@ class Player private constructor(
 
     suspend fun setLevel(level: Float) {
         output.setLevel(level)
-        seekTo(precisePositionInFrames(), false)
+        if (needsFlushingForLowLatency()) {
+            seekTo(precisePositionInFrames(), false)
+        }
     }
 
     companion object {

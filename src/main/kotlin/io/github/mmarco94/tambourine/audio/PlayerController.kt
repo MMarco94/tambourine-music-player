@@ -21,8 +21,8 @@ import kotlin.time.Duration.Companion.seconds
 private val logger = KotlinLogging.logger {}
 
 private val BUFFER = 10.seconds
+val LOW_LATENCY_BUFFER = 100.milliseconds
 private val SONG_SWITCH_THRESHOLD = 100.milliseconds
-private val PLAY_LOOP_DELAY = 1.seconds
 
 sealed interface Position {
     data object Current : Position
@@ -40,6 +40,8 @@ private sealed interface PlayerCommand {
     data object Pause : PlayerCommand
     data object SeekingStart : PlayerCommand
     data object SeekDone : PlayerCommand
+    data object EnterLowLatencyMode : PlayerCommand
+    data object ExitLowLatencyMode : PlayerCommand
     class SetLevel(val level: Float) : PlayerCommand
     class WaveformComputed(val song: Song, val waveform: Waveform) : PlayerCommand
 }
@@ -84,6 +86,7 @@ class PlayerController(
         val position: PositionState,
         val pause: Boolean,
         val seeking: Boolean,
+        val lowLatencyMode: Boolean,
         val level: Float,
     ) {
 
@@ -93,6 +96,7 @@ class PlayerController(
                 position = PositionState(ZERO),
                 pause = true,
                 seeking = false,
+                lowLatencyMode = false,
                 level = 1f,
             )
         }
@@ -122,7 +126,8 @@ class PlayerController(
             onWaveformComputed: suspend (Song, Waveform) -> Unit,
         ): StateChangeResult {
             return if (currentlyPlaying != null && !pause) {
-                val result = currentlyPlaying.player.playFrame()
+                val bufferingCap = if (lowLatencyMode) LOW_LATENCY_BUFFER / 2 else null
+                val result = currentlyPlaying.player.playFrame(bufferingCap)
                 if (
                     result == Player.PlayResult.Finished &&
                     !seeking &&
@@ -139,7 +144,7 @@ class PlayerController(
                 } else {
                     val maxAllowedPause = when (result) {
                         is Player.PlayResult.Played -> ZERO
-                        is Player.PlayResult.NotPlayed -> PLAY_LOOP_DELAY
+                        is Player.PlayResult.NotPlayed -> (bufferingCap ?: BUFFER) / 10
                         is Player.PlayResult.Finished -> {
                             // I'll resume playing only when the "if" above will become true
                             if (seeking) {
@@ -177,6 +182,7 @@ class PlayerController(
                     position = PositionState(ZERO),
                     pause = true,
                     seeking = seeking,
+                    lowLatencyMode = lowLatencyMode,
                     level = level
                 )
             }
@@ -276,6 +282,7 @@ class PlayerController(
     }
 
     suspend fun startSeek() {
+        sendCommand(EnterLowLatencyMode)
         sendCommand(SeekingStart)
     }
 
@@ -285,10 +292,19 @@ class PlayerController(
 
     suspend fun endSeek() {
         sendCommand(SeekDone)
+        sendCommand(ExitLowLatencyMode)
     }
 
     suspend fun setLevel(level: Float) {
         sendCommand(SetLevel(level))
+    }
+
+    suspend fun enterLowLatencyMode() {
+        sendCommand(EnterLowLatencyMode)
+    }
+
+    suspend fun exitLowLatencyMode() {
+        sendCommand(ExitLowLatencyMode)
     }
 
     private suspend fun sendCommand(command: PlayerCommand) {
@@ -338,16 +354,10 @@ class PlayerController(
                             }
 
                             is Play -> state.change { copy(pause = false) }
-                            is SeekingStart -> state.change {
-                                logger.debug { "Seeking started" }
-                                copy(seeking = true)
-                            }
-
-                            is SeekDone -> state.change {
-                                logger.debug { "Seeking done" }
-                                copy(seeking = false)
-                            }
-
+                            is SeekingStart -> state.change { copy(seeking = true) }
+                            is SeekDone -> state.change { copy(seeking = false) }
+                            is EnterLowLatencyMode -> state.change { copy(lowLatencyMode = true) }
+                            is ExitLowLatencyMode -> state.change { copy(lowLatencyMode = false) }
                             is SetLevel -> state.change {
                                 state.setLevel(command.level)
                             }
