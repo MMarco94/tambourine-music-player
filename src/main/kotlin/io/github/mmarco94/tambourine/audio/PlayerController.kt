@@ -16,12 +16,13 @@ import kotlin.concurrent.thread
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.logger {}
 
-private val BUFFER = 500.milliseconds
+private val BUFFER = 10.seconds
 private val SONG_SWITCH_THRESHOLD = 100.milliseconds
-private val PLAY_LOOP_DELAY = 100.milliseconds
+private val PLAY_LOOP_DELAY = 1.seconds
 
 sealed interface Position {
     data object Current : Position

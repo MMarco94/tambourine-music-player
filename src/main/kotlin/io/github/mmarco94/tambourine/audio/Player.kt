@@ -37,16 +37,10 @@ class Player private constructor(
         output.flush()
     }
 
-    private fun dirtyFrames(now: ValueTimeMark = TimeSource.Monotonic.markNow()): Long {
-        // The output line might already contain some data.
-        // This function checks whether all data in the line was written by us
-        return (output.bufferedFrames(now) - cleanOutputtedFrames).coerceAtLeast(0)
-    }
-
     private fun precisePositionInFrames(now: ValueTimeMark = TimeSource.Monotonic.markNow()): Long {
-        return (source.readFrames - (output.bufferedFrames(now) - dirtyFrames(now))).coerceAtLeast(
-            0
-        )
+        val buffered = output.bufferedFrames(now)
+        val dirty = (buffered - cleanOutputtedFrames).coerceAtLeast(0)
+        return (source.readFrames - buffered + dirty).coerceAtLeast(0)
     }
 
     fun pendingFlush(): Duration {
@@ -95,9 +89,9 @@ class Player private constructor(
                 source.seekTo(positionInFrames + output.bufferSize / format.frameSize)
             }
             flush()
+            cleanOutputtedFrames = 0
         }
 
-        cleanOutputtedFrames = 0
         source.seekTo(positionInFrames)
     }
 
