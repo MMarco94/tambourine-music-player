@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.audio.PlayerController
 import io.github.mmarco94.tambourine.audio.Position
-import io.github.mmarco94.tambourine.audio.Waveform
+import io.github.mmarco94.tambourine.audio.WaveformComputer
 import io.github.mmarco94.tambourine.data.RepeatMode
 import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongQueue
@@ -321,37 +321,41 @@ val fakeHeight = run {
 @Composable
 private fun WaveformUI(
     modifier: Modifier,
-    wf: Waveform?,
+    wf: WaveformComputer.Waveform?,
     activePercent: Density.(Size) -> Float,
     mousePercent: (Density.(Size) -> Float)?,
 ) {
     val left: DoubleArray? = wf?.waveformsPerChannel?.first()
     val right: DoubleArray? = wf?.waveformsPerChannel?.getOrNull(1) ?: left
+    val scale = wf?.max ?: 1.0
     Column(modifier) {
-        SingleWaveformUI(left, false, activePercent, mousePercent)
-        SingleWaveformUI(right, true, activePercent, mousePercent)
+        val computed = wf?.analyzedFrames ?: 0L
+        SingleWaveformUI(computed, left, scale, false, activePercent, mousePercent)
+        SingleWaveformUI(computed, right, scale, true, activePercent, mousePercent)
     }
 }
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun SingleWaveformUI(
+    computed: Long,
     wf: DoubleArray?,
+    scale: Double,
     invert: Boolean,
     activePercent: Density.(Size) -> Float,
     mousePercent: (Density.(Size) -> Float)?,
 ) {
     // This is the most efficient way to do this. 10/10 would do again
-    val transition = updateTransition(wf, label = "Waveform")
+    val transition = updateTransition(computed to wf, label = "Waveform")
     val spring = spring<Float>(stiffness = Spring.StiffnessVeryLow)
-    val animations = (0 until Waveform.WAVEFORM_LOW_RES_SIZE).map { index ->
-        transition.animateFloat({ spring }) { state ->
-            val h = state?.getOrZero(index) ?: fakeHeight
+    val animations = (0 until WaveformComputer.WAVEFORM_LOW_RES_SIZE).map { index ->
+        transition.animateFloat({ spring }) { (_, state) ->
+            val h = state?.getOrZero(index)?.div(scale) ?: fakeHeight
             val baseHeight = fakeHeight / 2
             (baseHeight + h * (1 - baseHeight)).toFloat()
         }
     }
-    val animatedWaveform = DoubleArray(Waveform.WAVEFORM_LOW_RES_SIZE) { index ->
+    val animatedWaveform = DoubleArray(WaveformComputer.WAVEFORM_LOW_RES_SIZE) { index ->
         animations[index].value.toDouble()
     }
     val modifier = Modifier.fillMaxWidth().height(waveformHeight)

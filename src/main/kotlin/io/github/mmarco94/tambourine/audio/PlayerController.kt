@@ -2,7 +2,6 @@ package io.github.mmarco94.tambourine.audio
 
 import androidx.compose.runtime.*
 import io.github.mmarco94.tambourine.audio.PlayerCommand.*
-import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongQueue
 import io.github.mmarco94.tambourine.mpris.MPRISPlayerController
 import io.github.mmarco94.tambourine.utils.debugElapsed
@@ -43,7 +42,6 @@ private sealed interface PlayerCommand {
     data object EnterLowLatencyMode : PlayerCommand
     data object ExitLowLatencyMode : PlayerCommand
     class SetLevel(val level: Float) : PlayerCommand
-    class WaveformComputed(val song: Song, val waveform: Waveform) : PlayerCommand
 }
 
 class PlayerController(
@@ -72,8 +70,7 @@ class PlayerController(
         val queue: SongQueue,
         val player: Player,
         val bufferer: Job,
-        val waveformCreator: Job,
-        val waveform: Waveform? = null,
+        val waveformCreator: WaveformComputer,
     )
 
     data class PositionState(
@@ -121,10 +118,7 @@ class PlayerController(
             return actualPosition + elapsed
         }
 
-        suspend fun play(
-            cs: CoroutineScope,
-            onWaveformComputed: suspend (Song, Waveform) -> Unit,
-        ): StateChangeResult {
+        suspend fun play(cs: CoroutineScope): StateChangeResult {
             return if (currentlyPlaying != null && !pause) {
                 val bufferingCap = if (lowLatencyMode) LOW_LATENCY_BUFFER / 2 else null
                 val result = currentlyPlaying.player.playFrame(bufferingCap)
@@ -139,7 +133,6 @@ class PlayerController(
                         queue = next,
                         position = Position.Beginning,
                         keepBufferedContent = true,
-                        onWaveformComputed = onWaveformComputed,
                     ).change { copy(pause = this.pause || !keepPlaying) }
                 } else {
                     val maxAllowedPause = when (result) {
@@ -169,13 +162,12 @@ class PlayerController(
             queue: SongQueue?,
             position: Position,
             keepBufferedContent: Boolean,
-            onWaveformComputed: suspend (Song, Waveform) -> Unit,
         ): State {
             if (queue == null) {
                 currentlyPlaying?.apply {
                     player.stop()
                     bufferer.cancel()
-                    waveformCreator.cancel()
+                    waveformCreator.close()
                 }
                 return State(
                     currentlyPlaying = null,
@@ -195,7 +187,7 @@ class PlayerController(
                 }
                 logger.debugElapsed("Preparing song ${new.title}") {
                     currentlyPlaying?.bufferer?.cancel()
-                    currentlyPlaying?.waveformCreator?.cancel()
+                    currentlyPlaying?.waveformCreator?.close()
                     val bufferSize = Player.optimalBufferSize(stream.format, BUFFER)
                     val input = AsyncAudioInputStream(stream, 2, bufferSize)
                     val bufferer = cs.launch(Dispatchers.IO) {
@@ -203,21 +195,19 @@ class PlayerController(
                             input.bufferAll()
                         }
                     }
+                    // It doesn't make sense to keep the position across songs
+                    val actualPosition = if (position == Position.Current) Position.Beginning else position
                     val player = Player.create(
                         format = stream.format,
                         input = input.readers[0],
                         older = currentlyPlaying?.player,
                         bufferSize = bufferSize,
                         level = level,
-                        position = position,
+                        position = actualPosition,
                         keepBufferedContent = keepBufferedContent,
                     )
-                    val waveformCreator = cs.launch(Dispatchers.Default) {
-                        logger.debugElapsed("Computing waveform for ${new.title}") {
-                            val waveform = Waveform.fromStream(input.readers[1], stream.format, new)
-                            onWaveformComputed(new, waveform)
-                        }
-                    }
+                    val waveformCreator = WaveformComputer(input.readers[1], stream.format, new)
+                    waveformCreator.start()
                     CurrentlyPlaying(
                         queue,
                         player,
@@ -245,7 +235,9 @@ class PlayerController(
     private var observableState by mutableStateOf(State.initial)
     val level get() = observableState.level
     val queue get() = observableState.currentlyPlaying?.queue
-    val waveform get() = observableState.currentlyPlaying?.waveform
+    val waveform by derivedStateOf {
+        observableState.currentlyPlaying?.waveformCreator?.waveform?.value
+    }
     val pause get() = observableState.pause
     val position get() = observableState.position
 
@@ -321,9 +313,6 @@ class PlayerController(
         thread(name = "PlayerControllerLoop") {
             runBlocking {
                 launch {
-                    val onWaveformComputed: suspend (Song, Waveform) -> Unit = { song, waveform ->
-                        commandChannel.send(WaveformComputed(song, waveform))
-                    }
                     var state = State.initial
                     var desiredPause = ZERO
                     while (true) {
@@ -341,7 +330,6 @@ class PlayerController(
                                     command.queue,
                                     command.position,
                                     keepBufferedContent = false,
-                                    onWaveformComputed,
                                 )
                             }
 
@@ -358,24 +346,8 @@ class PlayerController(
                             is SeekDone -> state.change { copy(seeking = false) }
                             is EnterLowLatencyMode -> state.change { copy(lowLatencyMode = true) }
                             is ExitLowLatencyMode -> state.change { copy(lowLatencyMode = false) }
-                            is SetLevel -> state.change {
-                                state.setLevel(command.level)
-                            }
-
-                            is WaveformComputed -> state.change {
-                                copy(
-                                    currentlyPlaying = if (currentlyPlaying?.queue?.currentSong == command.song) {
-                                        currentlyPlaying.copy(waveform = command.waveform)
-                                    } else {
-                                        currentlyPlaying
-                                    }
-                                )
-                            }
-
-                            null -> state.play(
-                                coroutineScope,
-                                onWaveformComputed,
-                            )
+                            is SetLevel -> state.change { state.setLevel(command.level) }
+                            null -> state.play(coroutineScope)
                         }
                         if (newState != state) {
                             state = newState

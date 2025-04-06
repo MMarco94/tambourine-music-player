@@ -113,9 +113,9 @@ fun SmallFakeSpectrometers(
             val percent = position / songLength
             val realAmpl = waveform.waveformsPerChannelHiRes.maxOf {
                 val index = (it.size * percent).roundToInt().coerceIn(it.indices)
-                it[index].toFloat()
+                it[index]
             }
-            0.1f + sqrt(realAmpl) * 0.9f
+            0.1f + sqrt((realAmpl / waveform.max).toFloat()) * 0.9f
         } else {
             0.2f
         }
