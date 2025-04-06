@@ -3,8 +3,9 @@
 set -ex
 
 # Build JAR
-./gradlew createReleaseDistributable
-tar -czf build/tmp/tambourine.tar.gz -C build/compose/binaries/main-release/app tambourine
+# Uncomment for release builds
+#./gradlew createReleaseDistributable
+./gradlew createDistributable
 # Create flatpak
 flatpak-builder --force-clean build-dir flatpak/io.github.mmarco94.tambourine.yml
 # Install flatpak

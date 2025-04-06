@@ -6,6 +6,7 @@ plugins {
 
 group = "io.github.mmarco94"
 version = "1.1.0"
+val debugBuild = false
 
 repositories {
     google()
@@ -65,11 +66,17 @@ tasks.test {
 compose.desktop {
     application {
         mainClass = "io.github.mmarco94.tambourine.MainKt"
+        if (debugBuild) {
+            jvmArgs += listOf("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005")
+        }
         nativeDistributions {
             packageName = "tambourine"
             packageVersion = version.toString()
 
             modules("java.naming", "jdk.security.auth", "jdk.unsupported")
+            if (debugBuild) {
+                modules.add("jdk.jdwp.agent")
+            }
         }
         buildTypes.release.proguard {
             version.set("7.6.0")

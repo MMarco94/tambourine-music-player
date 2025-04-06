@@ -22,16 +22,16 @@ modules:
     buildsystem: simple
     build-commands:
       # Installing the actual app
-      - tar -xzf tambourine.tar.gz -C /app/
+      - mv tambourine /app/
       - install -D run.sh /app/bin/run.sh
       # ffsampledsp requires libbz2.so.1.0, however Flatpak only provides libbz2.so.1.0.8
       - mkdir -p /app/lib/ffmpeg
       - mkdir -p /app/tambourine/lib/os
       - ln -s /usr/lib/x86_64-linux-gnu/libbz2.so.1.0.8 /app/tambourine/lib/os/libbz2.so.1.0
     sources:
-      - type: file
-        path: ../build/tmp/tambourine.tar.gz
-        dest-filename: tambourine.tar.gz
+      - type: dir
+        # Use main-release for release builds
+        path: ../build/compose/binaries/main/app
       - type: file
         path: run.sh
   - name: extras
