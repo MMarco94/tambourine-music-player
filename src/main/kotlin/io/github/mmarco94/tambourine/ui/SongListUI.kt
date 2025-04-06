@@ -1,5 +1,6 @@
 package io.github.mmarco94.tambourine.ui
 
+import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -66,6 +67,9 @@ fun SongListUI(
             modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
             adapter = rememberScrollbarAdapter(
                 scrollState = state
+            ),
+            style = LocalScrollbarStyle.current.copy(
+                minimalHeight = 64.dp,
             )
         )
     }
