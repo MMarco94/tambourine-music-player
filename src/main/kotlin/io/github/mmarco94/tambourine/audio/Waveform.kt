@@ -31,13 +31,13 @@ data class Waveform(
             val summaries = List(format.channels) {
                 DoubleArray(resolution)
             }
-            var decodedFrames = 0
+            var decodedFrames = 0L
             while (true) {
                 val chunk = audio.read(Int.MAX_VALUE) ?: break
                 summaries.forEachIndexed { channel, waveform ->
                     decode(chunk.readData, chunk.offset, chunk.length, format, channel) { frame, _, value ->
                         val idx =
-                            ((decodedFrames + frame).toLong() * resolution / totalApproximateFrames).roundToInt()
+                            ((decodedFrames + frame) * resolution / totalApproximateFrames).roundToInt()
                         if (idx in waveform.indices) {
                             waveform[idx] += value.absoluteValue / framesPerSample
                         }

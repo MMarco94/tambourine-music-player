@@ -107,11 +107,14 @@ class PlayerController(
         )
 
         fun calculateCurrentPosition(now: Instant): Duration {
+            val actualPosition = position.position
             if (pause || currentlyPlaying == null) {
-                return position.position
+                return actualPosition
             }
-            val elapsed = (now - position.informationAge).coerceAtLeast(ZERO)
-            return (position.position + elapsed).coerceAtMost(currentlyPlaying.queue.currentSong.length)
+            val elapsed = (now - position.informationAge)
+                .coerceAtMost(currentlyPlaying.queue.currentSong.length - actualPosition)
+                .coerceAtLeast(ZERO)
+            return actualPosition + elapsed
         }
 
         suspend fun play(
