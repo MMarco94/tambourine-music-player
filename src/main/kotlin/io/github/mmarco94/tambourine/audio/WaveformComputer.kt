@@ -7,7 +7,6 @@ import io.github.mmarco94.tambourine.utils.decode
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.launch
@@ -23,9 +22,7 @@ class WaveformComputer(
     val audio: AsyncAudioInputStream.Reader,
     val format: AudioFormat,
     val song: Song,
-) : AutoCloseable {
-
-    private val scope = CoroutineScope(Dispatchers.Default)
+) {
 
     data class Waveform(
         val max: Double,
@@ -50,7 +47,7 @@ class WaveformComputer(
     )
     private val waveformChannel = Channel<Waveform>(CONFLATED)
 
-    fun start() {
+    fun start(scope: CoroutineScope) {
         scope.launch(Dispatchers.Swing) {
             for (w in waveformChannel) {
                 waveform.value = w
@@ -68,7 +65,8 @@ class WaveformComputer(
                     waveformsPerChannelHiRes.forEachIndexed { channel, waveform ->
                         val waveformLowRes = waveformsPerChannel[channel]
                         decode(chunk.readData, chunk.offset, chunk.length, format, channel) { frame, _, value ->
-                            val idxHiRes = ((decodedFrames + frame) * RESOLUTION / totalApproximateFrames).roundToInt()
+                            val idxHiRes =
+                                ((decodedFrames + frame) * RESOLUTION / totalApproximateFrames).roundToInt()
                             val idxLowRes =
                                 ((decodedFrames + frame) * WAVEFORM_LOW_RES_SIZE / totalApproximateFrames).roundToInt()
                             if (idxHiRes in waveform.indices) {
@@ -87,10 +85,6 @@ class WaveformComputer(
                 }
             }
         }
-    }
-
-    override fun close() {
-        scope.cancel()
     }
 
     companion object {

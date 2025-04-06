@@ -67,10 +67,10 @@ class PlayerController(
     }
 
     data class CurrentlyPlaying(
+        val jobsScope: CoroutineScope,
         val queue: SongQueue,
         val player: Player,
-        val bufferer: Job,
-        val waveformCreator: WaveformComputer,
+        val waveform: MutableState<WaveformComputer.Waveform>,
     )
 
     data class PositionState(
@@ -166,8 +166,7 @@ class PlayerController(
             if (queue == null) {
                 currentlyPlaying?.apply {
                     player.stop()
-                    bufferer.cancel()
-                    waveformCreator.close()
+                    jobsScope.cancel()
                 }
                 return State(
                     currentlyPlaying = null,
@@ -185,12 +184,12 @@ class PlayerController(
                 val stream = logger.debugElapsed("Opening song ${new.title}") {
                     new.audioStream()
                 }
+                currentlyPlaying?.jobsScope?.cancel()
+                val scope = CoroutineScope(Dispatchers.Default)
                 logger.debugElapsed("Preparing song ${new.title}") {
-                    currentlyPlaying?.bufferer?.cancel()
-                    currentlyPlaying?.waveformCreator?.close()
                     val bufferSize = Player.optimalBufferSize(stream.format, BUFFER)
                     val input = AsyncAudioInputStream(stream, 2, bufferSize)
-                    val bufferer = cs.launch(Dispatchers.IO) {
+                    scope.launch(Dispatchers.IO) {
                         logger.debugElapsed("Reading ${new.title}") {
                             input.bufferAll()
                         }
@@ -207,12 +206,12 @@ class PlayerController(
                         keepBufferedContent = keepBufferedContent,
                     )
                     val waveformCreator = WaveformComputer(input.readers[1], stream.format, new)
-                    waveformCreator.start()
+                    waveformCreator.start(scope)
                     CurrentlyPlaying(
+                        scope,
                         queue,
                         player,
-                        bufferer,
-                        waveformCreator,
+                        waveformCreator.waveform,
                     )
                 }
             } else {
@@ -236,7 +235,7 @@ class PlayerController(
     val level get() = observableState.level
     val queue get() = observableState.currentlyPlaying?.queue
     val waveform by derivedStateOf {
-        observableState.currentlyPlaying?.waveformCreator?.waveform?.value
+        observableState.currentlyPlaying?.waveform?.value
     }
     val pause get() = observableState.pause
     val position get() = observableState.position
