@@ -15,6 +15,7 @@ class Chunk(
 class AsyncAudioInputStream(
     private val input: AudioInputStream,
     readerCount: Int,
+    private val firstBufferSize: Int,
     private val bufferSize: Int,
 ) {
 
@@ -28,7 +29,7 @@ class AsyncAudioInputStream(
     suspend fun bufferAll() {
         val chunks = AppendOnlyList<Chunk>()
         do {
-            val buffer = ByteArray(bufferSize)
+            val buffer = ByteArray(if (chunks.isEmpty()) firstBufferSize else bufferSize)
             val read = input.read(buffer)
             if (read > 0) {
                 chunks.add(Chunk(buffer, 0, read))

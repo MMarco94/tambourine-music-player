@@ -8,6 +8,9 @@ import io.github.mmarco94.tambourine.utils.debugElapsed
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.swing.Swing
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -20,6 +23,7 @@ import kotlin.time.Duration.Companion.seconds
 private val logger = KotlinLogging.logger {}
 
 private val BUFFER = 10.seconds
+private val FIRST_READ_BUFFER = SILENCE_PADDING_LIMIT
 val LOW_LATENCY_BUFFER = 100.milliseconds
 private val SONG_SWITCH_THRESHOLD = 100.milliseconds
 
@@ -70,7 +74,7 @@ class PlayerController(
         val jobsScope: CoroutineScope,
         val queue: SongQueue,
         val player: Player,
-        val waveform: MutableState<WaveformComputer.Waveform>,
+        val decodedSongData: StateFlow<SongDecoder.DecodedSongData?>,
     )
 
     data class PositionState(
@@ -118,7 +122,7 @@ class PlayerController(
             return actualPosition + elapsed
         }
 
-        suspend fun play(cs: CoroutineScope): StateChangeResult {
+        suspend fun play(): StateChangeResult {
             return if (currentlyPlaying != null && !pause) {
                 val bufferingCap = if (lowLatencyMode) LOW_LATENCY_BUFFER / 2 else null
                 val result = currentlyPlaying.player.playFrame(bufferingCap)
@@ -129,7 +133,6 @@ class PlayerController(
                 ) {
                     val (next, keepPlaying) = currentlyPlaying.queue.nextInQueue()
                     changeQueue(
-                        cs = cs,
                         queue = next,
                         position = Position.Beginning,
                         keepBufferedContent = true,
@@ -158,7 +161,6 @@ class PlayerController(
         }
 
         suspend fun changeQueue(
-            cs: CoroutineScope,
             queue: SongQueue?,
             position: Position,
             keepBufferedContent: Boolean,
@@ -187,15 +189,24 @@ class PlayerController(
                 currentlyPlaying?.jobsScope?.cancel()
                 val scope = CoroutineScope(Dispatchers.Default)
                 logger.debugElapsed("Preparing song ${new.title}") {
+                    val firstBufferSize = Player.optimalBufferSize(stream.format, FIRST_READ_BUFFER)
                     val bufferSize = Player.optimalBufferSize(stream.format, BUFFER)
-                    val input = AsyncAudioInputStream(stream, 2, bufferSize)
+                    val input = AsyncAudioInputStream(stream, 2, firstBufferSize, bufferSize)
                     scope.launch(Dispatchers.IO) {
                         logger.debugElapsed("Reading ${new.title}") {
                             input.bufferAll()
                         }
                     }
+                    val songDecoder = SongDecoder(input.readers[1], stream.format, new)
+                    songDecoder.start(scope)
+                    val decoded = songDecoder.decodedSongData.filterNotNull().first()
+
                     // It doesn't make sense to keep the position across songs
-                    val actualPosition = if (position == Position.Current) Position.Beginning else position
+                    val actualPosition = when (position) {
+                        Position.Current, Position.Beginning -> decoded.songStartingSilence()
+                        is Position.Specific -> position.time
+                    }
+                    println("Starting song at $actualPosition")
                     val player = Player.create(
                         format = stream.format,
                         input = input.readers[0],
@@ -205,18 +216,25 @@ class PlayerController(
                         position = actualPosition,
                         keepBufferedContent = keepBufferedContent,
                     )
-                    val waveformCreator = WaveformComputer(input.readers[1], stream.format, new)
-                    waveformCreator.start(scope)
                     CurrentlyPlaying(
                         scope,
                         queue,
                         player,
-                        waveformCreator.waveform,
+                        songDecoder.decodedSongData,
                     )
                 }
             } else {
                 currentlyPlaying.copy(queue = queue).apply {
-                    player.seekTo(position, keepBufferedContent)
+                    when (position) {
+                        Position.Beginning -> {
+                            val decoded = currentlyPlaying.decodedSongData.value
+                            val startPadding = decoded?.songStartingSilence() ?: ZERO
+                            player.seekTo(startPadding, keepBufferedContent)
+                        }
+
+                        is Position.Specific -> player.seekTo(position.time, keepBufferedContent)
+                        Position.Current -> {}
+                    }
                 }
             }
             return copy(
@@ -234,14 +252,23 @@ class PlayerController(
     private var observableState by mutableStateOf(State.initial)
     val level get() = observableState.level
     val queue get() = observableState.currentlyPlaying?.queue
-    val waveform by derivedStateOf {
-        observableState.currentlyPlaying?.waveform?.value
-    }
     val pause get() = observableState.pause
     val position get() = observableState.position
 
     fun position(now: Instant): Duration {
         return observableState.calculateCurrentPosition(now)
+    }
+
+    @Composable
+    fun DecodedSongData(): SongDecoder.DecodedSongData? {
+        val cp = observableState.currentlyPlaying
+        return if (cp != null) {
+            val data by cp.decodedSongData.collectAsState(null)
+            data
+        } else {
+            null
+        }
+
     }
 
     @Composable
@@ -325,7 +352,6 @@ class PlayerController(
                         val (newState, maxAllowedPause) = when (command) {
                             is ChangeQueue -> state.change {
                                 changeQueue(
-                                    coroutineScope,
                                     command.queue,
                                     command.position,
                                     keepBufferedContent = false,
@@ -346,7 +372,7 @@ class PlayerController(
                             is EnterLowLatencyMode -> state.change { copy(lowLatencyMode = true) }
                             is ExitLowLatencyMode -> state.change { copy(lowLatencyMode = false) }
                             is SetLevel -> state.change { state.setLevel(command.level) }
-                            null -> state.play(coroutineScope)
+                            null -> state.play()
                         }
                         if (newState != state) {
                             state = newState

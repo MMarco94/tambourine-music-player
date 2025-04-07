@@ -34,7 +34,7 @@ Browse your music collection; play a song; that's it really.
 - Persist filter/sort
 - Keep scrolling position when removing filters
 - Drag&drop and open files to open them
-- Skip "zeros" at the beginning of the song
+- Skip "zeros" at the end of the song
 - Drag & drop in queue UI
 - Spectrometer
 - Background API?

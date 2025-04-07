@@ -94,12 +94,8 @@ class Player private constructor(
         return PlayResult.NotPlayed
     }
 
-    suspend fun seekTo(position: Position, keepBufferedContent: Boolean) {
-        when (position) {
-            Position.Current -> {}
-            Position.Beginning -> seekTo(0, keepBufferedContent)
-            is Position.Specific -> seekTo(format.durationToFrames(position.time), keepBufferedContent)
-        }
+    suspend fun seekTo(position: Duration, keepBufferedContent: Boolean) {
+        seekTo(format.durationToFrames(position), keepBufferedContent)
     }
 
     private suspend fun seekTo(positionInFrames: Long, keepBufferedContent: Boolean) {
@@ -138,7 +134,7 @@ class Player private constructor(
             older: Player?,
             bufferSize: Int,
             level: Float,
-            position: Position,
+            position: Duration,
             keepBufferedContent: Boolean,
         ): Player {
             return if (

@@ -105,17 +105,17 @@ fun SmallFakeSpectrometers(
 ) {
     val position = player.Position()
     val songLength = player.queue?.currentSong?.length
-    val waveform = player.waveform
+    val decodedSongData = player.DecodedSongData()
     val amplitude: Float = if (player.pause) {
         0f
     } else
-        if (songLength != null && waveform != null) {
+        if (songLength != null && decodedSongData != null) {
             val percent = position / songLength
-            val realAmpl = waveform.waveformsPerChannelHiRes.maxOf {
+            val realAmpl = decodedSongData.waveformsPerChannelHiRes.maxOf {
                 val index = (it.size * percent).roundToInt().coerceIn(it.indices)
                 it[index]
             }
-            0.1f + sqrt((realAmpl / waveform.max).toFloat()) * 0.9f
+            0.1f + sqrt((realAmpl / decodedSongData.maxAmplitude).toFloat()) * 0.9f
         } else {
             0.2f
         }
