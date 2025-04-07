@@ -62,7 +62,7 @@ class Player private constructor(
         data object Finished : PlayResult
     }
 
-    suspend fun playFrame(bufferingCap: Duration?): PlayResult {
+    suspend fun playFrame(bufferingCap: Duration? = null, limitFrames: Long = Long.MAX_VALUE): PlayResult {
         output.printDebugInfo()
         val available = if (bufferingCap != null) {
             val capFrames = format.durationToFrames(bufferingCap)
@@ -82,7 +82,12 @@ class Player private constructor(
 
         output.start()
         if (available > 0) {
-            val chunk = source.read(available)
+            val limitBytes = if (limitFrames == Long.MAX_VALUE) {
+                Long.MAX_VALUE
+            } else {
+                limitFrames * format.frameSize
+            }
+            val chunk = source.read(available, limitBytes)
             return if (chunk != null) {
                 cleanOutputtedFrames += chunk.length / format.frameSize
                 output.write(chunk.readData, chunk.offset, chunk.length)

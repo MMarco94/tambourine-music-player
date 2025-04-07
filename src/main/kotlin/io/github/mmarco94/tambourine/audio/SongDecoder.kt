@@ -3,6 +3,7 @@ package io.github.mmarco94.tambourine.audio
 import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.utils.debugElapsed
 import io.github.mmarco94.tambourine.utils.decode
+import io.github.mmarco94.tambourine.utils.durationToFrames
 import io.github.mmarco94.tambourine.utils.framesToDuration
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -20,11 +21,13 @@ import kotlin.time.DurationUnit
 
 private val logger = KotlinLogging.logger {}
 
-// Anything below this threshold is considered silence
-private const val SILENCE_THRESHOLD = 0.01
-
-// If there's more than half a second of silence, it's probably intentional
-val SILENCE_PADDING_LIMIT = 500.milliseconds
+// Anything below these threshold is considered silence
+private val SILENCE_THRESHOLDS = listOf(
+    0.0 to 1000.milliseconds,
+    0.01 to 650.milliseconds,
+    0.04 to 150.milliseconds,
+)
+val MAX_SILENCE_PADDING = SILENCE_THRESHOLDS.maxOf { it.second }
 
 
 class SongDecoder(
@@ -33,18 +36,43 @@ class SongDecoder(
     val song: Song,
 ) {
 
+    data class SilencePadding(
+        val threshold: Double,
+        val silenceFrameStart: Long,
+        val silenceFrameEnd: Long,
+        val silenceCapFrames: Long,
+    ) {
+        fun silenceAtStart(): Long {
+            return silenceFrameStart.coerceAtMost(silenceCapFrames)
+        }
+
+        fun silenceAtEnd(): Long {
+            return silenceFrameEnd.coerceAtMost(silenceCapFrames)
+        }
+    }
+
     data class DecodedSongData(
         val format: AudioFormat,
         val waveformsPerChannel: List<DoubleArray>,
         val waveformsPerChannelHiRes: List<DoubleArray>,
         val maxAmplitude: Double,
         val analyzedFrames: Long,
-        val paddingStartFrames: Long,
-        val paddingEndFrames: Long,
+        val silencePaddings: List<SilencePadding>,
         val done: Boolean = false,
     ) {
-        fun songStartingSilence(): Duration {
-            return format.framesToDuration(paddingStartFrames).coerceAtMost(SILENCE_PADDING_LIMIT)
+        fun songSilenceStart(): Duration {
+            val padStart = silencePaddings.maxOf { it.silenceAtStart() }
+            return format.framesToDuration(padStart)
+        }
+
+        fun songSilenceEnd(): Duration {
+            val padEnd = silencePaddings.maxOf { it.silenceAtEnd() }
+            return format.framesToDuration(padEnd)
+        }
+
+        fun songNonSilentLengthFrames(): Long {
+            val padEnd = silencePaddings.maxOf { it.silenceAtEnd() }
+            return analyzedFrames - padEnd
         }
     }
 
@@ -58,6 +86,24 @@ class SongDecoder(
     val decodedSongData: StateFlow<DecodedSongData?> = decodedSongDataFlow
     private val decodedSongDataChannel = Channel<DecodedSongData>(CONFLATED)
 
+    private class SilenceCalculator(val threshold: Double, val silenceCapFrames: Long) {
+        var firstNonZero = Long.MAX_VALUE
+        var lastNonZero = 0L
+        fun toPadding(totalFrames: Long, done: Boolean) = SilencePadding(
+            threshold = threshold,
+            silenceFrameStart = if (firstNonZero == Long.MAX_VALUE) totalFrames else firstNonZero,
+            silenceFrameEnd = if (done) totalFrames - lastNonZero - 1 else 0L,
+            silenceCapFrames = silenceCapFrames,
+        )
+
+        fun register(value: Double, frameIndex: Long) {
+            if (value.absoluteValue > threshold) {
+                firstNonZero = minOf(firstNonZero, frameIndex)
+                lastNonZero = maxOf(lastNonZero, frameIndex)
+            }
+        }
+    }
+
     fun start(scope: CoroutineScope) {
         scope.launch {
             logger.debugElapsed("Computing waveform for ${song.title}") {
@@ -66,17 +112,17 @@ class SongDecoder(
                 val framesPerSampleLowRes = totalApproximateFrames / WAVEFORM_LOW_RES_SIZE
                 var decodedFrames = 0L
                 var maxValue = 0.5
-                var firstNonZero = Long.MAX_VALUE
-                var lastNonZero = 0L
+                val thresholds = SILENCE_THRESHOLDS.map { (threshold, duration) ->
+                    SilenceCalculator(threshold, format.durationToFrames(duration))
+                }
                 while (true) {
                     val chunk = audio.read(Int.MAX_VALUE) ?: break
                     waveformsPerChannelHiRes.forEachIndexed { channel, waveform ->
                         val waveformLowRes = waveformsPerChannel[channel]
                         decode(chunk.readData, chunk.offset, chunk.length, format, channel) { frame, _, value ->
                             val frameIndex = decodedFrames + frame
-                            if (value.absoluteValue > SILENCE_THRESHOLD) {
-                                firstNonZero = minOf(firstNonZero, frameIndex)
-                                lastNonZero = maxOf(lastNonZero, frameIndex)
+                            for (threshold in thresholds) {
+                                threshold.register(value, frameIndex)
                             }
                             val idxHiRes =
                                 (frameIndex * RESOLUTION / totalApproximateFrames).roundToInt()
@@ -98,9 +144,7 @@ class SongDecoder(
                         waveformsPerChannelHiRes = waveformsPerChannelHiRes,
                         maxAmplitude = maxValue,
                         analyzedFrames = decodedFrames,
-                        paddingStartFrames = if (firstNonZero == Long.MAX_VALUE) decodedFrames else firstNonZero,
-                        // Until I've reached the end, I cannot know for sure
-                        paddingEndFrames = 0L,
+                        silencePaddings = thresholds.map { it.toPadding(decodedFrames, false) },
                     )
                     decodedSongDataFlow.value = newData
                     decodedSongDataChannel.send(newData)
@@ -111,15 +155,14 @@ class SongDecoder(
                     waveformsPerChannel = waveformsPerChannel,
                     waveformsPerChannelHiRes = waveformsPerChannelHiRes,
                     analyzedFrames = decodedFrames,
-                    paddingStartFrames = if (firstNonZero == Long.MAX_VALUE) decodedFrames else firstNonZero,
-                    paddingEndFrames = decodedFrames - lastNonZero - 1,
+                    silencePaddings = thresholds.map { it.toPadding(decodedFrames, true) },
                     done = true,
                 )
                 decodedSongDataFlow.value = finalData
                 decodedSongDataChannel.send(finalData)
                 logger.debug {
-                    "${format.framesToDuration(finalData.paddingStartFrames)} zeros at the beginning; " +
-                            "${format.framesToDuration(finalData.paddingEndFrames)} zeros at the end"
+                    "${finalData.songSilenceStart()} silence at the beginning; " +
+                            "${finalData.songSilenceEnd()} silence at the end"
                 }
             }
         }

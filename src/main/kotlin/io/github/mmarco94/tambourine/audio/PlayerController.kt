@@ -23,7 +23,7 @@ import kotlin.time.Duration.Companion.seconds
 private val logger = KotlinLogging.logger {}
 
 private val BUFFER = 10.seconds
-private val FIRST_READ_BUFFER = SILENCE_PADDING_LIMIT
+private val FIRST_READ_BUFFER = MAX_SILENCE_PADDING
 val LOW_LATENCY_BUFFER = 100.milliseconds
 private val SONG_SWITCH_THRESHOLD = 100.milliseconds
 
@@ -125,7 +125,14 @@ class PlayerController(
         suspend fun play(): StateChangeResult {
             return if (currentlyPlaying != null && !pause) {
                 val bufferingCap = if (lowLatencyMode) LOW_LATENCY_BUFFER / 2 else null
-                val result = currentlyPlaying.player.playFrame(bufferingCap)
+                val decodedSongData = currentlyPlaying.decodedSongData.value
+                val limit = if (decodedSongData != null && decodedSongData.done) {
+                    decodedSongData.songNonSilentLengthFrames()
+                } else {
+                    Long.MAX_VALUE
+                }
+
+                val result = currentlyPlaying.player.playFrame(bufferingCap, limit)
                 if (
                     result == Player.PlayResult.Finished &&
                     !seeking &&
@@ -203,10 +210,9 @@ class PlayerController(
 
                     // It doesn't make sense to keep the position across songs
                     val actualPosition = when (position) {
-                        Position.Current, Position.Beginning -> decoded.songStartingSilence()
+                        Position.Current, Position.Beginning -> decoded.songSilenceStart()
                         is Position.Specific -> position.time
                     }
-                    println("Starting song at $actualPosition")
                     val player = Player.create(
                         format = stream.format,
                         input = input.readers[0],
@@ -228,7 +234,7 @@ class PlayerController(
                     when (position) {
                         Position.Beginning -> {
                             val decoded = currentlyPlaying.decodedSongData.value
-                            val startPadding = decoded?.songStartingSilence() ?: ZERO
+                            val startPadding = decoded?.songSilenceStart() ?: ZERO
                             player.seekTo(startPadding, keepBufferedContent)
                         }
 
