@@ -13,7 +13,10 @@ import io.github.mmarco94.tambourine.utils.hsb
 val ColorScheme.onSurfaceSecondary get() = onSurface.copy(alpha = 0.55f)
 
 // See Material3.ColorScheme
-const val inactiveAlpha = .38f
+const val INACTIVE_ALPHA = .38f
+private const val TOO_DARK_THRESHOLD = 0.15
+private const val TOO_BRIGHT_THRESHOLD_LIGHT = 0.85
+private const val TOO_BRIGHT_THRESHOLD_SATURATION = 0.3
 
 /**
  * Inspired by https://github.com/gtk-flutter/adwaita/blob/main/lib/src/theme.dart
@@ -33,12 +36,21 @@ object MusicPlayerTheme {
         Color(red = 239, green = 184, blue = 200),
     ).map { it.hsb() }
 
-    val defaultScheme = colorSchemeFromPalette(defaultPalette)
+    val defaultScheme = colorScheme(defaultPalette)
 
-    fun colorSchemeFromPalette(palette: List<HSLColor>): ColorScheme {
-        val primary = palette[0]
-        val secondary = palette[1]
-        val tertiary = palette[2]
+    fun colorScheme(palette: List<HSLColor>): ColorScheme {
+        fun penalty(color: HSLColor): Float {
+            return if (color.lightness < TOO_DARK_THRESHOLD) {
+                1 - color.lightness
+            } else if (color.lightness > TOO_BRIGHT_THRESHOLD_LIGHT && color.saturation < TOO_BRIGHT_THRESHOLD_SATURATION) {
+                color.lightness
+            } else 0f
+        }
+
+        val sorted = palette.sortedBy { color -> penalty(color) }
+        val primary = sorted[0].pastel()
+        val secondary = sorted.getOrNull(1)?.pastel() ?: primary
+        val tertiary = sorted.getOrNull(2)?.pastel() ?: secondary
         val primaryContainer = primary.darker()
         val secondaryContainer = secondary.darker()
         val tertiaryContainer = tertiary.darker()

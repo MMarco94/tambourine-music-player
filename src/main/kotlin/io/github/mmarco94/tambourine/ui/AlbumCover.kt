@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
@@ -34,7 +35,7 @@ fun AlbumContainer(
 }
 
 @Composable
-fun AlbumCoverContent(cover: AlbumCover?) {
+fun AlbumCoverContent(cover: AlbumCover?, colorFilter: ColorFilter? = null) {
     if (cover != null) {
         key(cover) {
             Image(
@@ -43,6 +44,7 @@ fun AlbumCoverContent(cover: AlbumCover?) {
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
                 filterQuality = FilterQuality.High,
+                colorFilter = colorFilter,
             )
         }
     }

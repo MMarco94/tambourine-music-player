@@ -22,6 +22,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -37,10 +39,7 @@ import io.github.mmarco94.tambourine.data.RepeatMode
 import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongQueue
 import io.github.mmarco94.tambourine.playerController
-import io.github.mmarco94.tambourine.utils.format
-import io.github.mmarco94.tambourine.utils.getOrZero
-import io.github.mmarco94.tambourine.utils.progress
-import io.github.mmarco94.tambourine.utils.toFloat
+import io.github.mmarco94.tambourine.utils.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.ceil
@@ -146,18 +145,20 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
         contentAlignment = Alignment.Center
     ) {
         AlbumContainer(Modifier.fillMaxHeight(), MaterialTheme.shapes.large, elevation = 16.dp) {
-            val blur by animateDpAsState(if (hasLyrics) 16.dp else 0.dp)
+            val blur by animateDpAsState(if (hasLyrics) 48.dp else 0.dp)
+            val saturation by animateFloatAsState(if (hasLyrics) 0.75f else 1f)
             Crossfade(song.cover, Modifier.blur(blur)) {
-                AlbumCoverContent(it)
+                AlbumCoverContent(
+                    it,
+                    colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(saturation) }),
+                )
             }
+            val bgColor = song.cover?.colorPalette?.first() ?: MusicPlayerTheme.defaultScheme.primary
             val bg by animateColorAsState(
-                (song.cover?.colorScheme ?: MusicPlayerTheme.defaultScheme)
-                    .primary
-                    .copy(if (hasLyrics) .8f else 0f)
+                bgColor.copy(if (hasLyrics) .5f else 0f)
             )
-            val content by animateColorAsState(
-                (song.cover?.colorScheme ?: MusicPlayerTheme.defaultScheme)
-                    .onPrimary
+            val contentColor by animateColorAsState(
+                bgColor.hsb().contrast().color
             )
             Box(Modifier.background(bg)) {
                 Crossfade(
@@ -171,7 +172,7 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
                         if (player.queue?.currentSong == s) {
                             pos = position
                         }
-                        CompositionLocalProvider(LocalContentColor provides content) {
+                        CompositionLocalProvider(LocalContentColor provides contentColor) {
                             LyricsComposable(
                                 s.lyrics,
                                 getPosition = { pos },
@@ -361,7 +362,7 @@ private fun SingleWaveformUI(
     }
     val modifier = Modifier.fillMaxWidth().height(waveformHeight)
     Box {
-        ActualWaveform(modifier, animatedWaveform, invert, activePercent, inactiveAlpha, .8f, inactiveAlpha)
+        ActualWaveform(modifier, animatedWaveform, invert, activePercent, INACTIVE_ALPHA, .8f, INACTIVE_ALPHA)
         val t = updateTransition(mousePercent)
         t.Crossfade(contentKey = { it == null }, animationSpec = spring(stiffness = Spring.StiffnessLow)) { mp ->
             if (mp != null) {
@@ -413,7 +414,7 @@ private fun PlayerIcon(
     active: Boolean = true,
     onClick: suspend CoroutineScope.() -> Unit
 ) {
-    val alpha by animateFloatAsState(if (active) 1f else inactiveAlpha)
+    val alpha by animateFloatAsState(if (active) 1f else INACTIVE_ALPHA)
     BigIconButton(size = size, {
         cs.launch {
             onClick()

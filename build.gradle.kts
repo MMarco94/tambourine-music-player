@@ -55,8 +55,6 @@ dependencies {
     // DBUS APIs
     implementation("com.github.hypfvieh:dbus-java-core:5.1.1")
     implementation("com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.1.1")
-    // Dominant color from image
-    implementation("com.github.SvenWoltmann:color-thief-java:1.1.2")
 
     val kotest = "6.0.4"
     testImplementation("io.kotest:kotest-runner-junit5:$kotest")

@@ -327,7 +327,7 @@ fun LibraryHeader(
         }
 
         val shouldHide = tab != null && tab != SEARCH
-        val alpha by animateFloatAsState(if (shouldHide) inactiveAlpha else 1f)
+        val alpha by animateFloatAsState(if (shouldHide) INACTIVE_ALPHA else 1f)
         val blur by animateFloatAsState(if (shouldHide) 2.dp.toPxApprox() else 0f)
         Box(
             Modifier.graphicsLayer {

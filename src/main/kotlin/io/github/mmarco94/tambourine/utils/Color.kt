@@ -2,38 +2,11 @@ package io.github.mmarco94.tambourine.utils
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asSkiaBitmap
-import de.androidpit.colorthief.MMCQ
-import org.jetbrains.skia.Bitmap
+import io.github.mmarco94.tambourine.color.MMCQ
 import kotlin.math.roundToInt
 
-fun ImageBitmap.palette(reduction: Int = 10): List<Color> {
-    val pixels = getPixels(asSkiaBitmap(), reduction)
-    return MMCQ.quantize(pixels, 3)
-        .palette()
-        .map { (r, g, b) -> Color(r, g, b) }
-}
-
-private fun getPixels(
-    sourceImage: Bitmap,
-    reduction: Int,
-): Array<IntArray> {
-    val width = sourceImage.width
-    val height = sourceImage.height
-    val pixelCount = width * height
-    // numRegardedPixels must be rounded up to avoid an ArrayIndexOutOfBoundsException if all
-    // pixels are good.
-    val numRegardedPixels = (pixelCount + reduction - 1) / reduction
-    return Array(numRegardedPixels) { idx ->
-        val i = idx * reduction
-        val row = i / width
-        val col = i % width
-        val rgb = sourceImage.getColor(col, row)
-        val r = rgb shr 16 and 0xFF
-        val g = rgb shr 8 and 0xFF
-        val b = rgb and 0xFF
-        intArrayOf(r, g, b)
-    }
+fun ImageBitmap.palette(maxColors: Int, reduction: Int = 8): List<Color> {
+    return MMCQ.quantize(this, maxColors, reduction).palette()
 }
 
 data class HSLColor(
@@ -60,14 +33,6 @@ data class HSLColor(
         )
     }
 
-    fun shift(hueDelta: Float = 0f, saturationDelta: Float = 0f, lightnessDelta: Float = 0f): HSLColor {
-        return HSLColor(
-            (hue + hueDelta).mod(360f),
-            (saturation + saturationDelta).coerceIn(0f, 1f),
-            (lightness + lightnessDelta).coerceIn(0f, 1f),
-        )
-    }
-
     fun interpolate(another: HSLColor, progress: Float = .5f): HSLColor {
         require(progress in 0.0..1.0)
         return HSLColor(
@@ -78,10 +43,7 @@ data class HSLColor(
     }
 
     fun pastel(): HSLColor {
-        val base = shift(saturationDelta = .1f)
-        return base.interpolate(
-            base.copy(saturation = 0.25f, lightness = 1f),
-        )
+        return interpolate(copy(saturation = 0.35f, lightness = 1f))
     }
 }
 

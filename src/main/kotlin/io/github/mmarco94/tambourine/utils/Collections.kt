@@ -7,15 +7,15 @@ fun <T> Collection<T>.rangeOfOrNull(f: (T) -> Int?): IntRange? {
     forEach {
         val new = f(it)
         if (new != null) {
-            if (min == null || new < min!!) {
+            if (min == null || new < min) {
                 min = new
             }
-            if (max == null || new > max!!) {
+            if (max == null || new > max) {
                 max = new
             }
         }
     }
-    return if (min != null) (min!!..max!!)
+    return if (min != null) (min..max!!)
     else null
 }
 
@@ -25,11 +25,6 @@ fun <T> Collection<T>.mostCommonOrNull(): T? {
 }
 
 fun DoubleArray.getOrZero(index: Int) = getOrElse(index) { 0.0 }
-
-inline fun DoubleArray.mapInPlace(f: (Double) -> Double): DoubleArray {
-    onEachIndexed { index, d -> this[index] = f(d) }
-    return this
-}
 
 /**
  * Returns the map with the entries that were added or changed

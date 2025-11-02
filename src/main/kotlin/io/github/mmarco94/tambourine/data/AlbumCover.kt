@@ -1,6 +1,5 @@
 package io.github.mmarco94.tambourine.data
 
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.graphics.toComposeImageBitmap
@@ -23,8 +22,8 @@ private val logger = KotlinLogging.logger {}
 data class AlbumCover(
     val image: ImageBitmap,
 ) {
-    val palette: List<Color> = image.palette()
-    val colorScheme = MusicPlayerTheme.colorSchemeFromPalette(palette.map { it.hsb().pastel() })
+    val colorPalette = image.palette(4)
+    val colorScheme = MusicPlayerTheme.colorScheme(colorPalette.map { it.hsb() })
 
     val file: File? by lazy {
         try {
@@ -64,8 +63,8 @@ class CoversDecoder(
             jobs.getOrPut(rawImg) {
                 coroutineScope.async {
                     try {
-                        val decoded = Image.makeFromEncoded(img).toComposeImageBitmap()
-                        AlbumCover(decoded)
+                        val image = Image.makeFromEncoded(img)
+                        AlbumCover(image.toComposeImageBitmap())
                     } catch (e: Exception) {
                         logger.error { e.message }
                         null

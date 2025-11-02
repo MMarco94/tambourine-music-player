@@ -37,7 +37,7 @@ fun BaseTag(
             MaterialTheme.colorScheme.onSurface
         }
     )
-    val alpha by animateFloatAsState(if (active) 1f else inactiveAlpha)
+    val alpha by animateFloatAsState(if (active) 1f else INACTIVE_ALPHA)
     Card(
         Modifier.alpha(alpha),
         colors = CardDefaults.cardColors(bg, contentColor),
