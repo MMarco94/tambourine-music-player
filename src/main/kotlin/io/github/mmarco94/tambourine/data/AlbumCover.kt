@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import io.github.mmarco94.tambourine.ui.MusicPlayerTheme
+import io.github.mmarco94.tambourine.utils.fastHashCode
 import io.github.mmarco94.tambourine.utils.hsb
 import io.github.mmarco94.tambourine.utils.palette
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -43,7 +44,7 @@ class CoversDecoder(
 ) {
 
     private class RawImage(val bytes: ByteArray) {
-        private val hc = bytes.contentHashCode()
+        private val hc: Int = bytes.fastHashCode()
 
         override fun equals(other: Any?): Boolean {
             return other is RawImage && other.hc == hc && other.bytes.contentEquals(bytes)

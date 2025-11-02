@@ -29,6 +29,7 @@ class LiveLibrary(
     suspend fun start() {
         suspendCancellableCoroutine<Unit> { cont ->
             scope.launch {
+                logger.info { "Started song loading" }
                 roots.forEach { root ->
                     pendingEvents.incrementAndGet()
                     onNew(root)
@@ -160,7 +161,6 @@ class LiveLibrary(
     private suspend fun onModifiedFolder(folder: File) {
         eventChannel.send(InternalEvent.FolderProcessed)
     }
-
 
     private sealed interface InternalEvent {
         data class NewSong(
