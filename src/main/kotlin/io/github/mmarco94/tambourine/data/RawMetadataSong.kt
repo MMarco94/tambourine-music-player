@@ -39,7 +39,7 @@ data class RawMetadataSong(
             val year = if (yearStr.isNotBlank()) {
                 yearStr.toIntOrNull() ?: try {
                     LocalDate.parse(yearStr)
-                } catch (e: IllegalArgumentException) {
+                } catch (_: IllegalArgumentException) {
                     null
                 }?.year
             } else null

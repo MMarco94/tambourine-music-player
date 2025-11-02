@@ -12,13 +12,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.swing.Swing
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlin.concurrent.thread
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
