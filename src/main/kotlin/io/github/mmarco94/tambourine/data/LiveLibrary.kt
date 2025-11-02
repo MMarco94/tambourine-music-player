@@ -10,6 +10,7 @@ import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.nio.file.*
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.TimeSource
 
 private val logger = KotlinLogging.logger {}
 
@@ -17,6 +18,7 @@ class LiveLibrary(
     private val scope: CoroutineScope,
     private val roots: Set<File>
 ) {
+    private val creationTime = TimeSource.Monotonic.markNow()
     private val watchService: WatchService = FileSystems.getDefault().newWatchService()
     private val watchServiceMutex = Mutex()
     private val registeredKeys = mutableMapOf<File, WatchKey>()
@@ -31,7 +33,6 @@ class LiveLibrary(
             scope.launch {
                 logger.info { "Started song loading" }
                 roots.forEach { root ->
-                    pendingEvents.incrementAndGet()
                     onNew(root)
                 }
                 while (true) {
@@ -64,7 +65,10 @@ class LiveLibrary(
                     }
                     val remaining = pendingEvents.decrementAndGet()
                     if (remaining == 0) {
-                        logger.info { "Processed ${rawMetadatas.size} songs" }
+                        logger.info {
+                            val diff = creationTime.elapsedNow()
+                            "Processed ${rawMetadatas.size} songs ($diff since beginning)"
+                        }
                         channel.send(Library.from(rawMetadatas.values))
                     }
                 }
@@ -84,30 +88,28 @@ class LiveLibrary(
 
     private fun onFileEvent(dirPath: Path, event: WatchEvent<*>) {
         val file = dirPath.resolve(event.context() as Path).toFile()
+        when (event.kind()) {
+            StandardWatchEventKinds.ENTRY_CREATE -> onNew(file)
+            StandardWatchEventKinds.ENTRY_DELETE -> onDeleted(file)
+            else -> onModified(file)
+        }
+    }
+
+    private fun onNew(fileOrFolder: File) {
         pendingEvents.incrementAndGet()
         scope.launch {
-            when (event.kind()) {
-                StandardWatchEventKinds.ENTRY_CREATE -> onNew(file)
-                StandardWatchEventKinds.ENTRY_DELETE -> onDeleted(file)
-                else -> onModified(file)
+            if (fileOrFolder.isDirectory) {
+                onNewFolder(fileOrFolder)
+            } else {
+                onNewFile(fileOrFolder)
             }
         }
     }
 
-    private suspend fun onNew(fileOrFolder: File) {
-        if (fileOrFolder.isDirectory) {
-            onNewFolder(fileOrFolder)
-        } else {
-            onNewFile(fileOrFolder)
-        }
-    }
-
+    /** Warning: increment pendingEvents before calling this! */
     private suspend fun onNewFolder(folder: File) {
         folder.listFiles()?.forEach { file ->
-            pendingEvents.incrementAndGet()
-            scope.launch {
-                onNew(file)
-            }
+            onNew(file)
         }
         watchServiceMutex.withLock {
             registeredKeys.remove(folder)?.cancel()
@@ -123,6 +125,7 @@ class LiveLibrary(
         eventChannel.send(InternalEvent.FolderProcessed)
     }
 
+    /** Warning: increment pendingEvents before calling this! */
     private suspend fun onNewFile(file: File) {
         try {
             eventChannel.send(
@@ -139,27 +142,18 @@ class LiveLibrary(
         }
     }
 
-    private suspend fun onDeleted(fileOrFolder: File) {
-        watchServiceMutex.withLock {
-            registeredKeys.remove(fileOrFolder)?.cancel()
-        }
-        eventChannel.send(InternalEvent.FileDeleted(fileOrFolder))
-    }
-
-    private suspend fun onModified(fileOrFolder: File) {
-        if (fileOrFolder.isDirectory) {
-            onModifiedFolder(fileOrFolder)
-        } else {
-            onModifiedFile(fileOrFolder)
+    private fun onDeleted(fileOrFolder: File) {
+        pendingEvents.incrementAndGet()
+        scope.launch {
+            watchServiceMutex.withLock {
+                registeredKeys.remove(fileOrFolder)?.cancel()
+            }
+            eventChannel.send(InternalEvent.FileDeleted(fileOrFolder))
         }
     }
 
-    private suspend fun onModifiedFile(file: File) {
-        onNewFile(file)
-    }
-
-    private suspend fun onModifiedFolder(folder: File) {
-        eventChannel.send(InternalEvent.FolderProcessed)
+    private fun onModified(fileOrFolder: File) {
+        onNew(fileOrFolder)
     }
 
     private sealed interface InternalEvent {
