@@ -1,3 +1,5 @@
+-libraryjars  <java.home>/jmods/java.base.jmod(!**.jar;!module-info.class)
+
 -dontwarn javax.annotation.**
 -dontwarn kotlinx.serialization.**
 -keep public class io.github.mmarco94.tambourine.** { *; }
