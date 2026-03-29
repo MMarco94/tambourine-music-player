@@ -3,6 +3,7 @@
 -keep public class io.github.mmarco94.tambourine.** { *; }
 # Logs
 -dontwarn ch.qos.logback.**
+-dontwarn com.oracle.svm.core.annotate.**
 -keep public class org.slf4j.** { *; }
 -keep public class ch.qos.logback.** { *; }
 # Audio

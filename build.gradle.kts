@@ -85,7 +85,7 @@ compose.desktop {
             }
         }
         buildTypes.release.proguard {
-            version.set("7.6.0")
+            version.set("7.9.0")
             optimize = false
             configurationFiles.from(project.file("compose-desktop.pro"))
         }
