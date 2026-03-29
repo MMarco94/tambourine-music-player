@@ -13,23 +13,31 @@ private val logger = KotlinLogging.logger {}
 sealed interface Lyrics {
     val rawString: String
 
-    data class Plain(override val rawString: String, val lyrics: String) : Lyrics {
+    data class Plain(val lyrics: String) : Lyrics {
+        override val rawString: String get() = lyrics
+
         override fun toString(): String {
             return lyrics
         }
     }
 
-    data class Synchronized(override val rawString: String, val lines: List<Line>) : Lyrics {
+    data class Synchronized(val lines: List<Line>) : Lyrics {
+        override val rawString: String get() = toString()
         override fun toString(): String {
-            return lines.joinToString(separator = "\n") {
-                "${it.start}: ${it.content}"
-            }
+            return lines.joinToString(separator = "\n")
         }
 
         data class Line(
             val start: Duration,
             val content: String,
-        )
+        ) {
+            override fun toString(): String {
+                val mm = start.inWholeMinutes.toString().padStart(2, '0')
+                val ss = (start.inWholeSeconds - start.inWholeMinutes * 60).toString().padStart(2, '0')
+                val xx = ((start.inWholeMilliseconds - start.inWholeSeconds * 1000) / 10).toString().padStart(2, '0')
+                return "[$mm:$ss:$xx]$content"
+            }
+        }
     }
 
     companion object {
@@ -43,7 +51,7 @@ sealed interface Lyrics {
             }
 
             val trimmed = lyrics.trimToNull() ?: return null
-            return Plain(lyrics, trimmed)
+            return Plain(trimmed)
         }
     }
 }
@@ -81,7 +89,7 @@ private data class LrcFile(
         if (lines.isEmpty()) {
             throw ParseException("Empty lines in Lrc", 0)
         }
-        return Lyrics.Synchronized(rawString, lines)
+        return Lyrics.Synchronized(lines)
     }
 
     companion object {
