@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
-    kotlin("jvm") version "2.2.21"
+    kotlin("jvm") version "2.3.20"
     id("org.jetbrains.compose")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.github.ben-manes.versions") version "0.53.0"
@@ -19,7 +19,7 @@ repositories {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
 }
 
 dependencies {
@@ -37,8 +37,8 @@ dependencies {
     implementation("com.github.MMarco94:klib-portal:0.1")
 
     // Logging
-    implementation("io.github.oshai:kotlin-logging-jvm:7.0.13")
-    implementation("ch.qos.logback:logback-classic:1.5.20")
+    implementation("io.github.oshai:kotlin-logging-jvm:8.0.01")
+    implementation("ch.qos.logback:logback-classic:1.5.32")
     implementation("org.slf4j:jul-to-slf4j:2.0.17")
 
     // ffmpeg-based audio decoder
@@ -53,10 +53,10 @@ dependencies {
     // music metadata reader
     implementation("net.jthink:jaudiotagger:3.0.1")
     // DBUS APIs
-    implementation("com.github.hypfvieh:dbus-java-core:5.1.1")
-    implementation("com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.1.1")
+    implementation("com.github.hypfvieh:dbus-java-core:5.2.0")
+    implementation("com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.2.0")
 
-    val kotest = "6.0.4"
+    val kotest = "6.1.9"
     testImplementation("io.kotest:kotest-runner-junit5:$kotest")
     testImplementation("io.kotest:kotest-assertions-core:$kotest")
 }
