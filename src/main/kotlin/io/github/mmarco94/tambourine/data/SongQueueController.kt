@@ -51,7 +51,7 @@ data class SongQueueController(
         var newQueue = player.queue
         newQueue = if (newQueue != null) {
             val possible = newQueue.songs.withIndex().indexOfLast { (index, s) ->
-                index != newQueue.position && s == song
+                index != newQueue!!.position && s == song
             }
             if (possible >= 0) {
                 newQueue.move(possible, newQueue.position + 1)
