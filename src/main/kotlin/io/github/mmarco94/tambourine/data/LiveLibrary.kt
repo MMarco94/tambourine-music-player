@@ -22,7 +22,6 @@ class LiveLibrary(
     private val watchService: WatchService = FileSystems.getDefault().newWatchService()
     private val watchServiceMutex = Mutex()
     private val registeredKeys = mutableMapOf<File, WatchKey>()
-    private val decoder = CoversDecoder(scope)
     private val pendingEvents = AtomicInteger(0)
 
     private var eventChannel = Channel<InternalEvent>()
@@ -33,7 +32,7 @@ class LiveLibrary(
             scope.launch {
                 logger.info { "Started song loading" }
                 roots.forEach { root ->
-                    onNew(root)
+                    onNew(root, decoder = CoversDecoder(scope))
                 }
                 while (true) {
                     val monitorKey = runInterruptible(Dispatchers.IO) {
@@ -41,7 +40,7 @@ class LiveLibrary(
                     }
                     val dirPath = monitorKey.watchable() as Path
                     monitorKey.pollEvents().forEach { event ->
-                        onFileEvent(dirPath, event)
+                        onFileEvent(dirPath, event, decoder = CoversDecoder(scope))
                     }
                     if (!monitorKey.reset()) {
                         monitorKey.cancel()
@@ -86,30 +85,30 @@ class LiveLibrary(
         }
     }
 
-    private fun onFileEvent(dirPath: Path, event: WatchEvent<*>) {
+    private fun onFileEvent(dirPath: Path, event: WatchEvent<*>, decoder: CoversDecoder) {
         val file = dirPath.resolve(event.context() as Path).toFile()
         when (event.kind()) {
-            StandardWatchEventKinds.ENTRY_CREATE -> onNew(file)
+            StandardWatchEventKinds.ENTRY_CREATE -> onNew(file, decoder)
             StandardWatchEventKinds.ENTRY_DELETE -> onDeleted(file)
-            else -> onModified(file)
+            else -> onModified(file, decoder)
         }
     }
 
-    private fun onNew(fileOrFolder: File) {
+    private fun onNew(fileOrFolder: File, decoder: CoversDecoder) {
         pendingEvents.incrementAndGet()
         scope.launch {
             if (fileOrFolder.isDirectory) {
-                onNewFolder(fileOrFolder)
+                onNewFolder(fileOrFolder, decoder)
             } else {
-                onNewFile(fileOrFolder)
+                onNewFile(fileOrFolder, decoder)
             }
         }
     }
 
     /** Warning: increment pendingEvents before calling this! */
-    private suspend fun onNewFolder(folder: File) {
+    private suspend fun onNewFolder(folder: File, decoder: CoversDecoder) {
         folder.listFiles()?.forEach { file ->
-            onNew(file)
+            onNew(file, decoder)
         }
         watchServiceMutex.withLock {
             registeredKeys.remove(folder)?.cancel()
@@ -126,7 +125,7 @@ class LiveLibrary(
     }
 
     /** Warning: increment pendingEvents before calling this! */
-    private suspend fun onNewFile(file: File) {
+    private suspend fun onNewFile(file: File, decoder: CoversDecoder) {
         try {
             eventChannel.send(
                 InternalEvent.NewSong(
@@ -152,8 +151,8 @@ class LiveLibrary(
         }
     }
 
-    private fun onModified(fileOrFolder: File) {
-        onNew(fileOrFolder)
+    private fun onModified(fileOrFolder: File, decoder: CoversDecoder) {
+        onNew(fileOrFolder, decoder)
     }
 
     private sealed interface InternalEvent {
