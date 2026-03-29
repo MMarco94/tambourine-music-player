@@ -3,11 +3,13 @@ package io.github.mmarco94.tambourine.color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
 
+@PublishedApi
+internal const val BITS_PER_COLOR = 5
+
 class ColorHistogram(
-    val bitsPerColor: Int,
     val histogram: IntArray
 ) {
-    private val colorRange = 0 until (1 shl bitsPerColor)
+    private val colorRange = 0 until (1 shl BITS_PER_COLOR)
     private val partialSums: IntArray = run {
         val ret = IntArray(histogram.size)
         for (r in colorRange) {
@@ -54,28 +56,28 @@ class ColorHistogram(
     @Suppress("NOTHING_TO_INLINE")
     @PublishedApi
     internal inline fun idx(r: Int, g: Int, b: Int): Int {
-        return (r shl bitsPerColor shl bitsPerColor) + (g shl bitsPerColor) + b
+        return (r shl BITS_PER_COLOR shl BITS_PER_COLOR) + (g shl BITS_PER_COLOR) + b
     }
 
     companion object {
 
         @Suppress("NOTHING_TO_INLINE")
-        private inline fun idx(r: Int, g: Int, b: Int, bitsPerColor: Int): Int {
-            return (r shl (2 * bitsPerColor)) + (g shl bitsPerColor) + b
+        private inline fun idx(r: Int, g: Int, b: Int): Int {
+            return (r shl (2 * BITS_PER_COLOR)) + (g shl BITS_PER_COLOR) + b
         }
 
-        fun build(image: ImageBitmap, sampling: Int, bitsPerColor: Int): VBox {
+        fun build(image: ImageBitmap, sampling: Int): VBox {
             val bitmap = image.asSkiaBitmap()
-            val histogram = IntArray(1 shl (3 * bitsPerColor))
-            val maxColorValue = (1 shl bitsPerColor) - 1
-            val shift: Int = 8 - bitsPerColor
+            val histogram = IntArray(1 shl (3 * BITS_PER_COLOR))
+            val maxColorValue = (1 shl BITS_PER_COLOR) - 1
+            val shift: Int = 8 - BITS_PER_COLOR
             val imgWidth = bitmap.width
             for (i in 0 until imgWidth * image.height step sampling) {
                 val pixel = bitmap.getColor(i % imgWidth, i / imgWidth)
                 val r = (pixel shr 16 and 0xFF) shr shift
                 val g = (pixel shr 8 and 0xFF) shr shift
                 val b = (pixel and 0xFF) shr shift
-                val index = idx(r, g, b, bitsPerColor)
+                val index = idx(r, g, b)
                 histogram[index]++
             }
             return VBox(
@@ -85,7 +87,7 @@ class ColorHistogram(
                 maxColorValue,
                 0,
                 maxColorValue,
-                ColorHistogram(bitsPerColor, histogram),
+                ColorHistogram(histogram = histogram),
             ).trim()
         }
     }

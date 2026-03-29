@@ -99,7 +99,7 @@ data class VBox(
     }
 
     fun avg(): Color {
-        val colorRestorationFactor = (1 shl (8 - histogram.bitsPerColor)) / 256f
+        val colorRestorationFactor = (1 shl (8 - BITS_PER_COLOR)) / 256f
 
         return if (this.count > 0) {
             var rsum = 0

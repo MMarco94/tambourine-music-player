@@ -11,8 +11,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 
 object MMCQ {
 
-    fun quantize(image: ImageBitmap, maxColors: Int, sampling: Int, bitsPerColor: Int = 5): CMap {
-        val fullVbox = ColorHistogram.build(image, sampling, bitsPerColor)
+    fun quantize(image: ImageBitmap, maxColors: Int, sampling: Int): CMap {
+        val fullVbox = ColorHistogram.build(image, sampling)
         val pq = mutableListOf(fullVbox)
         iter(pq, compareBy { it.count }, maxColors)
         pq.sortByDescending { it.count.toFloat() / it.volume }
