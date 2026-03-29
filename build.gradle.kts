@@ -72,6 +72,7 @@ tasks.test {
 compose.desktop {
     application {
         mainClass = "io.github.mmarco94.tambourine.MainKt"
+        jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
         if (debugBuild) {
             jvmArgs += listOf("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005")
         }
