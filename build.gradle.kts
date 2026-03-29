@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "io.github.mmarco94"
-version = "1.1.2"
+version = "1.1.3"
 val debugBuild = false
 
 repositories {
