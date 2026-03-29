@@ -73,7 +73,12 @@ compose.desktop {
     application {
         mainClass = "io.github.mmarco94.tambourine.MainKt"
         jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
+        // These options are set to optimize the memory usage
+        jvmArgs += listOf("-XX:+UseZGC") // Use Z Garbage Collector, for low latency, see https://docs.oracle.com/en/java/javase/25/gctuning/z-garbage-collector.html
+        jvmArgs += listOf("-XX:SoftMaxHeapSize=256m") // Let's target a reasonable max memory of 256mb
+        jvmArgs += listOf("-XX:ZUncommitDelay=1") // Return memory to OS after 1 second
         if (debugBuild) {
+            jvmArgs += listOf("-XX:NativeMemoryTracking=summary")
             jvmArgs += listOf("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005")
         }
         nativeDistributions {

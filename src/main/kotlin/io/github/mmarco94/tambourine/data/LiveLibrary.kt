@@ -64,6 +64,7 @@ class LiveLibrary(
                     }
                     val remaining = pendingEvents.decrementAndGet()
                     if (remaining == 0) {
+                        System.gc()
                         logger.info {
                             val diff = creationTime.elapsedNow()
                             "Processed ${rawMetadatas.size} songs ($diff since beginning)"
