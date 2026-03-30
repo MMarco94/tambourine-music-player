@@ -2,10 +2,10 @@
 -dontwarn kotlinx.serialization.**
 -keep public class io.github.mmarco94.tambourine.** { *; }
 # Logs
--dontwarn ch.qos.logback.**
+-dontwarn org.tinylog.**
+-dontwarn io.github.oshai.kotlinlogging.logback.**
 -dontwarn com.oracle.svm.core.annotate.**
 -keep public class org.slf4j.** { *; }
--keep public class ch.qos.logback.** { *; }
 # Audio
 -keep public class org.jaudiotagger.** { *; }
 -keep public class com.tagtraum.ffsampledsp.** { *; }

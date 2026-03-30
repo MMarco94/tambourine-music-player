@@ -16,7 +16,6 @@ import io.github.mmarco94.tambourine.ui.App
 import io.github.mmarco94.tambourine.ui.LibraryHeaderTab
 import io.github.mmarco94.tambourine.ui.Panel
 import io.github.mmarco94.tambourine.utils.Preferences
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,7 +28,6 @@ import org.slf4j.bridge.SLF4JBridgeHandler
 import java.io.File
 
 val playerController = staticCompositionLocalOf<PlayerController> { throw IllegalStateException() }
-val logger = KotlinLogging.logger {}
 
 fun main(args: Array<String>) {
     val filesFromArgs = args.map { File(it) }

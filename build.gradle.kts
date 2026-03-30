@@ -38,7 +38,8 @@ dependencies {
 
     // Logging
     implementation("io.github.oshai:kotlin-logging-jvm:8.0.01")
-    implementation("ch.qos.logback:logback-classic:1.5.32")
+    implementation("org.tinylog:tinylog-impl:2.7.0")
+    implementation("org.tinylog:slf4j-tinylog:2.7.0")
     implementation("org.slf4j:jul-to-slf4j:2.0.17")
 
     // ffmpeg-based audio decoder
@@ -85,7 +86,7 @@ compose.desktop {
             packageName = "tambourine"
             packageVersion = version.toString()
 
-            modules("java.naming", "jdk.security.auth", "jdk.unsupported")
+            modules("java.naming", "java.management", "jdk.security.auth", "jdk.unsupported")
             if (debugBuild) {
                 modules.add("jdk.jdwp.agent")
             }
