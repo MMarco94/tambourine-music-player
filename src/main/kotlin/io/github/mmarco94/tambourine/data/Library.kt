@@ -35,6 +35,9 @@ data class Song(
 
     val artist get() = album.artist
 
+    private val hashCode = super.hashCode()
+    override fun hashCode() = hashCode
+
     private fun matches(queryFilter: String): Boolean {
         return title.contains(queryFilter, ignoreCase = true) ||
                 this.album.title.contains(queryFilter, ignoreCase = true) ||

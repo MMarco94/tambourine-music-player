@@ -11,7 +11,7 @@ internal fun Image.toBitmap(width: Int): Bitmap {
     val height = ((width * this.height).toFloat() / this.width).roundToInt().coerceAtLeast(1)
     val bitmap = Bitmap()
     bitmap.allocPixels(ImageInfo.makeN32(width, height, ColorAlphaType.PREMUL))
-    val canvas = org.jetbrains.skia.Canvas(bitmap)
+    val canvas = Canvas(bitmap)
     canvas.drawImageRect(
         this,
         Rect.makeWH(this.width.toFloat(), this.height.toFloat()),
