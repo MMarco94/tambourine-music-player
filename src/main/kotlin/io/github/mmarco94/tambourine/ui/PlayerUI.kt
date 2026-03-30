@@ -48,6 +48,8 @@ import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
 
+private val MAX_BLUR = 48.dp
+
 @Composable
 fun PlayerUI(
     modifier: Modifier,
@@ -145,12 +147,13 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
         contentAlignment = Alignment.Center
     ) {
         AlbumContainer(Modifier.fillMaxHeight(), MaterialTheme.shapes.large, elevation = 16.dp) {
-            val blur by animateDpAsState(if (hasLyrics) 48.dp else 0.dp)
+            val blur by animateDpAsState(if (hasLyrics) MAX_BLUR else 0.dp)
             val saturation by animateFloatAsState(if (hasLyrics) 0.75f else 1f)
             Crossfade(song.cover, Modifier.blur(blur)) {
                 AlbumCoverContent(
                     it,
                     colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(saturation) }),
+                    fullResolution = blur < MAX_BLUR / 2,
                 )
             }
             val bgColor = song.cover?.colorPalette?.first() ?: MusicPlayerTheme.defaultScheme.primary

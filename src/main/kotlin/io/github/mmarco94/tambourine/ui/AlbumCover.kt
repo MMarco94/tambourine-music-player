@@ -5,8 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.ColorFilter
@@ -35,11 +34,22 @@ fun AlbumContainer(
 }
 
 @Composable
-fun AlbumCoverContent(cover: AlbumCover?, colorFilter: ColorFilter? = null) {
+fun AlbumCoverContent(
+    cover: AlbumCover?,
+    colorFilter: ColorFilter? = null,
+    fullResolution: Boolean = false,
+) {
     if (cover != null) {
         key(cover) {
+            var image by remember { mutableStateOf(cover.previewImage) }
+            LaunchedEffect(cover, fullResolution) {
+                image = cover.previewImage
+                if (fullResolution) {
+                    image = cover.decodeFullImage()
+                }
+            }
             Image(
-                cover.image,
+                image,
                 null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
@@ -68,7 +78,7 @@ fun AlbumCover(
 fun BlurredAlbumCover(cover: AlbumCover?, modifier: Modifier) {
     if (cover != null) {
         Image(
-            cover.image,
+            cover.previewImage,
             null,
             alpha = .3f,
             modifier = modifier.blur(64.dp),
