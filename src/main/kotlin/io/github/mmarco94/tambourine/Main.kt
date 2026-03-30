@@ -16,7 +16,9 @@ import io.github.mmarco94.tambourine.ui.App
 import io.github.mmarco94.tambourine.ui.LibraryHeaderTab
 import io.github.mmarco94.tambourine.ui.Panel
 import io.github.mmarco94.tambourine.utils.Preferences
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -26,8 +28,8 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.bridge.SLF4JBridgeHandler
 import java.io.File
 
-
 val playerController = staticCompositionLocalOf<PlayerController> { throw IllegalStateException() }
+val logger = KotlinLogging.logger {}
 
 fun main(args: Array<String>) {
     val filesFromArgs = args.map { File(it) }
@@ -70,20 +72,26 @@ fun main(args: Array<String>) {
                     alwaysOnTop = bringToTop.also { bringToTop = false }
                 ) {
                     val library by remember {
+                        val ms = mutableStateOf<Library?>(null)
                         var done = false
-                        musicLibrary.onEach {
-                            if (it != null && !done && filesFromArgs.isNotEmpty()) {
-                                done = true
-                                cs.launch {
-                                    val queue = createQueue(it, filesFromArgs)
-                                    if (queue != null) {
-                                        player.changeQueue(queue)
-                                        player.play()
+                        cs.launch(start = CoroutineStart.UNDISPATCHED) {
+                            musicLibrary
+                                .onEach {
+                                    if (it != null && !done && filesFromArgs.isNotEmpty()) {
+                                        done = true
+                                        cs.launch {
+                                            val queue = createQueue(it, filesFromArgs)
+                                            if (queue != null) {
+                                                player.changeQueue(queue)
+                                                player.play()
+                                            }
+                                        }
                                     }
                                 }
-                            }
+                                .collect { ms.value = it }
                         }
-                    }.collectAsState(null)
+                        ms
+                    }
                     App(library, selectedPanel, { selectedPanel = it }, libraryTab, { libraryTab = it })
                 }
             }

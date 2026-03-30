@@ -3,7 +3,6 @@ package io.github.mmarco94.tambourine.ui
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.updateTransition
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.LocalContextMenuRepresentation
 import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.defaultScrollbarStyle
@@ -28,7 +27,6 @@ import io.github.mmarco94.tambourine.playerController
 import io.github.mmarco94.tambourine.ui.LibraryUIState.*
 import io.github.mmarco94.tambourine.ui.Panel.*
 
-
 enum class Panel(
     val icon: ImageVector,
     val label: String,
@@ -36,22 +34,6 @@ enum class Panel(
     LIBRARY(Icons.Filled.LibraryMusic, "Library"),
     QUEUE(Icons.AutoMirrored.Default.QueueMusic, "Queue"),
     PLAYER(Icons.Filled.PlayCircleFilled, "Player"),
-}
-
-/**
- * If the first frames of the app are slow to draw, the windows is a bit buggy.
- * Use this function to know whether the composable should be fast to render
- */
-@Composable
-private fun DelayDraw(f: @Composable (shouldRenderQuickly: Boolean) -> Unit) {
-    var drawCount by remember { mutableStateOf(0) }
-    val shouldRenderQuickly = drawCount < 3
-    if (shouldRenderQuickly) {
-        Canvas(Modifier) {
-            drawCount++
-        }
-    }
-    f(shouldRenderQuickly)
 }
 
 @Composable
@@ -83,40 +65,37 @@ fun App(
         ) {
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 BlurredFadeAlbumCover(mainImage, Modifier.fillMaxSize())
-                DelayDraw { shouldRenderQuickly ->
-                    var libUIState = if (player.queue != null) NORMAL else library.toUIState()
-                    if (shouldRenderQuickly && libUIState == NORMAL) libUIState = LOADING
-                    LibraryContainer(
-                        libUIState,
-                        library,
-                        { openSettings = true },
-                    ) { lib ->
-                        BoxWithConstraints {
-                            val w = constraints.maxWidth
-                            val large = w >= (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPxApprox()
-                            val visiblePanels = if (large) {
-                                listOf(selectedPanel, PLAYER).distinct()
-                            } else {
-                                listOf(selectedPanel)
-                            }
-                            Column {
-                                MainContent(
-                                    Modifier.fillMaxWidth().weight(1f),
-                                    large,
-                                    selectedPanel,
-                                    visiblePanels,
-                                    selectPanel,
-                                    lib,
-                                    listOptions,
-                                    { listOptions = it },
-                                    { openSettings = true },
-                                    libraryTab,
-                                    selectLibraryTab,
-                                )
-                                if (!large) {
-                                    HorizontalDivider()
-                                    BottomBar(selectedPanel, selectPanel)
-                                }
+                val libUIState = if (player.queue != null) NORMAL else library.toUIState()
+                LibraryContainer(
+                    libUIState,
+                    library,
+                    { openSettings = true },
+                ) { lib ->
+                    BoxWithConstraints {
+                        val w = constraints.maxWidth
+                        val large = w >= (BIG_SONG_ROW_DESIRED_WIDTH * 2).toPxApprox()
+                        val visiblePanels = if (large) {
+                            listOf(selectedPanel, PLAYER).distinct()
+                        } else {
+                            listOf(selectedPanel)
+                        }
+                        Column {
+                            MainContent(
+                                Modifier.fillMaxWidth().weight(1f),
+                                large,
+                                selectedPanel,
+                                visiblePanels,
+                                selectPanel,
+                                lib,
+                                listOptions,
+                                { listOptions = it },
+                                { openSettings = true },
+                                libraryTab,
+                                selectLibraryTab,
+                            )
+                            if (!large) {
+                                HorizontalDivider()
+                                BottomBar(selectedPanel, selectPanel)
                             }
                         }
                     }

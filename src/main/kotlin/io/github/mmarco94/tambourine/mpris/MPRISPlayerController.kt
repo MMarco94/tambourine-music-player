@@ -94,24 +94,24 @@ class MPRISPlayerController(
 
     private data class LastSentPositionData(val song: Song, val position: Duration, val eventTime: Instant)
 
-    private val connection: DBusConnection = DBusConnectionBuilder.forSessionBus().apply {
-        withShared(false)
-        receivingThreadConfig().apply {
-            this.withSignalThreadCount(1)
-            this.withErrorHandlerThreadCount(1)
-            this.withMethodCallThreadCount(1)
-            this.withMethodReturnThreadCount(1)
-        }
-    }.build()
     private var latestState = Channel<PlayerController.State>(Channel.CONFLATED)
 
     fun start() {
-        connection.exportObject("/org/mpris/MediaPlayer2", this)
-        connection.requestBusName("org.mpris.MediaPlayer2.io.github.mmarco94.tambourine")
         cs.launch(Dispatchers.Default) {
+            val connection: DBusConnection = DBusConnectionBuilder.forSessionBus().apply {
+                withShared(false)
+                receivingThreadConfig().apply {
+                    this.withSignalThreadCount(1)
+                    this.withErrorHandlerThreadCount(1)
+                    this.withMethodCallThreadCount(1)
+                    this.withMethodReturnThreadCount(1)
+                }
+            }.build()
+            connection.exportObject("/org/mpris/MediaPlayer2", this@MPRISPlayerController)
+            connection.requestBusName("org.mpris.MediaPlayer2.io.github.mmarco94.tambourine")
             var prevEvent: LastSentPositionData? = null
             for (state in latestState) {
-                val newState = doSetState(prevEvent, state)
+                val newState = doSetState(connection, prevEvent, state)
                 prevEvent = newState
             }
         }
@@ -122,6 +122,7 @@ class MPRISPlayerController(
     }
 
     private fun doSetState(
+        connection: DBusConnection,
         lastPositionData: LastSentPositionData?,
         state: PlayerController.State,
     ): LastSentPositionData? {

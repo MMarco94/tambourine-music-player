@@ -25,7 +25,7 @@ data class MPRISState(
         const val interfaceName = "org.mpris.MediaPlayer2"
     }
 
-    val variants: Map<String, Variant<*>> = mapOf(
+    fun getVariants(): Map<String, Variant<*>> = mapOf(
         "CanQuit" to canQuit.variant(),
         "Fullscreen" to fullscreen.variant(),
         "CanSetFullscreen" to canSetFullscreen.variant(),

@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -25,9 +26,8 @@ class LiveLibrary(
     private val pendingEvents = AtomicInteger(0)
 
     private var eventChannel = Channel<InternalEvent>()
-    val channel = Channel<Library>(Channel.CONFLATED)
 
-    suspend fun start() {
+    suspend fun start(flowCollector: FlowCollector<Library>) {
         suspendCancellableCoroutine<Unit> { cont ->
             scope.launch {
                 logger.info { "Started song loading" }
@@ -64,12 +64,13 @@ class LiveLibrary(
                     }
                     val remaining = pendingEvents.decrementAndGet()
                     if (remaining == 0) {
+                        val library = Library.from(rawMetadatas.values)
                         System.gc()
                         logger.info {
                             val diff = creationTime.elapsedNow()
                             "Processed ${rawMetadatas.size} songs ($diff since beginning)"
                         }
-                        channel.send(Library.from(rawMetadatas.values))
+                        flowCollector.emit(library)
                     }
                 }
             }
@@ -174,17 +175,9 @@ class LiveLibrary(
 @OptIn(ExperimentalCoroutinesApi::class)
 fun Flow<Set<File>>.toLibrary(): Flow<Library?> {
     return transformLatest { roots ->
-        emit(null)
         withContext(Dispatchers.Default) {
             val liveLibrary = LiveLibrary(this, roots)
-            launch {
-                liveLibrary.start()
-            }
-            launch {
-                for (lib in liveLibrary.channel) {
-                    emit(lib)
-                }
-            }
+            liveLibrary.start(this@transformLatest)
         }
     }
 }

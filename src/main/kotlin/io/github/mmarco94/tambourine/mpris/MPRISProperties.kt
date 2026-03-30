@@ -19,7 +19,7 @@ class MPRISProperties(
 
     override fun GetAll(interfaceName: String): Map<String, Variant<*>> {
         return when (interfaceName) {
-            MPRISState.interfaceName -> mprisState.variants
+            MPRISState.interfaceName -> mprisState.getVariants()
             MPRISPlayerState.interfaceName -> mprisPlayerState.variants
             else -> throw IllegalArgumentException("Unknown interface $interfaceName")
         }
