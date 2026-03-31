@@ -389,10 +389,6 @@ class PlayerController(
                 }
             }
         }
-        try {
-            mprisPlayer?.start()
-        } catch (e: Exception) {
-            logger.error { "Error starting MPRIS: ${e.message}" }
-        }
+        mprisPlayer?.start()
     }
 }

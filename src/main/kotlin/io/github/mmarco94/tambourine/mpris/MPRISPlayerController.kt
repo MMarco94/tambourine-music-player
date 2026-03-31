@@ -98,21 +98,25 @@ class MPRISPlayerController(
 
     fun start() {
         cs.launch(Dispatchers.Default) {
-            val connection: DBusConnection = DBusConnectionBuilder.forSessionBus().apply {
-                withShared(false)
-                receivingThreadConfig().apply {
-                    this.withSignalThreadCount(1)
-                    this.withErrorHandlerThreadCount(1)
-                    this.withMethodCallThreadCount(1)
-                    this.withMethodReturnThreadCount(1)
+            try {
+                val connection: DBusConnection = DBusConnectionBuilder.forSessionBus().apply {
+                    withShared(false)
+                    receivingThreadConfig().apply {
+                        this.withSignalThreadCount(1)
+                        this.withErrorHandlerThreadCount(1)
+                        this.withMethodCallThreadCount(1)
+                        this.withMethodReturnThreadCount(1)
+                    }
+                }.build()
+                connection.exportObject("/org/mpris/MediaPlayer2", this@MPRISPlayerController)
+                connection.requestBusName("org.mpris.MediaPlayer2.io.github.mmarco94.tambourine")
+                var prevEvent: LastSentPositionData? = null
+                for (state in latestState) {
+                    val newState = doSetState(connection, prevEvent, state)
+                    prevEvent = newState
                 }
-            }.build()
-            connection.exportObject("/org/mpris/MediaPlayer2", this@MPRISPlayerController)
-            connection.requestBusName("org.mpris.MediaPlayer2.io.github.mmarco94.tambourine")
-            var prevEvent: LastSentPositionData? = null
-            for (state in latestState) {
-                val newState = doSetState(connection, prevEvent, state)
-                prevEvent = newState
+            } catch (e: Exception) {
+                logger.error { "Error starting MPRIS: ${e.message}" }
             }
         }
     }
