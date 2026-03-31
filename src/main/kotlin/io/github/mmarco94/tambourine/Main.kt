@@ -44,6 +44,11 @@ fun main(args: Array<String>) {
 
         SLF4JBridgeHandler.removeHandlersForRootLogger()
         SLF4JBridgeHandler.install()
+
+        // Since this app includes no Swing component, we can avoid overriding its look and feel.
+        // This saves ~200ms of time of application setup, see `configureSwingGlobalsForCompose`
+        System.setProperty("skiko.rendering.laf.global", "false")
+
         application {
             val cs = rememberCoroutineScope()
             // Using `alwaysOnTop` is the most reliable method. awt.Window.toFront() doesn't work :(
