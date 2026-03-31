@@ -8,4 +8,7 @@ mkdir -p "$XDG_CACHE_HOME"/tmp
 
 export JAVA_TOOL_OPTIONS="-Djava.io.tmpdir=$XDG_CACHE_HOME/tmp -Djava.util.prefs.userRoot=$XDG_CONFIG_HOME"
 
+ # Printing the local time, as a reference to measure startup performances
+date +"%T.%N"
+
 LD_LIBRARY_PATH=/app/tambourine/lib/os exec /app/tambourine/bin/tambourine "$@"
