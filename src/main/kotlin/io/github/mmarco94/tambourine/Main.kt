@@ -176,11 +176,13 @@ private fun handleKeypress(
         } else {
             when (event.key) {
                 Key.Spacebar -> {
-                    cs.launch {
-                        if (player.pause) {
-                            player.play()
-                        } else {
-                            player.pause()
+                    if (libraryTab != LibraryHeaderTab.SEARCH) {
+                        cs.launch {
+                            if (player.pause) {
+                                player.play()
+                            } else {
+                                player.pause()
+                            }
                         }
                     }
                     return true
