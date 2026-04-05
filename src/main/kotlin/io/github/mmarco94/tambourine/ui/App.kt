@@ -43,6 +43,7 @@ fun App(
     library: Library?,
     selectedPanel: Panel,
     selectPanel: (Panel) -> Unit,
+    closeApp: () -> Unit,
     libraryTab: LibraryHeaderTab?,
     selectLibraryTab: (LibraryHeaderTab?) -> Unit,
 ) {
@@ -83,17 +84,18 @@ fun App(
                         }
                         Column {
                             MainContent(
-                                Modifier.fillMaxWidth().weight(1f),
-                                large,
-                                selectedPanel,
-                                visiblePanels,
-                                selectPanel,
-                                lib,
-                                listOptions,
-                                { listOptions = it },
-                                { openSettings = true },
-                                libraryTab,
-                                selectLibraryTab,
+                                modifier = Modifier.fillMaxWidth().weight(1f),
+                                large = large,
+                                selectedPanel = selectedPanel,
+                                visiblePanels = visiblePanels,
+                                selectPanel = selectPanel,
+                                library = lib,
+                                listOptions = listOptions,
+                                setListOptions = { listOptions = it },
+                                openSettings = { openSettings = true },
+                                closeApp = closeApp,
+                                libraryTab = libraryTab,
+                                selectLibraryTab = selectLibraryTab,
                             )
                             if (!large) {
                                 HorizontalDivider()
@@ -103,7 +105,7 @@ fun App(
                     }
                 }
                 if (openSettings) {
-                    LibrarySettings { openSettings = false }
+                    AppSettingsWindow { openSettings = false }
                 }
             }
         }
@@ -121,6 +123,7 @@ private fun MainContent(
     listOptions: SongListOptions,
     setListOptions: (SongListOptions) -> Unit,
     openSettings: () -> Unit,
+    closeApp: () -> Unit,
     libraryTab: LibraryHeaderTab?,
     selectLibraryTab: (LibraryHeaderTab?) -> Unit,
 ) {
@@ -129,7 +132,7 @@ private fun MainContent(
     val libraryScrollState = rememberLazyListState()
     var showLyrics by remember { mutableStateOf(true) }
     PanelContainer(modifier, Panel.entries.toSet(), visiblePanels) { panel ->
-        val showSettings = !large || panel == PLAYER
+        val showToolbar = !large || panel == PLAYER
         when (panel) {
             LIBRARY -> LibraryContainer(
                 library,
@@ -148,14 +151,15 @@ private fun MainContent(
                     selectLibraryTab(null)
                 })
                 LibraryHeader(
-                    Modifier.fillMaxSize(),
-                    library,
-                    listOptions,
-                    setListOptions,
-                    libraryTab,
-                    selectLibraryTab,
-                    showSettings,
-                    openSettings,
+                    modifier = Modifier.fillMaxSize(),
+                    library = library,
+                    options = listOptions,
+                    setOptions = setListOptions,
+                    tab = libraryTab,
+                    setTab = selectLibraryTab,
+                    showToolbar = showToolbar,
+                    openSettings = openSettings,
+                    closeApp = closeApp,
                 ) {
                     Crossfade(listOptions.queryFilter.isNotEmpty() && lib.songs.isEmpty()) {
                         if (it) {
@@ -172,18 +176,23 @@ private fun MainContent(
                     val sortedLib = remember(library, listOptions) {
                         (library as Library).sort(listOptions)
                     }
-                    SongQueueUI(Modifier.fillMaxSize(), sortedLib, showSettings, openSettings)
+                    SongQueueUI(
+                        sortedLibrary = sortedLib,
+                        showToolbar = showToolbar,
+                        openSettings = openSettings,
+                        closeApp = closeApp,
+                    )
                 }
 
             PLAYER -> {
                 mainWindowScope.current.apply {
                     WindowDraggableArea {
                         PlayerUI(
-                            modifier = Modifier.fillMaxSize(),
-                            showSettingsButton = showSettings,
+                            showToolbar = showToolbar,
                             showLyrics = showLyrics,
                             openSettings = openSettings,
                             setShowLyrics = { showLyrics = it },
+                            closeApp = closeApp,
                         )
                         if (large) {
                             RailBar(selectedPanel, selectPanel)
@@ -289,7 +298,7 @@ private fun LoadingLibraryComposable(openSettings: () -> Unit) {
             Icons.Default.LibraryMusic,
             "Loading...",
         ) {}
-        SettingsButton(Modifier.align(Alignment.TopEnd), openSettings)
+        AppSettingsButton(Modifier.align(Alignment.TopEnd), openSettings)
     }
 }
 

@@ -172,8 +172,9 @@ fun LibraryHeader(
     setOptions: (SongListOptions) -> Unit,
     tab: LibraryHeaderTab?,
     setTab: (LibraryHeaderTab?) -> Unit,
-    showSettingsButton: Boolean,
+    showToolbar: Boolean,
     openSettings: () -> Unit,
+    closeApp: () -> Unit,
     content: @Composable () -> Unit,
 ) {
     val artistRenderer = remember(library, options, setOptions) {
@@ -225,7 +226,7 @@ fun LibraryHeader(
                                     tab == null || tab == SEARCH, true,
                                     false, Icons.Default.Search,
                                     "Search", q, null,
-                                    { setTab(null);setOptions(options.removeSearch()) },
+                                    { setTab(null); setOptions(options.removeSearch()) },
                                     { setTab(SEARCH) },
                                 )
                             }
@@ -256,20 +257,20 @@ fun LibraryHeader(
                         }
                     }
                 }
-                val otherButtonState = tab to showSettingsButton
+                val otherButtonState = tab to showToolbar
                 val secondButtonTransition = updateTransition(otherButtonState)
                 secondButtonTransition.AnimatedContent(
                     transitionSpec = {
                         fadeIn() togetherWith fadeOut() using SizeTransform()
                     },
                     contentKey = { (tab, _) -> tab != null },
-                ) { (tab, showSettingsButton) ->
+                ) { (tab, showToolbar) ->
                     if (tab != null && tab != SEARCH) {
                         IconButton({ setTab(null) }) {
                             Icon(Icons.Filled.Close, "Close")
                         }
-                    } else if (showSettingsButton) {
-                        SettingsButton(Modifier, openSettings)
+                    } else if (showToolbar) {
+                        AppToolbar(openSettings = openSettings, closeApp = closeApp, modifier = Modifier)
                     }
                 }
             }

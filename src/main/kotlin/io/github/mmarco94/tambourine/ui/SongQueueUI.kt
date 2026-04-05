@@ -22,26 +22,31 @@ import kotlin.math.roundToInt
 
 @Composable
 fun SongQueueUI(
-    modifier: Modifier,
     sortedLibrary: Library,
-    showSettingsButton: Boolean,
+    showToolbar: Boolean,
     openSettings: () -> Unit,
+    closeApp: () -> Unit,
 ) {
     val player = playerController.current
     val queue = player.queue
     val cs = rememberCoroutineScope()
     if (queue == null) {
-        BigMessage(
-            modifier,
-            Icons.AutoMirrored.Default.QueueMusic,
-            "Empty queue",
-            "To begin, select a song from your library",
-        )
+        Column {
+            if (showToolbar) {
+                AppToolbar(openSettings = openSettings, closeApp = closeApp)
+            }
+            BigMessage(
+                Modifier.fillMaxSize(),
+                Icons.AutoMirrored.Default.QueueMusic,
+                "Empty queue",
+                "To begin, select a song from your library",
+            )
+        }
     } else {
         val controller = SongQueueController(cs, queue.originalSongs, sortedLibrary, player)
-        Column(modifier) {
+        Column(Modifier.fillMaxSize()) {
             Row(
-                Modifier.heightIn(min = 64.dp).padding(vertical = 8.dp),
+                Modifier.heightIn(min = 64.dp).padding(vertical = 8.dp).padding(end = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Spacer(Modifier.width(16.dp))
@@ -68,8 +73,8 @@ fun SongQueueUI(
                 Spacer(Modifier.width(16.dp))
                 RepeatIcon(cs, queue)
                 ShuffleIcon(cs, queue)
-                if (showSettingsButton) {
-                    SettingsButton(Modifier, openSettings)
+                if (showToolbar) {
+                    AppToolbar(openSettings = openSettings, closeApp = closeApp, modifier = Modifier, autoSize = false)
                 }
             }
             HorizontalDivider()

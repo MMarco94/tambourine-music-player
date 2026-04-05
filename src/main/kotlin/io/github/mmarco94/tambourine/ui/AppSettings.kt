@@ -34,7 +34,7 @@ import java.io.File
 private val logger = KotlinLogging.logger {}
 
 @Composable
-fun SettingsButton(
+fun AppSettingsButton(
     modifier: Modifier,
     openSettings: () -> Unit,
 ) {
@@ -48,7 +48,8 @@ fun SettingsButton(
             { showMenu = false },
             offset = DpOffset(8.dp, 0.dp),
         ) {
-            DropdownMenuItem(text = { SingleLineText("Settings", style = LocalTextStyle.current) },
+            DropdownMenuItem(
+                text = { SingleLineText("Settings", style = LocalTextStyle.current) },
                 leadingIcon = { Icon(Icons.Default.Settings, null) },
                 onClick = {
                     openSettings()
@@ -59,13 +60,15 @@ fun SettingsButton(
 }
 
 @Composable
-fun LibrarySettings(close: () -> Unit) {
+fun AppSettingsWindow(close: () -> Unit) {
     var library by remember { mutableStateOf(Preferences.getLibraryFolder()) }
-    val latest by Preferences.libraryFolder.collectAsState(library)
+    var useSystemDecorations by remember { mutableStateOf(Preferences.useSystemDecorations()) }
+    val preferenceLibrary by Preferences.libraryFolder.collectAsState(library)
+    val preferenceUseSystemDecorations by Preferences.useSystemDecorations
 
     Window(
         close,
-        title = "Library settings",
+        title = "Settings",
         state = rememberWindowState(
             size = DpSize(640.dp, 320.dp),
         ),
@@ -88,12 +91,27 @@ fun LibrarySettings(close: () -> Unit) {
                     LibraryDirectorySetting(library) {
                         library = it
                     }
+
                     Spacer(Modifier.height(16.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().clickable { useSystemDecorations = !useSystemDecorations },
+                    ) {
+                        Checkbox(useSystemDecorations, {
+                            useSystemDecorations = it
+                        })
+                        Text("Use system decorations")
+                    }
+
+                    Spacer(Modifier.height(32.dp))
                     Button(
-                        {
+                        onClick = {
                             Preferences.setLibraryFolder(library)
+                            Preferences.setUseSystemDecorations(useSystemDecorations)
                             close()
-                        }, enabled = latest != library && library.isDirectory, modifier = Modifier.align(Alignment.End)
+                        },
+                        enabled = (preferenceLibrary != library || preferenceUseSystemDecorations != useSystemDecorations) && library.isDirectory,
+                        modifier = Modifier.align(Alignment.End)
                     ) {
                         Text("Apply changes")
                     }

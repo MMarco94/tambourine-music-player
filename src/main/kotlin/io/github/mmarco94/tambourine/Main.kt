@@ -65,40 +65,51 @@ fun main(args: Array<String>) {
             CompositionLocalProvider(playerController provides player) {
                 var selectedPanel by remember { mutableStateOf(Panel.LIBRARY) }
                 var libraryTab: LibraryHeaderTab? by remember { mutableStateOf(null) }
-                Window(
-                    title = "Tambourine",
-                    onCloseRequest = ::exitApplication,
-                    state = remember {
-                        WindowState(size = DpSize(1440.dp, 960.dp))
-                    },
-                    onPreviewKeyEvent = { event ->
-                        handleKeypress(cs, event, player, libraryTab, { selectedPanel = it }, { libraryTab = it })
-                    },
-                    alwaysOnTop = bringToTop.also { bringToTop = false }
-                ) {
-                    val library by remember {
-                        val ms = mutableStateOf<Library?>(null)
-                        var done = false
-                        cs.launch(start = CoroutineStart.UNDISPATCHED) {
-                            musicLibrary
-                                .onEach {
-                                    if (it != null && !done && filesFromArgs.isNotEmpty()) {
-                                        done = true
-                                        cs.launch {
-                                            val queue = createQueue(it, filesFromArgs)
-                                            if (queue != null) {
-                                                player.changeQueue(queue)
-                                                player.play()
-                                            }
+                val useSystemDecorations by Preferences.useSystemDecorations
+                val library by remember {
+                    val ms = mutableStateOf<Library?>(null)
+                    var done = false
+                    cs.launch(start = CoroutineStart.UNDISPATCHED) {
+                        musicLibrary
+                            .onEach {
+                                if (it != null && !done && filesFromArgs.isNotEmpty()) {
+                                    done = true
+                                    cs.launch {
+                                        val queue = createQueue(it, filesFromArgs)
+                                        if (queue != null) {
+                                            player.changeQueue(queue)
+                                            player.play()
                                         }
                                     }
                                 }
-                                .collect { ms.value = it }
-                        }
-                        ms
+                            }
+                            .collect { ms.value = it }
                     }
-                    CompositionLocalProvider(mainWindowScope provides this) {
-                        App(library, selectedPanel, { selectedPanel = it }, libraryTab, { libraryTab = it })
+                    ms
+                }
+                key(useSystemDecorations) {
+                    Window(
+                        title = "Tambourine",
+                        onCloseRequest = ::exitApplication,
+                        state = remember {
+                            WindowState(size = DpSize(1440.dp, 960.dp))
+                        },
+                        onPreviewKeyEvent = { event ->
+                            handleKeypress(cs, event, player, libraryTab, { selectedPanel = it }, { libraryTab = it })
+                        },
+                        alwaysOnTop = bringToTop.also { bringToTop = false },
+                        undecorated = !useSystemDecorations,
+                    ) {
+                        CompositionLocalProvider(mainWindowScope provides this) {
+                            App(
+                                library = library,
+                                selectedPanel = selectedPanel,
+                                selectPanel = { selectedPanel = it },
+                                closeApp = ::exitApplication,
+                                libraryTab = libraryTab,
+                                selectLibraryTab = { libraryTab = it },
+                            )
+                        }
                     }
                 }
             }

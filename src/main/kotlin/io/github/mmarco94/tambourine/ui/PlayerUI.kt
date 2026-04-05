@@ -52,17 +52,20 @@ private val MAX_BLUR = 48.dp
 
 @Composable
 fun PlayerUI(
-    modifier: Modifier,
-    showSettingsButton: Boolean,
+    showToolbar: Boolean,
     showLyrics: Boolean,
     openSettings: () -> Unit,
+    closeApp: () -> Unit,
     setShowLyrics: (Boolean) -> Unit,
 ) {
     val cs = rememberCoroutineScope()
     val player = playerController.current
     val queue = player.queue
     val song = queue?.currentSong
-    Box(modifier) {
+    Column {
+        if (showToolbar) {
+            AppToolbar(openSettings = openSettings, closeApp = closeApp)
+        }
         if (song == null) {
             BigMessage(
                 Modifier.fillMaxSize(),
@@ -130,9 +133,6 @@ fun PlayerUI(
                 VolumeSlider(player)
                 Spacer(Modifier.weight(1f))
             }
-        }
-        if (showSettingsButton) {
-            SettingsButton(Modifier.align(Alignment.TopEnd), openSettings)
         }
     }
 }
