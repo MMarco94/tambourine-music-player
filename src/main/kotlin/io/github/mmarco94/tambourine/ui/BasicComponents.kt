@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.TextUnit
+import io.github.mmarco94.tambourine.mainWindowScope
 
 @Composable
 fun Dp.toPxApprox(): Float = with(LocalDensity.current) { toPx() }
@@ -88,19 +90,19 @@ fun BigIconButton(
 ) {
     Box(
         modifier =
-        modifier
-            .size(size)
-            .background(color = containerColor)
-            .clickable(
-                onClick = onClick,
-                enabled = enabled,
-                role = Role.Button,
-                interactionSource = interactionSource,
-                indication = ripple(
-                    bounded = false,
-                    radius = size / 2,
-                )
-            ),
+            modifier
+                .size(size)
+                .background(color = containerColor)
+                .clickable(
+                    onClick = onClick,
+                    enabled = enabled,
+                    role = Role.Button,
+                    interactionSource = interactionSource,
+                    indication = ripple(
+                        bounded = false,
+                        radius = size / 2,
+                    )
+                ),
         contentAlignment = Alignment.Center,
     ) {
         content()
@@ -117,5 +119,12 @@ fun IconButtonWithBG(
 ) {
     FilledIconButton(onClick, modifier, enabled, colors = IconButtonDefaults.filledIconButtonColors(color)) {
         content()
+    }
+}
+
+@Composable
+fun WindowDraggableArea(content: @Composable () -> Unit) {
+    mainWindowScope.current.apply {
+        this.WindowDraggableArea(content = content)
     }
 }

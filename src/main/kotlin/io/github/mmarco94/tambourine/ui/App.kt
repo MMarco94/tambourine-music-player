@@ -9,7 +9,6 @@ import androidx.compose.foundation.defaultScrollbarStyle
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.LibraryMusic
@@ -17,14 +16,12 @@ import androidx.compose.material.icons.filled.PlayCircleFilled
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.data.*
-import io.github.mmarco94.tambourine.mainWindowScope
 import io.github.mmarco94.tambourine.playerController
 import io.github.mmarco94.tambourine.ui.LibraryUIState.*
 import io.github.mmarco94.tambourine.ui.Panel.*
@@ -70,9 +67,10 @@ fun App(
                 BlurredFadeAlbumCover(mainImage, Modifier.fillMaxSize())
                 val libUIState = if (player.queue != null) NORMAL else library.toUIState()
                 LibraryContainer(
-                    libUIState,
-                    library,
-                    { openSettings = true },
+                    state = libUIState,
+                    library = library,
+                    openSettings = { openSettings = true },
+                    closeApp = closeApp,
                 ) { lib ->
                     BoxWithConstraints {
                         val w = constraints.maxWidth
@@ -135,8 +133,9 @@ private fun MainContent(
         val showToolbar = !large || panel == PLAYER
         when (panel) {
             LIBRARY -> LibraryContainer(
-                library,
-                openSettings
+                library = library,
+                openSettings = openSettings,
+                closeApp = closeApp,
             ) { library ->
                 val sortedLib = remember(library, listOptions) {
                     library.sort(listOptions)
@@ -172,7 +171,12 @@ private fun MainContent(
             }
 
             QUEUE ->
-                LibraryContainer(library.toUIState(false), library, openSettings) { library ->
+                LibraryContainer(
+                    state = library.toUIState(false),
+                    library = library,
+                    openSettings = openSettings,
+                    closeApp = closeApp,
+                ) { library ->
                     val sortedLib = remember(library, listOptions) {
                         (library as Library).sort(listOptions)
                     }
@@ -185,18 +189,16 @@ private fun MainContent(
                 }
 
             PLAYER -> {
-                mainWindowScope.current.apply {
-                    WindowDraggableArea {
-                        PlayerUI(
-                            showToolbar = showToolbar,
-                            showLyrics = showLyrics,
-                            openSettings = openSettings,
-                            setShowLyrics = { showLyrics = it },
-                            closeApp = closeApp,
-                        )
-                        if (large) {
-                            RailBar(selectedPanel, selectPanel)
-                        }
+                WindowDraggableArea {
+                    PlayerUI(
+                        showToolbar = showToolbar,
+                        showLyrics = showLyrics,
+                        openSettings = openSettings,
+                        setShowLyrics = { showLyrics = it },
+                        closeApp = closeApp,
+                    )
+                    if (large) {
+                        RailBar(selectedPanel, selectPanel)
                     }
                 }
             }
@@ -267,13 +269,14 @@ private fun LibraryContainer(
     state: LibraryUIState,
     library: Library?,
     openSettings: () -> Unit,
+    closeApp: () -> Unit,
     f: @Composable (Library?) -> Unit
 ) {
     val transition = updateTransition(state to library)
     transition.Crossfade(contentKey = { it.first }) { (state, lib) ->
         when (state) {
-            EMPTY -> LibraryEmptyComposable(openSettings)
-            LOADING -> LoadingLibraryComposable(openSettings)
+            EMPTY -> LibraryEmptyComposable(openSettings, closeApp)
+            LOADING -> LoadingLibraryComposable(openSettings, closeApp)
             NORMAL -> f(lib)
         }
     }
@@ -283,47 +286,62 @@ private fun LibraryContainer(
 private fun LibraryContainer(
     library: Library?,
     openSettings: () -> Unit,
+    closeApp: () -> Unit,
     f: @Composable (Library) -> Unit
 ) {
-    LibraryContainer(library.toUIState(), library, openSettings) { lib ->
+    LibraryContainer(
+        state = library.toUIState(),
+        library = library,
+        openSettings = openSettings,
+        closeApp = closeApp,
+    ) { lib ->
         f(lib as Library)
     }
 }
 
 @Composable
-private fun LoadingLibraryComposable(openSettings: () -> Unit) {
-    Box {
-        BigMessage(
-            Modifier.fillMaxSize(),
-            Icons.Default.LibraryMusic,
-            "Loading...",
-        ) {}
-        AppSettingsButton(Modifier.align(Alignment.TopEnd), openSettings)
+private fun LoadingLibraryComposable(openSettings: () -> Unit, closeApp: () -> Unit) {
+    WindowDraggableArea {
+        Column {
+            AppToolbar(openSettings = openSettings, closeApp = closeApp)
+            BigMessage(
+                Modifier.fillMaxSize(),
+                Icons.Default.LibraryMusic,
+                "Loading...",
+            ) {}
+        }
     }
 }
 
 @Composable
-private fun LibraryEmptyComposable(openSettings: () -> Unit) {
-    BigMessage(
-        Modifier.fillMaxSize(),
-        Icons.Default.LibraryMusic,
-        "Library is empty",
-    ) {
-        Button(openSettings) {
-            Text("Open settings")
+private fun LibraryEmptyComposable(openSettings: () -> Unit, closeApp: () -> Unit) {
+    WindowDraggableArea {
+        Column {
+            AppToolbar(openSettings = openSettings, closeApp = closeApp)
+            BigMessage(
+                Modifier.fillMaxSize(),
+                Icons.Default.LibraryMusic,
+                "Library is empty",
+            ) {
+                Button(openSettings) {
+                    Text("Open settings")
+                }
+            }
         }
     }
 }
 
 @Composable
 private fun LibraryNoSearchResultsComposable(clearSearch: () -> Unit) {
-    BigMessage(
-        Modifier.fillMaxSize(),
-        Icons.Default.SearchOff,
-        "No search result",
-    ) {
-        Button(clearSearch) {
-            Text("Remove filter")
+    WindowDraggableArea {
+        BigMessage(
+            Modifier.fillMaxSize(),
+            Icons.Default.SearchOff,
+            "No search result",
+        ) {
+            Button(clearSearch) {
+                Text("Remove filter")
+            }
         }
     }
 }

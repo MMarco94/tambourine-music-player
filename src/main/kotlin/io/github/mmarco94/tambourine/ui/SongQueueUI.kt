@@ -31,50 +31,59 @@ fun SongQueueUI(
     val queue = player.queue
     val cs = rememberCoroutineScope()
     if (queue == null) {
-        Column {
-            if (showToolbar) {
-                AppToolbar(openSettings = openSettings, closeApp = closeApp)
+        WindowDraggableArea {
+            Column {
+                if (showToolbar) {
+                    AppToolbar(openSettings = openSettings, closeApp = closeApp)
+                }
+                BigMessage(
+                    Modifier.fillMaxSize(),
+                    Icons.AutoMirrored.Default.QueueMusic,
+                    "Empty queue",
+                    "To begin, select a song from your library",
+                )
             }
-            BigMessage(
-                Modifier.fillMaxSize(),
-                Icons.AutoMirrored.Default.QueueMusic,
-                "Empty queue",
-                "To begin, select a song from your library",
-            )
         }
     } else {
         val controller = SongQueueController(cs, queue.originalSongs, sortedLibrary, player)
         Column(Modifier.fillMaxSize()) {
-            Row(
-                Modifier.heightIn(min = 64.dp).padding(vertical = 8.dp).padding(end = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Spacer(Modifier.width(16.dp))
-                SmallFakeSpectrometers(
-                    Modifier.size(32.dp),
-                    player,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Spacer(Modifier.width(16.dp))
-                Column(Modifier.weight(1f)) {
-                    // TODO: plurals
-                    SingleLineText(
-                        "${queue.songs.size} songs in the queue • ${
-                            queue.songs.sumOfDuration { it.length }.format()
-                        }", style = MaterialTheme.typography.bodyMedium
+            WindowDraggableArea {
+                Row(
+                    Modifier.heightIn(min = 64.dp).padding(vertical = 8.dp).padding(end = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Spacer(Modifier.width(16.dp))
+                    SmallFakeSpectrometers(
+                        Modifier.size(32.dp),
+                        player,
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
-                    val remaining = queue.remainingSongs
-                    SingleLineText(
-                        "${remaining.size} songs remaining • ${
-                            remaining.sumOfDuration { it.length }.format()
-                        }", style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                Spacer(Modifier.width(16.dp))
-                RepeatIcon(cs, queue)
-                ShuffleIcon(cs, queue)
-                if (showToolbar) {
-                    AppToolbar(openSettings = openSettings, closeApp = closeApp, modifier = Modifier, autoSize = false)
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        // TODO: plurals
+                        SingleLineText(
+                            "${queue.songs.size} songs in the queue • ${
+                                queue.songs.sumOfDuration { it.length }.format()
+                            }", style = MaterialTheme.typography.bodyMedium
+                        )
+                        val remaining = queue.remainingSongs
+                        SingleLineText(
+                            "${remaining.size} songs remaining • ${
+                                remaining.sumOfDuration { it.length }.format()
+                            }", style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    RepeatIcon(cs, queue)
+                    ShuffleIcon(cs, queue)
+                    if (showToolbar) {
+                        AppToolbar(
+                            openSettings = openSettings,
+                            closeApp = closeApp,
+                            modifier = Modifier,
+                            autoSize = false
+                        )
+                    }
                 }
             }
             HorizontalDivider()

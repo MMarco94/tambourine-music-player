@@ -201,90 +201,92 @@ fun LibraryHeader(
         var searchTagPos by remember { mutableStateOf(Offset(0f, 0f)) }
         var searchTagSize by remember { mutableStateOf(IntSize(0, 0)) }
         var searchIconPos by remember { mutableStateOf(Offset(0f, 0f)) }
-        Box(
-            Modifier.heightIn(min = 64.dp).animateContentHeight().onGloballyPositioned {
-                parentPos = it.localToWindow(Offset.Zero)
-                parentSize = it.size
-            },
-            contentAlignment = Alignment.Center,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                FlowRow(
-                    Modifier.padding(2.dp).weight(1f),
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    artistRenderer.Tag(tab, setTab)
-                    albumRenderer.Tag(tab, setTab)
-                    songRenderer.Tag(tab, setTab)
-                    Box(Modifier.onGloballyPositioned {
-                        searchTagPos = it.localToWindow(Offset.Zero)
-                        searchTagSize = it.size
-                    }) {
-                        queryTransition.Crossfade(contentKey = { it.isNotEmpty() }) { q ->
-                            if (q.isNotEmpty()) {
-                                Tag(
-                                    tab == null || tab == SEARCH, true,
-                                    false, Icons.Default.Search,
-                                    "Search", q, null,
-                                    { setTab(null); setOptions(options.removeSearch()) },
-                                    { setTab(SEARCH) },
-                                )
-                            }
-                        }
-                    }
-                }
-                Box(Modifier.onGloballyPositioned {
-                    searchIconPos = it.localToWindow(Offset.Zero)
-                }) {
-                    queryTransition.AnimatedContent(
-                        contentKey = { it.isEmpty() },
-                        transitionSpec = {
-                            fadeIn() togetherWith fadeOut() using SizeTransform()
-                        }) { q ->
-                        Box(Modifier.height(48.dp)) {
-                            if (q.isEmpty()) {
-                                IconButton(
-                                    { setTab(SEARCH) }, Modifier.alpha(
-                                        if (
-                                            searchBarMode.currentState == LibrarySearchBarMode.EXPANDED ||
-                                            searchBarMode.targetState == LibrarySearchBarMode.EXPANDED
-                                        ) 0f else 1f
+        WindowDraggableArea {
+            Box(
+                Modifier.heightIn(min = 64.dp).animateContentHeight().onGloballyPositioned {
+                    parentPos = it.localToWindow(Offset.Zero)
+                    parentSize = it.size
+                },
+                contentAlignment = Alignment.Center,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    FlowRow(
+                        Modifier.padding(2.dp).weight(1f),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        artistRenderer.Tag(tab, setTab)
+                        albumRenderer.Tag(tab, setTab)
+                        songRenderer.Tag(tab, setTab)
+                        Box(Modifier.onGloballyPositioned {
+                            searchTagPos = it.localToWindow(Offset.Zero)
+                            searchTagSize = it.size
+                        }) {
+                            queryTransition.Crossfade(contentKey = { it.isNotEmpty() }) { q ->
+                                if (q.isNotEmpty()) {
+                                    Tag(
+                                        tab == null || tab == SEARCH, true,
+                                        false, Icons.Default.Search,
+                                        "Search", q, null,
+                                        { setTab(null); setOptions(options.removeSearch()) },
+                                        { setTab(SEARCH) },
                                     )
-                                ) {
-                                    Icon(Icons.Filled.Search, "Search")
                                 }
                             }
                         }
                     }
-                }
-                val otherButtonState = tab to showToolbar
-                val secondButtonTransition = updateTransition(otherButtonState)
-                secondButtonTransition.AnimatedContent(
-                    transitionSpec = {
-                        fadeIn() togetherWith fadeOut() using SizeTransform()
-                    },
-                    contentKey = { (tab, _) -> tab != null },
-                ) { (tab, showToolbar) ->
-                    if (tab != null && tab != SEARCH) {
-                        IconButton({ setTab(null) }) {
-                            Icon(Icons.Filled.Close, "Close")
+                    Box(Modifier.onGloballyPositioned {
+                        searchIconPos = it.localToWindow(Offset.Zero)
+                    }) {
+                        queryTransition.AnimatedContent(
+                            contentKey = { it.isEmpty() },
+                            transitionSpec = {
+                                fadeIn() togetherWith fadeOut() using SizeTransform()
+                            }) { q ->
+                            Box(Modifier.height(48.dp)) {
+                                if (q.isEmpty()) {
+                                    IconButton(
+                                        { setTab(SEARCH) }, Modifier.alpha(
+                                            if (
+                                                searchBarMode.currentState == LibrarySearchBarMode.EXPANDED ||
+                                                searchBarMode.targetState == LibrarySearchBarMode.EXPANDED
+                                            ) 0f else 1f
+                                        )
+                                    ) {
+                                        Icon(Icons.Filled.Search, "Search")
+                                    }
+                                }
+                            }
                         }
-                    } else if (showToolbar) {
-                        AppToolbar(openSettings = openSettings, closeApp = closeApp, modifier = Modifier)
+                    }
+                    val otherButtonState = tab to showToolbar
+                    val secondButtonTransition = updateTransition(otherButtonState)
+                    secondButtonTransition.AnimatedContent(
+                        transitionSpec = {
+                            fadeIn() togetherWith fadeOut() using SizeTransform()
+                        },
+                        contentKey = { (tab, _) -> tab != null },
+                    ) { (tab, showToolbar) ->
+                        if (tab != null && tab != SEARCH) {
+                            IconButton({ setTab(null) }) {
+                                Icon(Icons.Filled.Close, "Close")
+                            }
+                        } else if (showToolbar) {
+                            AppToolbar(openSettings = openSettings, closeApp = closeApp, modifier = Modifier)
+                        }
                     }
                 }
-            }
-            LibrarySearchBar(
-                mode = searchBarMode,
-                collapse = { setTab(null) },
-                iconOffset = searchIconPos - parentPos,
-                tagOffset = searchTagPos - parentPos,
-                tagSize = searchTagSize,
-                expandedSize = parentSize,
-                library = library,
-                query = options.queryFilter,
-            ) {
-                setOptions(options.copy(queryFilter = it))
+                LibrarySearchBar(
+                    mode = searchBarMode,
+                    collapse = { setTab(null) },
+                    iconOffset = searchIconPos - parentPos,
+                    tagOffset = searchTagPos - parentPos,
+                    tagSize = searchTagSize,
+                    expandedSize = parentSize,
+                    library = library,
+                    query = options.queryFilter,
+                ) {
+                    setOptions(options.copy(queryFilter = it))
+                }
             }
         }
         HorizontalDivider()
@@ -340,12 +342,13 @@ fun LibraryHeader(
         ) {
             content()
             if (shouldHide) {
-                Box(Modifier
-                    .matchParentSize()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) { setTab(null) }
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { setTab(null) }
                 )
             }
         }
