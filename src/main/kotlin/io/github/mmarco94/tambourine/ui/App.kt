@@ -9,6 +9,7 @@ import androidx.compose.foundation.defaultScrollbarStyle
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.LibraryMusic
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.data.*
+import io.github.mmarco94.tambourine.mainWindowScope
 import io.github.mmarco94.tambourine.playerController
 import io.github.mmarco94.tambourine.ui.LibraryUIState.*
 import io.github.mmarco94.tambourine.ui.Panel.*
@@ -174,15 +176,18 @@ private fun MainContent(
                 }
 
             PLAYER -> {
-                Box(Modifier.fillMaxSize()) {
-                    PlayerUI(
-                        modifier = Modifier.fillMaxSize(),
-                        showSettingsButton = showSettings,
-                        showLyrics = showLyrics,
-                        openSettings = openSettings,
-                        setShowLyrics = { showLyrics = it })
-                    if (large) {
-                        RailBar(selectedPanel, selectPanel)
+                mainWindowScope.current.apply {
+                    WindowDraggableArea {
+                        PlayerUI(
+                            modifier = Modifier.fillMaxSize(),
+                            showSettingsButton = showSettings,
+                            showLyrics = showLyrics,
+                            openSettings = openSettings,
+                            setShowLyrics = { showLyrics = it },
+                        )
+                        if (large) {
+                            RailBar(selectedPanel, selectPanel)
+                        }
                     }
                 }
             }

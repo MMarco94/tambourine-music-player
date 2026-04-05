@@ -5,6 +5,7 @@ import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import io.github.mmarco94.tambourine.audio.PlayerController
@@ -28,6 +29,7 @@ import org.slf4j.bridge.SLF4JBridgeHandler
 import java.io.File
 
 val playerController = staticCompositionLocalOf<PlayerController> { throw IllegalStateException() }
+val mainWindowScope = staticCompositionLocalOf<WindowScope> { throw IllegalStateException() }
 
 fun main(args: Array<String>) {
     val filesFromArgs = args.map { File(it) }
@@ -95,7 +97,9 @@ fun main(args: Array<String>) {
                         }
                         ms
                     }
-                    App(library, selectedPanel, { selectedPanel = it }, libraryTab, { libraryTab = it })
+                    CompositionLocalProvider(mainWindowScope provides this) {
+                        App(library, selectedPanel, { selectedPanel = it }, libraryTab, { libraryTab = it })
+                    }
                 }
             }
         }
