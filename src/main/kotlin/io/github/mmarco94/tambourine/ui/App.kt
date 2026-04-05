@@ -64,7 +64,7 @@ fun App(
             LocalContextMenuRepresentation provides MenuContextRepresentation,
         ) {
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                BlurredFadeAlbumCover(mainImage, Modifier.fillMaxSize())
+                BlurredFadeAlbumCover(mainImage, Modifier.fillMaxSize().paperNoise())
                 val libUIState = if (player.queue != null) NORMAL else library.toUIState()
                 LibraryContainer(
                     state = libUIState,
