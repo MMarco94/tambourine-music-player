@@ -6,6 +6,7 @@
 -dontwarn io.github.oshai.kotlinlogging.logback.**
 -dontwarn com.oracle.svm.core.annotate.**
 -keep public class org.slf4j.** { *; }
+-keep public class org.tinylog.** { *; }
 # Audio
 -keep public class org.jaudiotagger.** { *; }
 -keep public class com.tagtraum.ffsampledsp.** { *; }
