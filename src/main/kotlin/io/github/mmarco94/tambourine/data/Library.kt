@@ -21,7 +21,7 @@ data class Album(
     val stats: SongCollectionStats,
 )
 
-data class Song(
+class Song(
     val file: File,
     override val disk: Int?,
     override val track: Int?,
@@ -35,8 +35,12 @@ data class Song(
 
     val artist get() = album.artist
 
-    private val hashCode = super.hashCode()
+    private val hashCode = file.hashCode()
     override fun hashCode() = hashCode
+
+    override fun equals(other: Any?): Boolean {
+        return other is Song && other.file == file
+    }
 
     private fun matches(queryFilter: String): Boolean {
         return title.contains(queryFilter, ignoreCase = true) ||
