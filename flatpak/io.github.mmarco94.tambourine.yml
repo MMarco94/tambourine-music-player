@@ -29,7 +29,7 @@ modules:
       - mkdir -p /app/tambourine/lib/os
       - ln -s /usr/lib/x86_64-linux-gnu/libbz2.so.1.0.8 /app/tambourine/lib/os/libbz2.so.1.0
       # running the app to create the SharedArchiveFile
-      - touch -t 197001010100 /app/tambourine/lib/app/tambourine-*.jar # setting a stable timestamp on the JAR
+      - touch -d "1970-01-01T00:00:00Z" /app/tambourine/lib/app/tambourine-*.jar # setting a stable timestamp on the JAR
       - cp /app/tambourine/lib/app/tambourine.cfg /app/tambourine/lib/app/tambourine.cfg.bkp
       - echo "java-options=-Xshare:dump" >> /app/tambourine/lib/app/tambourine.cfg
       - echo "java-options=-XX:SharedClassListFile=/app/tambourine/lib/app/resources/tambourine.classlist" >> /app/tambourine/lib/app/tambourine.cfg
