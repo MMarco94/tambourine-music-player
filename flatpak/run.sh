@@ -10,5 +10,7 @@ export JAVA_TOOL_OPTIONS="-Djava.io.tmpdir=$XDG_CACHE_HOME/tmp -Djava.util.prefs
 
  # Printing the local time, as a reference to measure startup performances
 date +"%T.%N"
+# Printing the JAR's stat for debugging
+stat /app/tambourine/lib/app/tambourine-*.jar
 
 LD_LIBRARY_PATH=/app/tambourine/lib/os exec /app/tambourine/bin/tambourine "$@"

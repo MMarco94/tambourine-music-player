@@ -93,8 +93,10 @@ compose.desktop {
         }
         buildTypes.release.proguard {
             version.set("7.9.0")
-            optimize = false
+            optimize = providers.gradleProperty("OptimizeProGuard").orNull != "false"
+            obfuscate = false
             configurationFiles.from(project.file("compose-desktop.pro"))
+            joinOutputJars = true
         }
     }
 }

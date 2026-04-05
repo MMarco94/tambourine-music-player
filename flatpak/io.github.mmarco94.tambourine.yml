@@ -11,7 +11,7 @@ command: run.sh
 finish-args:
   - --filesystem=xdg-music:ro
   - --socket=x11
-  # See https://github.com/JetBrains/skiko/issues/28 for Wayland support :(
+  # See https://youtrack.jetbrains.com/issue/SKIKO-28 for Wayland support :(
   #  - --socket=wayland
   #  - --socket=fallback-x11
   - --socket=pulseaudio
@@ -28,10 +28,23 @@ modules:
       - mkdir -p /app/lib/ffmpeg
       - mkdir -p /app/tambourine/lib/os
       - ln -s /usr/lib/x86_64-linux-gnu/libbz2.so.1.0.8 /app/tambourine/lib/os/libbz2.so.1.0
+      # running the app to create the SharedArchiveFile
+      - touch -t 197001010100 /app/tambourine/lib/app/tambourine-*.jar # setting a stable timestamp on the JAR
+      - cp /app/tambourine/lib/app/tambourine.cfg /app/tambourine/lib/app/tambourine.cfg.bkp
+      - echo "java-options=-Xshare:dump" >> /app/tambourine/lib/app/tambourine.cfg
+      - echo "java-options=-XX:SharedClassListFile=/app/tambourine/lib/app/resources/tambourine.classlist" >> /app/tambourine/lib/app/tambourine.cfg
+      - echo "java-options=-XX:SharedArchiveFile=/app/tambourine/lib/app/resources/tambourine.jsa" >> /app/tambourine/lib/app/tambourine.cfg
+      - /app/tambourine/bin/tambourine
+      # restoring original config and add class archive
+      - mv /app/tambourine/lib/app/tambourine.cfg.bkp /app/tambourine/lib/app/tambourine.cfg
+      - echo "java-options=-XX:SharedArchiveFile=/app/tambourine/lib/app/resources/tambourine.jsa" >> /app/tambourine/lib/app/tambourine.cfg
+      # Cleanup
+      - rm /app/tambourine/lib/app/resources/tambourine.classlist
+      - stat /app/tambourine/lib/app/tambourine-*.jar # printing the jar stats' for debugging
     sources:
       - type: dir
         # Use main-release for release builds
-        path: ../build/compose/binaries/main/app
+        path: ../build/compose/binaries/main-release/app
       - type: file
         path: run.sh
   - name: extras
