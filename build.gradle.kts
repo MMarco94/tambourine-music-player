@@ -90,6 +90,9 @@ compose.desktop {
             if (debugBuild) {
                 modules.add("jdk.jdwp.agent")
             }
+            linux {
+                iconFile.set(project.file("flatpak/icon.png"))
+            }
         }
         buildTypes.release.proguard {
             version.set("7.9.0")

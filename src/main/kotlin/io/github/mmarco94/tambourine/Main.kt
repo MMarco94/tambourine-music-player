@@ -6,8 +6,8 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowScope
-import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import io.github.mmarco94.tambourine.audio.PlayerController
 import io.github.mmarco94.tambourine.data.Library
 import io.github.mmarco94.tambourine.data.Song
@@ -91,9 +91,7 @@ fun main(args: Array<String>) {
                     Window(
                         title = "Tambourine",
                         onCloseRequest = ::exitApplication,
-                        state = remember {
-                            WindowState(size = DpSize(1440.dp, 960.dp))
-                        },
+                        state = rememberWindowState(size = DpSize(1440.dp, 960.dp)),
                         onPreviewKeyEvent = { event ->
                             handleKeypress(cs, event, player, libraryTab, { selectedPanel = it }, { libraryTab = it })
                         },
