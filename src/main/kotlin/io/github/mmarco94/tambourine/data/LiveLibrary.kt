@@ -175,6 +175,7 @@ class LiveLibrary(
 @OptIn(ExperimentalCoroutinesApi::class)
 fun Flow<Set<File>>.toLibrary(): Flow<Library?> {
     return transformLatest { roots ->
+        emit(null)
         withContext(Dispatchers.Default) {
             val liveLibrary = LiveLibrary(this, roots)
             liveLibrary.start(this@transformLatest)

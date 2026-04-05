@@ -9,8 +9,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,7 +17,6 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -32,32 +29,6 @@ import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder
 import java.io.File
 
 private val logger = KotlinLogging.logger {}
-
-@Composable
-fun AppSettingsButton(
-    modifier: Modifier,
-    openSettings: () -> Unit,
-) {
-    var showMenu by remember { mutableStateOf(false) }
-    Box(modifier) {
-        IconButton({ showMenu = !showMenu }) {
-            Icon(Icons.Default.MoreVert, "Open menu")
-        }
-        DropdownMenu(
-            showMenu,
-            { showMenu = false },
-            offset = DpOffset(8.dp, 0.dp),
-        ) {
-            DropdownMenuItem(
-                text = { SingleLineText("Settings", style = LocalTextStyle.current) },
-                leadingIcon = { Icon(Icons.Default.Settings, null) },
-                onClick = {
-                    openSettings()
-                    showMenu = false
-                })
-        }
-    }
-}
 
 @Composable
 fun AppSettingsWindow(close: () -> Unit) {

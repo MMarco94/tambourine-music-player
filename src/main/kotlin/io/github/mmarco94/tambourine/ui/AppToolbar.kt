@@ -3,12 +3,14 @@ package io.github.mmarco94.tambourine.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.utils.Preferences
 
@@ -34,6 +36,41 @@ fun AppToolbar(
             IconButton(closeApp) {
                 Icon(Icons.Default.Close, "Close app")
             }
+        }
+    }
+}
+
+@Composable
+fun AppSettingsButton(
+    modifier: Modifier,
+    openSettings: () -> Unit,
+) {
+    var showMenu by remember { mutableStateOf(false) }
+    Box(modifier) {
+        IconButton({ showMenu = !showMenu }) {
+            Icon(Icons.Default.MoreVert, "Open menu")
+        }
+        DropdownMenu(
+            showMenu,
+            { showMenu = false },
+            offset = DpOffset(8.dp, 0.dp),
+        ) {
+            DropdownMenuItem(
+                text = { SingleLineText("Settings", style = LocalTextStyle.current) },
+                leadingIcon = { Icon(Icons.Default.Settings, null) },
+                onClick = {
+                    openSettings()
+                    showMenu = false
+                },
+            )
+            DropdownMenuItem(
+                text = { SingleLineText("Reload library", style = LocalTextStyle.current) },
+                leadingIcon = { Icon(Icons.Default.Refresh, null) },
+                onClick = {
+                    Preferences.reloadLibrary()
+                    showMenu = false
+                },
+            )
         }
     }
 }

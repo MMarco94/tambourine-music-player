@@ -79,11 +79,6 @@ fun Library.sort(options: SongListOptions): Library {
     )
 }
 
-
-fun Library.filterAndSort(options: SongListOptions): Library {
-    return filter(options).sort(options)
-}
-
 fun Library.toListItems(
     options: SongListOptions,
 ): List<SongListItem> {

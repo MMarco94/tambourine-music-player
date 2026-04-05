@@ -6,7 +6,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.mapLatest
 import java.io.File
 import java.util.prefs.Preferences
 
@@ -17,12 +20,12 @@ object Preferences {
     }
     private const val KEY_LIBRARY = "library_folder"
     private const val KEY_SYSTEM_DECORATIONS = "system_decorations"
-    private val signals = MutableStateFlow(Any())
+    private val librarySignal = MutableStateFlow(Any())
+    private val useSystemDecorationsSignal = MutableStateFlow(Any())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val libraryFolder: Flow<File> = signals
+    val libraryFolder: Flow<File> = librarySignal
         .mapLatest { getLibraryFolder() }
-        .distinctUntilChanged()
         .flowOn(Dispatchers.IO)
 
     val useSystemDecorations: State<Boolean>
@@ -30,18 +33,20 @@ object Preferences {
         @Composable
         get() {
             return remember {
-                signals
-                    .mapLatest { useSystemDecorations() }
-                    .distinctUntilChanged()
+                useSystemDecorationsSignal.mapLatest { useSystemDecorations() }
             }.collectAsState(initial = useSystemDecorations())
         }
+
+    fun reloadLibrary() {
+        librarySignal.value = Any()
+    }
 
     fun getLibraryFolder() = File(prefs.get(KEY_LIBRARY, System.getProperty("user.home") + "/Music"))
 
     fun setLibraryFolder(library: File) {
         prefs.put(KEY_LIBRARY, library.absolutePath)
         prefs.flush()
-        signals.value = Any()
+        librarySignal.value = Any()
     }
 
     fun useSystemDecorations(): Boolean {
@@ -51,6 +56,6 @@ object Preferences {
     fun setUseSystemDecorations(useSystemDecorations: Boolean) {
         prefs.put(KEY_SYSTEM_DECORATIONS, useSystemDecorations.toString())
         prefs.flush()
-        signals.value = Any()
+        useSystemDecorationsSignal.value = Any()
     }
 }
