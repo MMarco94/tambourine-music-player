@@ -12,9 +12,9 @@ enum class ClassSharingMode {
 }
 
 group = "io.github.mmarco94"
-version = "1.1.4"
+version = "1.2.0"
 val debugBuild = false
-val runMode = ClassSharingMode.LoadArchive
+val runMode = ClassSharingMode.None
 
 repositories {
     google()
