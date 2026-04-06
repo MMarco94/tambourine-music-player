@@ -6,6 +6,14 @@ enum class RepeatMode {
     DO_NOT_REPEAT,
     REPEAT_QUEUE,
     REPEAT_SONG,
+    ;
+
+    val next
+        get() = when (this) {
+            DO_NOT_REPEAT -> REPEAT_QUEUE
+            REPEAT_QUEUE -> REPEAT_SONG
+            REPEAT_SONG -> DO_NOT_REPEAT
+        }
 }
 
 data class SongQueue(
@@ -71,13 +79,11 @@ data class SongQueue(
     }
 
     fun toggleRepeat(): SongQueue {
-        return copy(
-            repeatMode = when (repeatMode) {
-                DO_NOT_REPEAT -> REPEAT_QUEUE
-                REPEAT_QUEUE -> REPEAT_SONG
-                REPEAT_SONG -> DO_NOT_REPEAT
-            }
-        )
+        return setRepeatMode(repeatMode.next)
+    }
+
+    fun setRepeatMode(repeatMode: RepeatMode): SongQueue {
+        return copy(repeatMode = repeatMode)
     }
 
     fun toggleShuffle(): SongQueue {

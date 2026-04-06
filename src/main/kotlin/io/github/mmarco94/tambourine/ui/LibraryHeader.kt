@@ -35,23 +35,33 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.data.*
+import io.github.mmarco94.tambourine.generated.resources.*
 import io.github.mmarco94.tambourine.ui.LibraryHeaderTab.*
 import io.github.mmarco94.tambourine.utils.animateContentHeight
 import io.github.mmarco94.tambourine.utils.noopComparator
 import io.github.mmarco94.tambourine.utils.orNoop
+import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 
 private sealed interface SortFilterOption {
-    val name: String
-    val description: String get() = name
+    @Composable
+    fun name(): String
+
+    @Composable
+    fun description(): String = name()
+
     val transform: (SongListOptions) -> SongListOptions
 
     data class Sort(
         val sorter: Sorter<*>,
         override val transform: (SongListOptions) -> SongListOptions,
     ) : SortFilterOption {
-        override val name get() = sorter.label ?: "Do not sort"
-        override val description get() = sorter.fullDescription ?: "Do not sort"
+        @Composable
+        override fun name() = stringResource(sorter.label ?: Res.string.do_not_sort)
+
+        @Composable
+        override fun description() = stringResource(sorter.fullDescription ?: Res.string.do_not_sort)
+
         val icon: ImageVector? = when (sorter.isInverse) {
             true -> Icons.Filled.ArrowUpward
             false -> Icons.Filled.ArrowDownward
@@ -60,10 +70,13 @@ private sealed interface SortFilterOption {
     }
 
     data class Filter<T>(
-        override val name: String,
+        val name: String,
         val element: T,
         override val transform: (SongListOptions) -> SongListOptions,
-    ) : SortFilterOption
+    ) : SortFilterOption {
+        @Composable
+        override fun name() = name
+    }
 }
 
 @Composable
@@ -84,7 +97,7 @@ private fun TagForOptions(
         showAsSubtitle = selected is SortFilterOption.Sort,
         icon = icon,
         description = description,
-        selectedLabel = selected.name,
+        selectedLabel = selected.name(),
         selectedIcon = (selected as? SortFilterOption.Sort)?.icon,
         reset = reset?.let { { setOptions(it); close() } },
         onClick = onClick,
@@ -98,14 +111,14 @@ private class FilterSortPopupRenderer(
     val setOptions: (SongListOptions) -> Unit,
 ) {
     @Composable
-    fun CategorySeparatorSort() = CategorySeparator("Sort")
+    fun CategorySeparatorSort() = CategorySeparator(stringResource(Res.string.sort))
 
     @Composable
-    fun CategorySeparatorFilter() = CategorySeparator("Select")
+    fun CategorySeparatorFilter() = CategorySeparator(stringResource(Res.string.choose))
 
     @Composable
     fun Row(item: SortFilterOption) {
-        SimpleListItem(item.description, item)
+        SimpleListItem(item.description(), item)
     }
 
     @Composable
@@ -224,11 +237,15 @@ fun LibraryHeader(
                             queryTransition.Crossfade(contentKey = { it.isNotEmpty() }) { q ->
                                 if (q.isNotEmpty()) {
                                     Tag(
-                                        tab == null || tab == SEARCH, true,
-                                        false, Icons.Default.Search,
-                                        "Search", q, null,
-                                        { setTab(null); setOptions(options.removeSearch()) },
-                                        { setTab(SEARCH) },
+                                        active = tab == null || tab == SEARCH,
+                                        enabled = true,
+                                        showAsSubtitle = false,
+                                        icon = Icons.Default.Search,
+                                        description = stringResource(Res.string.action_search),
+                                        selectedLabel = q,
+                                        selectedIcon = null,
+                                        reset = { setTab(null); setOptions(options.removeSearch()) },
+                                        onClick = { setTab(SEARCH) },
                                     )
                                 }
                             }
@@ -252,7 +269,7 @@ fun LibraryHeader(
                                             ) 0f else 1f
                                         )
                                     ) {
-                                        Icon(Icons.Filled.Search, "Search")
+                                        Icon(Icons.Filled.Search, stringResource(Res.string.action_search))
                                     }
                                 }
                             }
@@ -268,7 +285,7 @@ fun LibraryHeader(
                     ) { (tab, showToolbar) ->
                         if (tab != null && tab != SEARCH) {
                             IconButton({ setTab(null) }) {
-                                Icon(Icons.Filled.Close, "Close")
+                                Icon(Icons.Filled.Close, stringResource(Res.string.action_close))
                             }
                         } else if (showToolbar) {
                             AppToolbar(openSettings = openSettings, closeApp = closeApp, modifier = Modifier)
@@ -363,7 +380,8 @@ private interface TabRenderer {
 }
 
 private interface OptionsRenderer : TabRenderer {
-    val description: String
+    @Composable
+    fun description(): String
     val icon: ImageVector
     val tab: LibraryHeaderTab
     val activeFilter: Any?
@@ -377,7 +395,7 @@ private interface OptionsRenderer : TabRenderer {
             active = currentTab == null || tab == currentTab,
             selected = selectedOption,
             enabled = activeFilter != null,
-            description = description,
+            description = description(),
             icon = icon,
             reset = if (activeFilter != null) withoutFilter else null,
             setOptions = setOptions,
@@ -424,7 +442,8 @@ private class ArtistOptionsRenderer(
     private val options: SongListOptions,
     override val setOptions: (SongListOptions) -> Unit,
 ) : OptionsRenderer {
-    override val description = "Artists"
+    @Composable
+    override fun description() = stringResource(Res.string.artists)
     override val icon = Icons.Default.Groups
     override val activeFilter = options.artistFilter
     override val withoutFilter = options.withArtistFilter(null)
@@ -467,7 +486,8 @@ private class AlbumOptionsRenderer(
     private val options: SongListOptions,
     override val setOptions: (SongListOptions) -> Unit,
 ) : OptionsRenderer {
-    override val description = "Albums"
+    @Composable
+    override fun description() = stringResource(Res.string.albums)
     override val icon = Icons.Default.Album
     override val activeFilter = options.albumFilter
     override val withoutFilter = options.withAlbumFilter(null)
@@ -525,7 +545,8 @@ private class SongOptionsRenderer(
     private val options: SongListOptions,
     override val setOptions: (SongListOptions) -> Unit,
 ) : OptionsRenderer {
-    override val description = "Songs"
+    @Composable
+    override fun description() = stringResource(Res.string.songs)
     override val icon = Icons.Default.MusicNote
     override val activeFilter = null
     override val withoutFilter = options

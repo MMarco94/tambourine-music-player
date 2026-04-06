@@ -11,8 +11,12 @@ import androidx.compose.ui.Modifier
 import io.github.mmarco94.tambourine.audio.Position
 import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongQueue
+import io.github.mmarco94.tambourine.generated.resources.Res
+import io.github.mmarco94.tambourine.generated.resources.action_play
+import io.github.mmarco94.tambourine.generated.resources.action_shuffle_from_here
 import io.github.mmarco94.tambourine.playerController
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun PlayShuffleButtons(
@@ -28,7 +32,7 @@ fun PlayShuffleButtons(
                 player.play()
             }
         }) {
-            Icon(Icons.Default.PlayArrow, "Play")
+            Icon(Icons.Default.PlayArrow, stringResource(Res.string.action_play))
         }
         IconButtonWithBG({
             cs.launch {
@@ -36,7 +40,7 @@ fun PlayShuffleButtons(
                 player.play()
             }
         }) {
-            Icon(Icons.Default.Shuffle, "Shuffle")
+            Icon(Icons.Default.Shuffle, stringResource(Res.string.action_shuffle_from_here))
         }
     }
 }

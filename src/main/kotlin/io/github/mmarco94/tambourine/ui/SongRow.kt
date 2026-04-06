@@ -24,9 +24,11 @@ import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongListItem
 import io.github.mmarco94.tambourine.data.SongQueueController
+import io.github.mmarco94.tambourine.generated.resources.*
 import io.github.mmarco94.tambourine.playerController
 import io.github.mmarco94.tambourine.utils.digits
 import io.github.mmarco94.tambourine.utils.format
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun SongRow(
@@ -96,24 +98,30 @@ private fun BaseSongRow(
     play: (shuffle: Boolean?) -> Unit,
 ) {
     val player = playerController.current
+    val playStr = stringResource(Res.string.action_play)
+    val shuffleStr = stringResource(Res.string.action_shuffle_from_here)
+    val playNextStr = stringResource(Res.string.action_play_next)
+    val addToQueueStr = stringResource(Res.string.action_add_to_queue)
+    val playAlbumStr = stringResource(Res.string.action_play_album)
+    val playArtistStr = stringResource(Res.string.action_play_artist)
     ContextMenuArea(items = {
         listOf(
-            ContextMenuItemWithIcon(Icons.Default.PlayCircle, "Play") {
+            ContextMenuItemWithIcon(Icons.Default.PlayCircle, playStr) {
                 play(false)
             },
-            ContextMenuItemWithIcon(Icons.Default.Shuffle, "Shuffle from here") {
+            ContextMenuItemWithIcon(Icons.Default.Shuffle, shuffleStr) {
                 play(true)
             },
-            ContextMenuItemWithIcon(Icons.AutoMirrored.Default.ReadMore, "Play next") {
+            ContextMenuItemWithIcon(Icons.AutoMirrored.Default.ReadMore, playNextStr) {
                 controller.playNext(song)
             },
-            ContextMenuItemWithIcon(Icons.AutoMirrored.Default.PlaylistAdd, "Add to queue") {
+            ContextMenuItemWithIcon(Icons.AutoMirrored.Default.PlaylistAdd, addToQueueStr) {
                 controller.addToQueue(song)
             },
-            ContextMenuItemWithIcon(Icons.Default.Album, "Play album") {
+            ContextMenuItemWithIcon(Icons.Default.Album, playAlbumStr) {
                 controller.playAlbum(song)
             },
-            ContextMenuItemWithIcon(Icons.Default.Groups, "Play artist") {
+            ContextMenuItemWithIcon(Icons.Default.Groups, playArtistStr) {
                 controller.playArtist(song)
             },
         )

@@ -12,7 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import io.github.mmarco94.tambourine.generated.resources.*
 import io.github.mmarco94.tambourine.utils.Preferences
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun AppToolbar(
@@ -34,7 +36,7 @@ fun AppToolbar(
         AppSettingsButton(Modifier, openSettings)
         if (!useSystemDecorations) {
             IconButton(closeApp) {
-                Icon(Icons.Default.Close, "Close app")
+                Icon(Icons.Default.Close, stringResource(Res.string.action_close_app))
             }
         }
     }
@@ -48,7 +50,7 @@ fun AppSettingsButton(
     var showMenu by remember { mutableStateOf(false) }
     Box(modifier) {
         IconButton({ showMenu = !showMenu }) {
-            Icon(Icons.Default.MoreVert, "Open menu")
+            Icon(Icons.Default.MoreVert, stringResource(Res.string.action_open_menu))
         }
         DropdownMenu(
             showMenu,
@@ -56,7 +58,7 @@ fun AppSettingsButton(
             offset = DpOffset(8.dp, 0.dp),
         ) {
             DropdownMenuItem(
-                text = { SingleLineText("Settings", style = LocalTextStyle.current) },
+                text = { SingleLineText(stringResource(Res.string.settings), style = LocalTextStyle.current) },
                 leadingIcon = { Icon(Icons.Default.Settings, null) },
                 onClick = {
                     openSettings()
@@ -64,7 +66,7 @@ fun AppSettingsButton(
                 },
             )
             DropdownMenuItem(
-                text = { SingleLineText("Reload library", style = LocalTextStyle.current) },
+                text = { SingleLineText(stringResource(Res.string.reload_library), style = LocalTextStyle.current) },
                 leadingIcon = { Icon(Icons.Default.Refresh, null) },
                 onClick = {
                     Preferences.reloadLibrary()

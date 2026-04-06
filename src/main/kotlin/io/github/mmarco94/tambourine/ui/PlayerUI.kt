@@ -37,10 +37,12 @@ import io.github.mmarco94.tambourine.audio.SongDecoder
 import io.github.mmarco94.tambourine.data.RepeatMode
 import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongQueue
+import io.github.mmarco94.tambourine.generated.resources.*
 import io.github.mmarco94.tambourine.playerController
 import io.github.mmarco94.tambourine.utils.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.ZERO
@@ -74,8 +76,8 @@ fun PlayerUI(
                 BigMessage(
                     Modifier.fillMaxSize(),
                     Icons.Filled.PlayCircleFilled,
-                    "Play a song",
-                    "To begin, select a song from your library",
+                    stringResource(Res.string.help_play_a_song_title),
+                    stringResource(Res.string.help_play_a_song_message),
                 )
             }
         } else {
@@ -117,7 +119,7 @@ fun PlayerUI(
                     ShuffleIcon(cs, queue)
                     Spacer(Modifier.width(16.dp))
                     PlayerIcon(
-                        cs, Icons.Default.SkipPrevious, "Previous"
+                        cs, Icons.Default.SkipPrevious, stringResource(Res.string.action_go_to_previous_song)
                     ) {
                         player.changeQueue(queue.previous(), Position.Beginning)
                         player.play()
@@ -126,7 +128,7 @@ fun PlayerUI(
                     PlayerIcon(
                         cs,
                         if (player.pause) Icons.Default.PlayArrow else Icons.Default.Pause,
-                        if (player.pause) "Play" else "Pause",
+                        stringResource(if (player.pause) Res.string.action_play else Res.string.action_pause),
                         iconModifier = Modifier.size(48.dp),
                         size = 48.dp,
                     ) {
@@ -138,7 +140,7 @@ fun PlayerUI(
                     }
                     Spacer(Modifier.width(8.dp))
                     PlayerIcon(
-                        cs, Icons.Default.SkipNext, "Next"
+                        cs, Icons.Default.SkipNext, stringResource(Res.string.action_go_to_next_song)
                     ) {
                         player.changeQueue(queue.next(), Position.Beginning)
                         player.play()
@@ -228,7 +230,10 @@ fun LyricsIcon(
     onClick: () -> Unit,
 ) {
     PlayerIcon(
-        cs, Icons.Default.Lyrics, "Lyrics", active = showLyrics,
+        cs,
+        Icons.Default.Lyrics,
+        label = stringResource(if (showLyrics) Res.string.action_hide_lyrics else Res.string.action_show_lyrics),
+        active = showLyrics,
     ) {
         onClick()
     }
@@ -241,7 +246,10 @@ fun ShuffleIcon(
 ) {
     val player = playerController.current
     PlayerIcon(
-        cs, Icons.Default.Shuffle, "Shuffle", active = queue.isShuffled
+        cs,
+        Icons.Default.Shuffle,
+        label = stringResource(if (queue.isShuffled) Res.string.action_disable_shuffle else Res.string.action_enable_shuffle),
+        active = queue.isShuffled
     ) {
         player.changeQueue(queue.toggleShuffle())
     }
@@ -253,14 +261,21 @@ fun RepeatIcon(
     queue: SongQueue
 ) {
     val player = playerController.current
+    val next = queue.repeatMode.next
     PlayerIcon(
         cs,
         if (queue.repeatMode == RepeatMode.REPEAT_SONG) Icons.Default.RepeatOne else Icons.Default.Repeat,
-        "Repeat",
+        label = stringResource(
+            when (next) {
+                RepeatMode.DO_NOT_REPEAT -> Res.string.action_repeat_none
+                RepeatMode.REPEAT_QUEUE -> Res.string.action_repeat_queue
+                RepeatMode.REPEAT_SONG -> Res.string.action_repeat_song
+            }
+        ),
         active = queue.repeatMode != RepeatMode.DO_NOT_REPEAT
     ) {
         player.changeQueue(
-            queue.toggleRepeat(),
+            queue.setRepeatMode(next),
         )
     }
 }
@@ -468,7 +483,7 @@ fun VolumeSlider(player: PlayerController) {
         PlayerIcon(
             cs,
             if (level == 0f) Icons.AutoMirrored.Default.VolumeOff else Icons.AutoMirrored.Default.VolumeDown,
-            "Mute"
+            label = stringResource(Res.string.action_mute_volume)
         ) {
             player.setLevel(if (level == 0f) nonZeroLevel else 0f)
         }
@@ -499,7 +514,7 @@ fun VolumeSlider(player: PlayerController) {
         PlayerIcon(
             cs,
             Icons.AutoMirrored.Default.VolumeUp,
-            "Max volume"
+            label = stringResource(Res.string.action_max_volume),
         ) {
             player.setLevel(1f)
         }

@@ -15,6 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import io.github.mmarco94.tambourine.generated.resources.Res
+import io.github.mmarco94.tambourine.generated.resources.action_reset
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun BaseTag(
@@ -93,7 +96,7 @@ fun Tag(
                         IconButton({
                             reset()
                         }, Modifier.width(40.dp).fillMaxHeight()) {
-                            Icon(Icons.Filled.Close, "Reset", Modifier.padding(8.dp))
+                            Icon(Icons.Filled.Close, stringResource(Res.string.action_reset), Modifier.padding(8.dp))
                         }
                     }
                 }

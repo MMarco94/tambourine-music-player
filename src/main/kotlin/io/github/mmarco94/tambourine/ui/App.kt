@@ -22,17 +22,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.data.*
+import io.github.mmarco94.tambourine.generated.resources.*
 import io.github.mmarco94.tambourine.playerController
 import io.github.mmarco94.tambourine.ui.LibraryUIState.*
 import io.github.mmarco94.tambourine.ui.Panel.*
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
 enum class Panel(
     val icon: ImageVector,
-    val label: String,
+    val label: StringResource,
 ) {
-    LIBRARY(Icons.Filled.LibraryMusic, "Library"),
-    QUEUE(Icons.AutoMirrored.Default.QueueMusic, "Queue"),
-    PLAYER(Icons.Filled.PlayCircleFilled, "Player"),
+    LIBRARY(Icons.Filled.LibraryMusic, Res.string.main_menu_library),
+    QUEUE(Icons.AutoMirrored.Default.QueueMusic, Res.string.main_menu_queue),
+    PLAYER(Icons.Filled.PlayCircleFilled, Res.string.main_menu_player),
 }
 
 @Composable
@@ -241,7 +244,7 @@ private fun BottomBar(
                 alwaysShowLabel = false,
                 label = {
                     SingleLineText(
-                        panel.label,
+                        stringResource(panel.label),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelMedium
                     )
@@ -307,7 +310,7 @@ private fun LoadingLibraryComposable(openSettings: () -> Unit, closeApp: () -> U
             BigMessage(
                 Modifier.fillMaxSize(),
                 Icons.Default.LibraryMusic,
-                "Loading...",
+                stringResource(Res.string.loading___),
             ) {}
         }
     }
@@ -321,10 +324,10 @@ private fun LibraryEmptyComposable(openSettings: () -> Unit, closeApp: () -> Uni
             BigMessage(
                 Modifier.fillMaxSize(),
                 Icons.Default.LibraryMusic,
-                "Library is empty",
+                stringResource(Res.string.empty_library),
             ) {
                 Button(openSettings) {
-                    Text("Open settings")
+                    Text(stringResource(Res.string.action_open_settings))
                 }
             }
         }
@@ -337,10 +340,10 @@ private fun LibraryNoSearchResultsComposable(clearSearch: () -> Unit) {
         BigMessage(
             Modifier.fillMaxSize(),
             Icons.Default.SearchOff,
-            "No search result",
+            stringResource(Res.string.no_search_results),
         ) {
             Button(clearSearch) {
-                Text("Remove filter")
+                Text(stringResource(Res.string.action_remove_filter))
             }
         }
     }

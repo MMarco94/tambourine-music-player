@@ -15,9 +15,12 @@ import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.data.Library
 import io.github.mmarco94.tambourine.data.SongListItem
 import io.github.mmarco94.tambourine.data.SongQueueController
+import io.github.mmarco94.tambourine.generated.resources.*
 import io.github.mmarco94.tambourine.playerController
 import io.github.mmarco94.tambourine.utils.format
 import io.github.mmarco94.tambourine.utils.sumOfDuration
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 
 @Composable
@@ -39,8 +42,8 @@ fun SongQueueUI(
                 BigMessage(
                     Modifier.fillMaxSize(),
                     Icons.AutoMirrored.Default.QueueMusic,
-                    "Empty queue",
-                    "To begin, select a song from your library",
+                    stringResource(Res.string.empty_queue),
+                    stringResource(Res.string.help_play_a_song_message),
                 )
             }
         }
@@ -60,17 +63,17 @@ fun SongQueueUI(
                     )
                     Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f)) {
-                        // TODO: plurals
-                        SingleLineText(
-                            "${queue.songs.size} songs in the queue • ${
-                                queue.songs.sumOfDuration { it.length }.format()
-                            }", style = MaterialTheme.typography.bodyMedium
-                        )
+                        val songsInQueueStr =
+                            pluralStringResource(Res.plurals.n_songs_in_queue, queue.songs.size, queue.songs.size)
+                        val totalLength = queue.songs.sumOfDuration { it.length }.format()
+                        SingleLineText("$songsInQueueStr • $totalLength", style = MaterialTheme.typography.bodyMedium)
+
                         val remaining = queue.remainingSongs
+                        val songsRemainingStr =
+                            pluralStringResource(Res.plurals.n_songs_remaining, remaining.size, remaining.size)
+                        val remainingLength = remaining.sumOfDuration { it.length }.format()
                         SingleLineText(
-                            "${remaining.size} songs remaining • ${
-                                remaining.sumOfDuration { it.length }.format()
-                            }", style = MaterialTheme.typography.bodyMedium
+                            "$songsRemainingStr • $remainingLength", style = MaterialTheme.typography.bodyMedium
                         )
                     }
                     Spacer(Modifier.width(16.dp))

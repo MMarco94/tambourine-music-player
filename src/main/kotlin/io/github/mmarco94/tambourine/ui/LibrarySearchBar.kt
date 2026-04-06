@@ -27,9 +27,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.*
 import io.github.mmarco94.tambourine.data.Library
+import io.github.mmarco94.tambourine.generated.resources.Res
+import io.github.mmarco94.tambourine.generated.resources.action_close
 import io.github.mmarco94.tambourine.ui.LibrarySearchBarMode.*
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.seconds
 
 enum class LibrarySearchBarMode {
     EXPANDED, ICON, TAG;
@@ -76,9 +80,9 @@ fun BoxScope.LibrarySearchBar(
     LaunchedEffect(library) {
         while (true) {
             placeholder = library.artists.randomOrNull()?.name.orEmpty()
-            delay(5000)
+            delay(5.seconds)
             placeholder = library.albums.randomOrNull()?.title.orEmpty()
-            delay(5000)
+            delay(5.seconds)
         }
     }
     val bgAlpha by mode.animateFloat(floatTransitionSpec) { if (it == ICON) 0f else 1f }
@@ -121,7 +125,8 @@ fun BoxScope.LibrarySearchBar(
         Box(
             Modifier.matchParentSize()
         ) {
-            Box(Modifier
+            Box(
+                Modifier
                 .offset { offset.round() }
                 .size(size.toDpApprox())
                 .padding(2.dp)
@@ -181,7 +186,11 @@ fun BoxScope.LibrarySearchBar(
                             }
                             Spacer(Modifier.weight(1f))
                             IconButton(collapse, Modifier.width(40.dp).alpha(closeAlpha)) {
-                                Icon(Icons.Filled.Close, "Close", Modifier.padding(8.dp))
+                                Icon(
+                                    Icons.Filled.Close,
+                                    stringResource(Res.string.action_close),
+                                    Modifier.padding(8.dp)
+                                )
                             }
                         }
                     }

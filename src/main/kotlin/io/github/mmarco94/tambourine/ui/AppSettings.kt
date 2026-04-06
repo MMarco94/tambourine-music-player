@@ -22,10 +22,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.rememberWindowState
 import io.github.mmarco94.klibportal.portals.openFile
+import io.github.mmarco94.tambourine.generated.resources.*
 import io.github.mmarco94.tambourine.utils.Preferences
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder
+import org.jetbrains.compose.resources.stringResource
 import java.io.File
 
 private val logger = KotlinLogging.logger {}
@@ -39,7 +41,7 @@ fun AppSettingsWindow(close: () -> Unit) {
 
     Window(
         close,
-        title = "Settings",
+        title = stringResource(Res.string.settings),
         state = rememberWindowState(
             size = DpSize(640.dp, 320.dp),
         ),
@@ -71,7 +73,7 @@ fun AppSettingsWindow(close: () -> Unit) {
                         Checkbox(useSystemDecorations, {
                             useSystemDecorations = it
                         })
-                        Text("Use system decorations")
+                        Text(stringResource(Res.string.use_system_decorations))
                     }
 
                     Spacer(Modifier.height(32.dp))
@@ -84,7 +86,7 @@ fun AppSettingsWindow(close: () -> Unit) {
                         enabled = (preferenceLibrary != library || preferenceUseSystemDecorations != useSystemDecorations) && library.isDirectory,
                         modifier = Modifier.align(Alignment.End)
                     ) {
-                        Text("Apply changes")
+                        Text(stringResource(Res.string.action_apply_changes))
                     }
                 }
             }
@@ -101,7 +103,7 @@ private fun LibraryDirectorySetting(library: File, changeLibrary: (File) -> Unit
             library.absolutePath,
             { changeLibrary(File(it)) },
             Modifier.weight(1f),
-            label = { SingleLineText("Library folder", style = LocalTextStyle.current) },
+            label = { SingleLineText(stringResource(Res.string.music_library_folder), style = LocalTextStyle.current) },
             maxLines = 1,
             shape = MaterialTheme.shapes.medium.copy(
                 topEnd = ZeroCornerSize, bottomEnd = ZeroCornerSize
@@ -119,13 +121,14 @@ private fun LibraryDirectorySetting(library: File, changeLibrary: (File) -> Unit
                 topStart = ZeroCornerSize, bottomStart = ZeroCornerSize
             ),
         ) {
+            val chooseLibraryStr = stringResource(Res.string.action_choose_library)
             Box(Modifier.fillMaxSize().clickable {
                 cs.launch {
                     DBusConnectionBuilder.forSessionBus().build().use { conn ->
                         try {
                             val file = openFile(
                                 conn,
-                                title = "Choose library",
+                                title = chooseLibraryStr,
                                 directory = true,
                                 multiple = false,
                             ).singleOrNull()?.toFile()
@@ -138,7 +141,7 @@ private fun LibraryDirectorySetting(library: File, changeLibrary: (File) -> Unit
                     }
                 }
             }) {
-                Icon(Icons.Default.FolderOpen, "Choose folder", Modifier.align(Alignment.Center))
+                Icon(Icons.Default.FolderOpen, chooseLibraryStr, Modifier.align(Alignment.Center))
             }
         }
     }
