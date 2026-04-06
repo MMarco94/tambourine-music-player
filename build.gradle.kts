@@ -8,7 +8,13 @@ plugins {
 }
 
 enum class ClassSharingMode {
-    None, DumpLoadedClasses, CreateArchive, LoadArchive
+    None,
+
+    // See https://docs.oracle.com/en/java/javase/26/docs/specs/man/java.html#application-class-data-sharing
+    DumpLoadedClasses, CreateArchive, LoadArchive,
+
+    // See https://docs.oracle.com/en/java/javase/26/docs/specs/man/java.html#ahead-of-time-cache
+    AotTraining, AotProduction
 }
 
 group = "io.github.mmarco94"
@@ -116,6 +122,12 @@ compose.desktop {
             )
 
             ClassSharingMode.LoadArchive -> jvmArgs += listOf("-XX:SharedArchiveFile=/tmp/tambourine.jsa")
+            ClassSharingMode.AotTraining -> jvmArgs += listOf(
+                "-XX:AOTMode=record",
+                "-XX:AOTCacheOutput=/tmp/tambourine.aot"
+            )
+
+            ClassSharingMode.AotProduction -> jvmArgs += listOf("-XX:AOTMode=on", "-XX:AOTCache=/tmp/tambourine.aot")
         }
         nativeDistributions {
             packageName = "tambourine"

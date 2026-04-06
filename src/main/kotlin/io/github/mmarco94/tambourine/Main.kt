@@ -1,6 +1,8 @@
 package io.github.mmarco94.tambourine
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -17,6 +19,7 @@ import io.github.mmarco94.tambourine.ui.App
 import io.github.mmarco94.tambourine.ui.LibraryHeaderTab
 import io.github.mmarco94.tambourine.ui.Panel
 import io.github.mmarco94.tambourine.utils.Preferences
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,9 +30,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.slf4j.bridge.SLF4JBridgeHandler
 import java.io.File
+import kotlin.time.Clock
 
+private val firstInstruction = Clock.System.now()
 val playerController = staticCompositionLocalOf<PlayerController> { throw IllegalStateException() }
 val mainWindowScope = staticCompositionLocalOf<WindowScope> { throw IllegalStateException() }
+private val logger = KotlinLogging.logger {}
 
 fun main(args: Array<String>) {
     Thread.currentThread().priority = Thread.MAX_PRIORITY
@@ -101,6 +107,13 @@ fun main(args: Array<String>) {
                         undecorated = !useSystemDecorations,
                     ) {
                         CompositionLocalProvider(mainWindowScope provides this) {
+                            var firstDraw by remember { mutableStateOf(true) }
+                            Canvas(Modifier) {
+                                if (firstDraw) {
+                                    firstDraw = false
+                                    logger.debug { "First draw took: ${Clock.System.now() - firstInstruction}" }
+                                }
+                            }
                             App(
                                 library = library,
                                 selectedPanel = selectedPanel,
