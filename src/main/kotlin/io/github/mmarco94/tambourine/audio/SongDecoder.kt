@@ -77,7 +77,7 @@ class SongDecoder(
     }
 
     private val waveformsPerChannel: List<DoubleArray> = List(format.channels) {
-        DoubleArray(RESOLUTION)
+        DoubleArray(WAVEFORM_LOW_RES_SIZE)
     }
     private val waveformsPerChannelHiRes: List<DoubleArray> = List(format.channels) {
         DoubleArray(RESOLUTION)
@@ -170,7 +170,7 @@ class SongDecoder(
 
     companion object {
         const val WAVEFORM_LOW_RES_SIZE = 240
-        private const val WAVEFORM_HIGH_RES_MULTIPLIER = 20
+        private const val WAVEFORM_HIGH_RES_MULTIPLIER = 4
         private const val RESOLUTION = WAVEFORM_LOW_RES_SIZE * WAVEFORM_HIGH_RES_MULTIPLIER
     }
 }
