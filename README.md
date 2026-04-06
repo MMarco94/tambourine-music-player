@@ -4,7 +4,7 @@ A music player for your local music library.
 
 <a href='https://flathub.org/apps/io.github.mmarco94.tambourine'><img width='240' alt='Download on Flathub' src='https://dl.flathub.org/assets/badges/flathub-badge-en.png'/></a>
 
-![Main screen](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s1.png)
+![Main screen](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/main_window.png)
 
 Tenets:
 
@@ -20,12 +20,11 @@ Browse your music collection; play a song; that's it really.
 
 ## Screenshots
 
-![s1](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s1.png)
-![s2](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s2.png)
-![s3](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s3.png)
-![s4](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s4.png)
-![s5](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s6.png)
-![s5](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/s5.png)
+![The currently playing queue](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/queue.png)
+![Artist filter and sorting options](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/filters.png)
+![Artist filter with lyrics](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/filter_lyrics.png)
+![The search interface](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/search.png)
+![Small window form factor](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/main/screenshots/small.png)
 
 ## Roadmap
 
