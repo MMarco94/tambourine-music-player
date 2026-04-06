@@ -49,6 +49,10 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
 
 private val MAX_BLUR = 48.dp
+private val TOP_SPACER_HEIGHT_EXPANSION = 540.dp..700.dp
+private val BOTTOM_SPACER_HEIGHT_EXPANSION = 700.dp..960.dp
+private val ALBUM_COVER_HEIGHT_COLLAPSE = 960.dp..1920.dp
+private val ALBUM_COVER_MIN_TOTAL_HEIGHT = 540.dp
 
 @Composable
 fun PlayerUI(
@@ -62,23 +66,42 @@ fun PlayerUI(
     val player = playerController.current
     val queue = player.queue
     val song = queue?.currentSong
-    Column {
-        if (showToolbar) {
-            AppToolbar(openSettings = openSettings, closeApp = closeApp)
-        }
+    BoxWithConstraints {
+        val totalHeight = this@BoxWithConstraints.maxHeight
         if (song == null) {
-            BigMessage(
-                Modifier.fillMaxSize(),
-                Icons.Filled.PlayCircleFilled,
-                "Play a song",
-                "To begin, select a song from your library",
-            )
+            Column {
+                if (showToolbar) {
+                    AppToolbar(openSettings = openSettings, closeApp = closeApp)
+                }
+                BigMessage(
+                    Modifier.fillMaxSize(),
+                    Icons.Filled.PlayCircleFilled,
+                    "Play a song",
+                    "To begin, select a song from your library",
+                )
+            }
         } else {
+            if (showToolbar) {
+                AppToolbar(
+                    openSettings = openSettings,
+                    closeApp = closeApp,
+                    modifier = Modifier.align(Alignment.TopEnd)
+                )
+            }
             Column(
                 Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
             ) {
-                CoverOrLyrics(Modifier.weight(3f), song, showLyrics)
+                if (totalHeight > ALBUM_COVER_MIN_TOTAL_HEIGHT) {
+                    val topSpacerHeight = 24.dp + 40.dp * TOP_SPACER_HEIGHT_EXPANSION.percent(totalHeight)
+                    Spacer(Modifier.height(topSpacerHeight))
+                    Box(Modifier.weight(3f), contentAlignment = Alignment.Center) {
+                        val coverWeight = 1f - ALBUM_COVER_HEIGHT_COLLAPSE.percent(totalHeight) * .5f
+                        CoverOrLyrics(Modifier.fillMaxHeight(coverWeight), song, showLyrics)
+                    }
+                }
+                Spacer(Modifier.height(24.dp))
                 Text(song.title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(8.dp))
                 SingleLineText(song.album.title, style = MaterialTheme.typography.titleMedium)
@@ -131,7 +154,11 @@ fun PlayerUI(
                 }
                 Spacer(Modifier.height(24.dp))
                 VolumeSlider(player)
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.height(24.dp))
+                val bottomSpacerWeight = BOTTOM_SPACER_HEIGHT_EXPANSION.percent(totalHeight)
+                if (bottomSpacerWeight > 0) {
+                    Spacer(Modifier.weight(bottomSpacerWeight))
+                }
             }
         }
     }
@@ -143,7 +170,7 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
     val actualSong = if (showLyrics) song else null
     val hasLyrics = actualSong?.lyrics != null
     Box(
-        modifier.padding(horizontal = 96.dp).padding(top = 72.dp, bottom = 32.dp),
+        modifier.padding(horizontal = 64.dp),
         contentAlignment = Alignment.Center
     ) {
         AlbumContainer(Modifier.fillMaxHeight(), MaterialTheme.shapes.large, elevation = 16.dp) {

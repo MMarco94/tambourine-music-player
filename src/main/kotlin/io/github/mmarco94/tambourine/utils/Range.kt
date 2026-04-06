@@ -14,3 +14,7 @@ fun DoubleRange.progress(progress: Float): Double {
 fun FloatRange.progress(progress: Float): Float {
     return start + progress * (endInclusive - start)
 }
+
+fun DpRange.percent(value: Dp): Float {
+    return ((value - start) / (endInclusive - start)).coerceIn(0f, 1f)
+}
