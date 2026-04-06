@@ -32,6 +32,7 @@ val playerController = staticCompositionLocalOf<PlayerController> { throw Illega
 val mainWindowScope = staticCompositionLocalOf<WindowScope> { throw IllegalStateException() }
 
 fun main(args: Array<String>) {
+    Thread.currentThread().priority = Thread.MAX_PRIORITY
     val filesFromArgs = args.map { File(it) }
     runBlocking {
         // Start loading ASAP
@@ -52,6 +53,7 @@ fun main(args: Array<String>) {
         System.setProperty("skiko.rendering.laf.global", "false")
 
         application {
+            Thread.currentThread().priority = Thread.MAX_PRIORITY
             val cs = rememberCoroutineScope()
             // Using `alwaysOnTop` is the most reliable method. awt.Window.toFront() doesn't work :(
             var bringToTop by remember { mutableStateOf(false) }

@@ -342,7 +342,7 @@ class PlayerController(
                 mprisPlayer?.setState(state)
             }
         }
-        thread(name = "PlayerControllerLoop") {
+        thread(name = "PlayerControllerLoop", priority = Thread.MAX_PRIORITY) {
             runBlocking {
                 launch {
                     var state = State.initial
