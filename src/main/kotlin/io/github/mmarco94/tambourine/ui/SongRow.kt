@@ -133,24 +133,21 @@ private fun BaseSongRow(
             shadowElevation = if (isCurrentSong) 2.dp else 0.dp,
         ) {
             Row(
-                Modifier.clickable { play(null) },
-                verticalAlignment = Alignment.CenterVertically
+                Modifier.clickable { play(null) }.padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Spacer(Modifier.width(8.dp))
                 if (showTrackNumber) {
                     val maxDigits = maxTrackNumber?.digits() ?: 0
                     SingleLineText(
                         song.track?.toString().orEmpty().padStart(maxDigits, ' '),
-                        Modifier.padding(vertical = 8.dp),
                         fontFamily = FontFamily.Monospace,
                         color = MaterialTheme.colorScheme.onSurfaceSecondary,
                         style = MaterialTheme.typography.labelMedium,
                     )
-                    Spacer(Modifier.width(8.dp))
                 }
                 if (showAlbumCover) {
-                    Spacer(Modifier.width(8.dp))
-                    Box(Modifier.padding(vertical = 8.dp)) {
+                    Box {
                         AlbumCover(
                             song.cover,
                             Modifier.size(48.dp),
@@ -172,17 +169,15 @@ private fun BaseSongRow(
                             }
                         )
                     }
-                    Spacer(Modifier.width(16.dp))
                 }
                 Box(Modifier.height(24.dp).animateContentSize()) {
                     if (isCurrentSong && !showAlbumCover) {
                         Row {
                             SmallFakeSpectrometers(Modifier.size(24.dp), player)
-                            Spacer(Modifier.width(8.dp))
                         }
                     }
                 }
-                Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
+                Column(Modifier.weight(1f)) {
                     Text(song.title, style = MaterialTheme.typography.titleSmall)
                     if (showAlbumInfo || showArtistInfo) {
                         Spacer(Modifier.height(4.dp))
@@ -202,7 +197,6 @@ private fun BaseSongRow(
                 }
                 SingleLineText(
                     song.length.format(),
-                    Modifier.padding(8.dp),
                     color = MaterialTheme.colorScheme.onSurfaceSecondary,
                     style = MaterialTheme.typography.labelMedium,
                 )
