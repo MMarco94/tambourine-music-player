@@ -29,3 +29,15 @@ A simple and straight-to-the point music player for your local library.
 ![Artist filter with lyrics](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/2e6970c977d941db62e6b58d3a73d82e308bf86c/screenshots/filter_lyrics.png)
 ![The search interface](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/2e6970c977d941db62e6b58d3a73d82e308bf86c/screenshots/search.png)
 ![Small window form factor](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/2e6970c977d941db62e6b58d3a73d82e308bf86c/screenshots/small.png)
+
+## Translations
+
+The app is translated in:
+
+- English
+- Italian
+
+To add a translation, add a `string.xml` file in the appropriate folder
+inside [the app's resources](https://github.com/MMarco94/tambourine-music-player/tree/main/src/main/composeResources).
+For example, see
+the [italian translation file](https://github.com/MMarco94/tambourine-music-player/blob/main/src/main/composeResources/values-it/strings.xml).
