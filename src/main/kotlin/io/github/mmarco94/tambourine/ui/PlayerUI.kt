@@ -4,7 +4,6 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -48,7 +47,6 @@ import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
 
-private val MAX_BLUR = 48.dp
 private val TOP_SPACER_HEIGHT_EXPANSION = 540.dp..700.dp
 private val BOTTOM_SPACER_HEIGHT_EXPANSION = 700.dp..960.dp
 private val ALBUM_COVER_HEIGHT_COLLAPSE = 960.dp..1920.dp
@@ -174,45 +172,48 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
         contentAlignment = Alignment.Center
     ) {
         AlbumContainer(Modifier.fillMaxHeight(), MaterialTheme.shapes.large, elevation = 16.dp) {
-            val blur by animateDpAsState(if (hasLyrics) MAX_BLUR else 0.dp)
-            val saturation by animateFloatAsState(if (hasLyrics) 0.75f else 1f)
-            Crossfade(song.cover, Modifier.blur(blur)) {
-                AlbumCoverContent(
-                    it,
-                    colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(saturation) }),
-                    fullResolution = blur < MAX_BLUR / 2,
-                )
+            val lyricToNormal by animateFloatAsState(if (hasLyrics) 1f else 0f)
+            val blur = 16.dp * lyricToNormal
+            val paper = 0.075f * lyricToNormal
+            val saturation by animateFloatAsState(if (hasLyrics) 0.6f else 1f)
+            val baseColor = song.cover?.colorPalette?.first() ?: MusicPlayerTheme.defaultScheme.primary
+            val bgColor = remember(baseColor) {
+                baseColor.hsb().makeContrasty().color
             }
-            val bgColor = song.cover?.colorPalette?.first() ?: MusicPlayerTheme.defaultScheme.primary
-            val bg by animateColorAsState(
-                bgColor.copy(if (hasLyrics) .5f else 0f)
+            val bgColorAnimated by animateColorAsState(
+                bgColor.copy(if (hasLyrics) .75f else 0f)
             )
             val contentColor by animateColorAsState(
                 bgColor.hsb().contrast().color
             )
-            Box(Modifier.background(bg)) {
-                Crossfade(
-                    actualSong,
-                    modifier = Modifier.fillMaxSize()
-                ) { s ->
-                    if (s?.lyrics != null) {
-                        val player = playerController.current
-                        var pos by remember { mutableStateOf(ZERO) }
-                        val position = player.Position()
-                        if (player.queue?.currentSong == s) {
-                            pos = position
-                        }
-                        CompositionLocalProvider(LocalContentColor provides contentColor) {
-                            LyricsComposable(
-                                s.lyrics,
-                                getPosition = { pos },
-                                setPosition = { position ->
-                                    cs.launch {
-                                        player.seek(player.queue, position)
-                                    }
+            Crossfade(song.cover, Modifier.paperNoise(baseBgColor = bgColorAnimated, strength = paper).blur(blur)) {
+                AlbumCoverContent(
+                    it,
+                    colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(saturation) }),
+                    fullResolution = lyricToNormal < 0.5f,
+                )
+            }
+            Crossfade(
+                actualSong,
+                modifier = Modifier.fillMaxSize()
+            ) { s ->
+                if (s?.lyrics != null) {
+                    val player = playerController.current
+                    var pos by remember { mutableStateOf(ZERO) }
+                    val position = player.Position()
+                    if (player.queue?.currentSong == s) {
+                        pos = position
+                    }
+                    CompositionLocalProvider(LocalContentColor provides contentColor) {
+                        LyricsComposable(
+                            s.lyrics,
+                            getPosition = { pos },
+                            setPosition = { position ->
+                                cs.launch {
+                                    player.seek(player.queue, position)
                                 }
-                            )
-                        }
+                            }
+                        )
                     }
                 }
             }

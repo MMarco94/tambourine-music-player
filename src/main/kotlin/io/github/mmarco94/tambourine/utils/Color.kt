@@ -18,6 +18,17 @@ data class HSLColor(
 
     fun darker() = copy(lightness = lightness / 2f)
 
+    fun makeContrasty(strength: Float = 2f): HSLColor {
+        return HSLColor(
+            hue,
+            (saturation * 1.2f).coerceAtMost(1f),
+            when {
+                lightness < .5f -> lightness / strength
+                else -> 1f - (1f - lightness) / strength
+            }
+        )
+    }
+
     fun contrast(): HSLColor {
         return HSLColor(
             (hue + 30f).mod(360f),
