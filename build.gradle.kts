@@ -28,10 +28,10 @@ kotlin {
 }
 
 dependencies {
-    implementation(compose.foundation)
+    implementation("org.jetbrains.compose.foundation:foundation:1.10.3")
     implementation(compose.desktop.currentOs)
-    api(compose.materialIconsExtended)
-    api(compose.material3)
+    implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+    implementation("org.jetbrains.compose.material3:material3:1.9.0")
     val coroutine = "1.10.2"
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutine")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:$coroutine")
@@ -62,7 +62,7 @@ dependencies {
     implementation("com.github.hypfvieh:dbus-java-core:5.2.0")
     implementation("com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.2.0")
 
-    val kotest = "6.1.9"
+    val kotest = "6.1.11"
     testImplementation("io.kotest:kotest-runner-junit5:$kotest")
     testImplementation("io.kotest:kotest-assertions-core:$kotest")
 }
