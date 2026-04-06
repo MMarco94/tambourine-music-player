@@ -7,9 +7,14 @@ plugins {
     id("com.github.ben-manes.versions") version "0.53.0"
 }
 
+enum class ClassSharingMode {
+    None, DumpLoadedClasses, CreateArchive, LoadArchive
+}
+
 group = "io.github.mmarco94"
 version = "1.1.4"
 val debugBuild = false
+val runMode = ClassSharingMode.LoadArchive
 
 repositories {
     google()
@@ -70,6 +75,20 @@ tasks.test {
     useJUnitPlatform()
 }
 
+val validateDebugMode by tasks.registering {
+    doLast {
+        if (debugBuild || runMode != ClassSharingMode.None) {
+            throw IllegalArgumentException("Cannot create release build with debug options")
+        }
+    }
+}
+
+tasks.configureEach {
+    if (name == "createReleaseDistributable" || name == "proguardReleaseJars") {
+        dependsOn(validateDebugMode)
+    }
+}
+
 compose.desktop {
     application {
         mainClass = "io.github.mmarco94.tambourine.MainKt"
@@ -81,6 +100,21 @@ compose.desktop {
         if (debugBuild) {
             jvmArgs += listOf("-XX:NativeMemoryTracking=summary")
             jvmArgs += listOf("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005")
+        }
+        when (runMode) {
+            ClassSharingMode.None -> {}
+            ClassSharingMode.DumpLoadedClasses -> jvmArgs += listOf(
+                "-Xshare:off",
+                "-XX:DumpLoadedClassList=/tmp/tambourine.classlist"
+            )
+
+            ClassSharingMode.CreateArchive -> jvmArgs += listOf(
+                "-Xshare:dump",
+                "-XX:SharedClassListFile=/tmp/tambourine.classlist",
+                "-XX:SharedArchiveFile=/tmp/tambourine.jsa"
+            )
+
+            ClassSharingMode.LoadArchive -> jvmArgs += listOf("-XX:SharedArchiveFile=/tmp/tambourine.jsa")
         }
         nativeDistributions {
             packageName = "tambourine"
