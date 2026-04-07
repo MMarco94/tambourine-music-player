@@ -49,6 +49,7 @@
         <item quantity="one">%1$d song remaining</item>
         <item quantity="other">%1$d songs remaining</item>
     </plurals>
+    <string name="playlists">Playlists</string>
 
     <string name="artist_sorter_name">Name</string>
     <string name="artist_sorter_name_description">By name</string>

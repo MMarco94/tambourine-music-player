@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.PlayCircleFilled
 import androidx.compose.material.icons.filled.SearchOff
@@ -33,7 +34,7 @@ enum class Panel(
     val icon: ImageVector,
     val label: StringResource,
 ) {
-    LIBRARY(Icons.Filled.LibraryMusic, Res.string.main_menu_library),
+    LIBRARY(Icons.Filled.Home, Res.string.main_menu_library),
     QUEUE(Icons.AutoMirrored.Default.QueueMusic, Res.string.main_menu_queue),
     PLAYER(Icons.Filled.PlayCircleFilled, Res.string.main_menu_player),
 }

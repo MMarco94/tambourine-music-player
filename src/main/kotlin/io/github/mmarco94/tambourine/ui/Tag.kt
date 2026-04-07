@@ -59,7 +59,7 @@ fun Tag(
     showAsSubtitle: Boolean,
     icon: ImageVector,
     description: String,
-    selectedLabel: String,
+    selectedLabel: String?,
     selectedIcon: ImageVector?,
     reset: (() -> Unit)?,
     onClick: () -> Unit,
@@ -71,7 +71,7 @@ fun Tag(
             onClick = onClick,
             content = {
                 Row(
-                    Modifier.height(IntrinsicSize.Max).heightIn(min = 40.dp).animateContentSize(),
+                    Modifier.height(IntrinsicSize.Max).heightIn(min = 52.dp).animateContentSize(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -80,15 +80,19 @@ fun Tag(
                         if (showAsSubtitle) {
                             Column {
                                 SingleLineText(description, style = MaterialTheme.typography.labelLarge)
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    SingleLineText(selectedLabel, style = MaterialTheme.typography.labelMedium)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                ) {
+                                    if (selectedLabel != null) {
+                                        SingleLineText(selectedLabel, style = MaterialTheme.typography.labelMedium)
+                                    }
                                     if (selectedIcon != null) {
-                                        Spacer(Modifier.width(2.dp))
                                         Icon(selectedIcon, null, Modifier.size(16.dp))
                                     }
                                 }
                             }
-                        } else {
+                        } else if (selectedLabel != null) {
                             SingleLineText(selectedLabel, style = MaterialTheme.typography.labelLarge)
                         }
                     }

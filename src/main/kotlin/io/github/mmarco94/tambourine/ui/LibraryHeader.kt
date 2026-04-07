@@ -83,7 +83,7 @@ private sealed interface SortFilterOption {
 private fun TagForOptions(
     active: Boolean,
     enabled: Boolean,
-    selected: SortFilterOption,
+    selected: SortFilterOption?,
     icon: ImageVector,
     description: String,
     reset: SongListOptions?,
@@ -94,10 +94,10 @@ private fun TagForOptions(
     Tag(
         active = active,
         enabled = enabled,
-        showAsSubtitle = selected is SortFilterOption.Sort,
+        showAsSubtitle = selected == null || selected is SortFilterOption.Sort,
         icon = icon,
         description = description,
-        selectedLabel = selected.name(),
+        selectedLabel = selected?.name(),
         selectedIcon = (selected as? SortFilterOption.Sort)?.icon,
         reset = reset?.let { { setOptions(it); close() } },
         onClick = onClick,
@@ -173,7 +173,7 @@ private class FilterSortPopupRenderer(
 }
 
 enum class LibraryHeaderTab {
-    ARTIST, ALBUM, SONG, SEARCH;
+    ARTIST, ALBUM, SONG, PLAYLIST, SEARCH;
 }
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalAnimationApi::class)
@@ -198,6 +198,9 @@ fun LibraryHeader(
     }
     val songRenderer = remember(options, setOptions) {
         SongOptionsRenderer(SONG, options, setOptions)
+    }
+    val playlistRenderer = remember(options, setOptions) {
+        PlaylistOptionsRenderer(PLAYLIST, options, setOptions)
     }
     val queryTransition = updateTransition(options.queryFilter)
 
@@ -225,11 +228,13 @@ fun LibraryHeader(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     FlowRow(
                         Modifier.padding(2.dp).weight(1f),
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.Center,
+                        itemVerticalAlignment = Alignment.CenterVertically,
                     ) {
                         artistRenderer.Tag(tab, setTab)
                         albumRenderer.Tag(tab, setTab)
                         songRenderer.Tag(tab, setTab)
+                        playlistRenderer.Tag(tab, setTab)
                         Box(Modifier.onGloballyPositioned {
                             searchTagPos = it.localToWindow(Offset.Zero)
                             searchTagSize = it.size
@@ -321,6 +326,7 @@ fun LibraryHeader(
                     ARTIST -> artistRenderer
                     ALBUM -> albumRenderer
                     SONG -> songRenderer
+                    PLAYLIST -> playlistRenderer
                     SEARCH -> null
                 }
                 if (renderer != null) {
@@ -386,7 +392,7 @@ private interface OptionsRenderer : TabRenderer {
     val tab: LibraryHeaderTab
     val activeFilter: Any?
     val withoutFilter: SongListOptions
-    val selectedOption: SortFilterOption
+    val selectedOption: SortFilterOption?
     val setOptions: (SongListOptions) -> Unit
 
     @Composable
@@ -573,6 +579,24 @@ private class SongOptionsRenderer(
             close,
             setOptions
         )
+    }
+}
+
+private class PlaylistOptionsRenderer(
+    override val tab: LibraryHeaderTab,
+    private val options: SongListOptions,
+    override val setOptions: (SongListOptions) -> Unit,
+) : OptionsRenderer {
+    @Composable
+    override fun description() = stringResource(Res.string.playlists)
+    override val icon = Icons.Default.LibraryMusic
+    override val activeFilter = null
+    override val withoutFilter = options
+    override val selectedOption = null
+
+    @Composable
+    override fun BoxScope.Render(close: () -> Unit) {
+        BigMessage(Modifier.fillMaxSize(), Icons.Default.Work, "Work in progress")
     }
 }
 
