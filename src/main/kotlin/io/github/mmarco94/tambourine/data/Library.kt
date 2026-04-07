@@ -3,10 +3,14 @@ package io.github.mmarco94.tambourine.data
 import io.github.mmarco94.tambourine.utils.mostCommonOrNull
 import io.github.mmarco94.tambourine.utils.orNoop
 import kotlinx.coroutines.awaitAll
+import net.bjoernpetersen.m3u.model.M3uEntry
+import net.bjoernpetersen.m3u.model.MediaPath
+import net.bjoernpetersen.m3u.model.MediaUrl
 import java.io.File
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
+import kotlin.io.path.name
 import kotlin.time.Duration
 
 data class Artist(
@@ -20,6 +24,19 @@ data class Album(
     val cover: AlbumCover?,
     val stats: SongCollectionStats,
 )
+
+data class Playlist(
+    val name: String,
+    val file: File,
+    val songs: List<Song>,
+) {
+    val songSet = songs.toSet()
+
+    override fun hashCode() = file.hashCode()
+    override fun equals(other: Any?): Boolean {
+        return other is Playlist && other.file == file
+    }
+}
 
 class Song(
     val file: File,
@@ -48,9 +65,10 @@ class Song(
                 this.artist.name.contains(queryFilter, ignoreCase = true)
     }
 
-    fun matches(artist: Artist?, album: Album?, queryFilter: List<String>): Boolean {
+    fun matches(artist: Artist?, album: Album?, playlist: Playlist?, queryFilter: List<String>): Boolean {
         return (artist == null || this.artist == artist) &&
                 (album == null || this.album == album) &&
+                (playlist == null || this in playlist.songSet) &&
                 (queryFilter.all { matches(it) })
     }
 
@@ -74,21 +92,24 @@ data class Library(
     val songs: List<Song>,
     val albums: List<Album>,
     val artists: List<Artist>,
+    val playlists: List<Playlist>,
     val songsByAlbum: Map<Album, List<Song>> = songs.groupBy { it.album },
     val songsByArtist: Map<Artist, List<Song>> = songs.groupBy { it.artist },
 ) {
-
     val stats = SongCollectionStats.of(songs)
 
-    fun filter(artist: Artist?, album: Album?, query: String): Library {
+    fun filter(artist: Artist?, album: Album?, playlist: File?, query: String): Library {
+        val playlist = playlists.singleOrNull { it.file == playlist }
         val queryFilter = query.split(queryStringDelimiters)
-        val songs = songs.filter { it.matches(artist, album, queryFilter) }
+        val songs = songs.filter { it.matches(artist, album, playlist, queryFilter) }
         val songsByAlbum = songs.groupBy { it.album }
         val songsByArtist = songs.groupBy { it.artist }
         return Library(
             songs = songs,
             albums = albums.filter { it in songsByAlbum },
             artists = artists.filter { it in songsByArtist },
+            //TODO: do I need to filter them?
+            playlists = playlists,
             songsByAlbum = songsByAlbum,
             songsByArtist = songsByArtist,
         )
@@ -118,6 +139,7 @@ data class Library(
             songs = newSongs,
             albums = newAlbums,
             artists = newArtists,
+            playlists = playlists,
         )
     }
 
@@ -144,7 +166,10 @@ data class Library(
                 }
         }
 
-        suspend fun from(metadata: Collection<RawMetadataSong>): Library {
+        suspend fun from(
+            metadata: Collection<RawMetadataSong>,
+            rawPlaylists: Set<Map.Entry<File, List<M3uEntry>>>,
+        ): Library {
             val artists = buildArtists(metadata)
             val albums = buildAlbums(metadata, artists)
 
@@ -163,11 +188,38 @@ data class Library(
                     lyrics = song.lyrics,
                 )
             }
+            val playlists = if (rawPlaylists.isNotEmpty()) {
+                val songsByName = songs.groupBy { it.file.name }
+                rawPlaylists.map { (file, entries) ->
+                    Playlist(
+                        name = file.nameWithoutExtension,
+                        file = file,
+                        songs = entries.mapNotNull { entry ->
+                            findBestMatch(entry, songsByName)
+                        },
+                    )
+                }.sortedBy { it.name }
+            } else emptyList()
             return Library(
-                songs,
-                albums.values.toList(),
-                artists.values.toList(),
+                songs = songs,
+                albums = albums.values.toList(),
+                artists = artists.values.toList(),
+                playlists = playlists,
             )
+        }
+
+        fun findBestMatch(
+            entry: M3uEntry,
+            songsByName: Map<String, List<Song>>,
+        ): Song? {
+            // TODO: log when/why there are no matches
+            val location = when (val loc = entry.location) {
+                is MediaPath -> loc.path
+                is MediaUrl -> return null
+            }
+            val candidates = songsByName[location.name] ?: return null
+            // TODO: find best candidate
+            return candidates.first()
         }
     }
 }

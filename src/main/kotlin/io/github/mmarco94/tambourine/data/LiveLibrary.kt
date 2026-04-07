@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import net.bjoernpetersen.m3u.M3uParser
+import net.bjoernpetersen.m3u.model.M3uEntry
 import java.io.File
 import java.nio.file.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -50,9 +52,11 @@ class LiveLibrary(
             }
             scope.launch {
                 val rawMetadatas = mutableMapOf<File, RawMetadataSong>()
+                val rawPlaylists = mutableMapOf<File, List<M3uEntry>>()
                 while (true) {
                     when (val event = eventChannel.receive()) {
                         is InternalEvent.NewSong -> rawMetadatas[event.file] = event.metadata
+                        is InternalEvent.NewPlaylist -> rawPlaylists[event.file] = event.playlist
                         is InternalEvent.FileDeleted -> {
                             rawMetadatas.keys.removeIf { song ->
                                 song.path.startsWith(event.fileOrFolder.absolutePath)
@@ -64,7 +68,7 @@ class LiveLibrary(
                     }
                     val remaining = pendingEvents.decrementAndGet()
                     if (remaining == 0) {
-                        val library = Library.from(rawMetadatas.values)
+                        val library = Library.from(rawMetadatas.values, rawPlaylists.entries)
                         System.gc()
                         logger.info {
                             val diff = creationTime.elapsedNow()
@@ -128,6 +132,14 @@ class LiveLibrary(
 
     /** Warning: increment pendingEvents before calling this! */
     private suspend fun onNewFile(file: File, decoder: CoversDecoder) {
+        if (file.extension == "m3u") {
+            onNewPlaylist(file)
+        } else {
+            onNewSong(file, decoder)
+        }
+    }
+
+    private suspend fun onNewSong(file: File, decoder: CoversDecoder) {
         try {
             eventChannel.send(
                 InternalEvent.NewSong(
@@ -138,7 +150,23 @@ class LiveLibrary(
         } catch (e: Exception) {
             eventChannel.send(InternalEvent.FileIgnored)
             logger.error {
-                "Error while parsing music file: ${e.message}"
+                "Error while parsing music file $file: ${e.message}"
+            }
+        }
+    }
+
+    private suspend fun onNewPlaylist(file: File) {
+        try {
+            eventChannel.send(
+                InternalEvent.NewPlaylist(
+                    file,
+                    M3uParser.parse(file.toPath())
+                )
+            )
+        } catch (e: Exception) {
+            eventChannel.send(InternalEvent.FileIgnored)
+            logger.error {
+                "Error while parsing playlist file $file: ${e.message}"
             }
         }
     }
@@ -161,6 +189,11 @@ class LiveLibrary(
         data class NewSong(
             val file: File,
             val metadata: RawMetadataSong,
+        ) : InternalEvent
+
+        data class NewPlaylist(
+            val file: File,
+            val playlist: List<M3uEntry>,
         ) : InternalEvent
 
         data class FileDeleted(

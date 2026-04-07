@@ -65,6 +65,7 @@ dependencies {
     implementation("com.tagtraum:ffsampledsp-complete:0.9.53")
     // music metadata reader
     implementation("net.jthink:jaudiotagger:3.0.1")
+    implementation("com.github.bjoernpetersen:m3u-parser:1.4.0")
     // DBUS APIs
     implementation("com.github.hypfvieh:dbus-java-core:5.2.0")
     implementation("com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.2.0")

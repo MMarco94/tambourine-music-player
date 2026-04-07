@@ -1,5 +1,7 @@
 package io.github.mmarco94.tambourine.data
 
+import java.io.File
+
 data class SongListOptions(
     val artistSorter: ArtistSorter = ArtistSorter.ALPHABETICAL,
     val albumSorter: AlbumSorter = AlbumSorter.YEAR,
@@ -8,6 +10,7 @@ data class SongListOptions(
     val queryFilter: String = "",
     val artistFilter: Artist? = null,
     val albumFilter: Album? = null,
+    val playlistFilter: File? = null,
 ) {
     val isInAlbumMode: Boolean
         get() {
@@ -45,6 +48,12 @@ data class SongListOptions(
             songSorterInAlbum = sorter,
         )
     }
+
+    fun withPlaylistFilter(playlist: File?): SongListOptions {
+        return copy(
+            playlistFilter = playlist,
+        )
+    }
 }
 
 sealed interface SongListItem {
@@ -63,7 +72,7 @@ sealed interface SongListItem {
 }
 
 fun Library.filter(options: SongListOptions): Library {
-    return filter(options.artistFilter, options.albumFilter, options.queryFilter)
+    return filter(options.artistFilter, options.albumFilter, options.playlistFilter, options.queryFilter)
 }
 
 fun Library.sort(options: SongListOptions): Library {

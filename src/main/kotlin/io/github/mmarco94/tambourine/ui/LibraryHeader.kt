@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.v2.ScrollbarAdapter
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -106,7 +107,7 @@ private fun TagForOptions(
 
 private class FilterSortPopupRenderer(
     val listOptions: SongListOptions,
-    val selected: SortFilterOption,
+    val selected: SortFilterOption?,
     val dismissPopup: () -> Unit,
     val setOptions: (SongListOptions) -> Unit,
 ) {
@@ -132,7 +133,7 @@ private class FilterSortPopupRenderer(
     }
 
     @Composable
-    private fun BoxScope.ScrollBar(adapter: androidx.compose.foundation.v2.ScrollbarAdapter) {
+    private fun BoxScope.ScrollBar(adapter: ScrollbarAdapter) {
         Box(Modifier.matchParentSize()) {
             VerticalScrollbar(
                 modifier = Modifier.align(Alignment.CenterEnd), adapter = adapter
@@ -199,8 +200,8 @@ fun LibraryHeader(
     val songRenderer = remember(options, setOptions) {
         SongOptionsRenderer(SONG, options, setOptions)
     }
-    val playlistRenderer = remember(options, setOptions) {
-        PlaylistOptionsRenderer(PLAYLIST, options, setOptions)
+    val playlistRenderer = remember(library, options, setOptions) {
+        PlaylistOptionsRenderer(PLAYLIST, library, options, setOptions)
     }
     val queryTransition = updateTransition(options.queryFilter)
 
@@ -413,7 +414,7 @@ private interface OptionsRenderer : TabRenderer {
     @Composable
     fun <T> BoxScope.FilterSortContent(
         listOptions: SongListOptions,
-        selected: SortFilterOption,
+        selected: SortFilterOption?,
         sortOptions: List<SortFilterOption.Sort>,
         filterOptions: List<SortFilterOption.Filter<T>>,
         dismissPopup: () -> Unit,
@@ -501,7 +502,7 @@ private class AlbumOptionsRenderer(
         options.artistSorter.comparator.orNoop(),
         options.albumSorter.comparator ?: compareBy { it.title },
         noopComparator()
-    ).filter(options.artistFilter, null, "")
+    ).filter(options.artistFilter, null, null, "")
     private val albumsSorters = AlbumSorter.entries.associateWith { sorter ->
         SortFilterOption.Sort(sorter) {
             it.withAlbumFilter(null).copy(albumSorter = sorter)
@@ -584,19 +585,35 @@ private class SongOptionsRenderer(
 
 private class PlaylistOptionsRenderer(
     override val tab: LibraryHeaderTab,
+    library: Library,
     private val options: SongListOptions,
     override val setOptions: (SongListOptions) -> Unit,
 ) : OptionsRenderer {
+    private val playlistFilters = library.playlists.associate { playlist ->
+        playlist.file to SortFilterOption.Filter(
+            name = playlist.name,
+            element = playlist.file,
+            transform = { it.withPlaylistFilter(playlist.file) }
+        )
+    }
+
     @Composable
     override fun description() = stringResource(Res.string.playlists)
     override val icon = Icons.Default.LibraryMusic
-    override val activeFilter = null
-    override val withoutFilter = options
-    override val selectedOption = null
+    override val activeFilter = options.playlistFilter
+    override val withoutFilter = options.withPlaylistFilter(null)
+    override val selectedOption = playlistFilters[options.playlistFilter]
 
     @Composable
     override fun BoxScope.Render(close: () -> Unit) {
-        BigMessage(Modifier.fillMaxSize(), Icons.Default.Work, "Work in progress")
+        FilterSortContent(
+            options,
+            selectedOption,
+            emptyList(),
+            playlistFilters.values.toList(),
+            close,
+            setOptions
+        )
     }
 }
 
