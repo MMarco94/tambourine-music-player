@@ -113,7 +113,8 @@ data class Library(
             songs = songs,
             albums = albums.filter { it in songsByAlbum },
             artists = artists.filter { it in songsByArtist },
-            //TODO: do I need to filter them?
+            // Note: I'm not filtering playlists so their elements remain consistent even when filtered.
+            // As of 2026-04-09, this has no real implication and could be changed if necessary
             playlists = playlists,
             songsByAlbum = songsByAlbum,
             songsByArtist = songsByArtist,
