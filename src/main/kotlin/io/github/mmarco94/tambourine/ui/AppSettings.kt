@@ -28,7 +28,9 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder
 import org.jetbrains.compose.resources.stringResource
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.isDirectory
 
 private val logger = KotlinLogging.logger {}
 
@@ -83,7 +85,7 @@ fun AppSettingsWindow(close: () -> Unit) {
                             Preferences.setUseSystemDecorations(useSystemDecorations)
                             close()
                         },
-                        enabled = (preferenceLibrary != library || preferenceUseSystemDecorations != useSystemDecorations) && library.isDirectory,
+                        enabled = (preferenceLibrary != library || preferenceUseSystemDecorations != useSystemDecorations) && library.isDirectory(),
                         modifier = Modifier.align(Alignment.End)
                     ) {
                         Text(stringResource(Res.string.action_apply_changes))
@@ -95,13 +97,13 @@ fun AppSettingsWindow(close: () -> Unit) {
 }
 
 @Composable
-private fun LibraryDirectorySetting(library: File, changeLibrary: (File) -> Unit) {
+private fun LibraryDirectorySetting(library: Path, changeLibrary: (Path) -> Unit) {
     val cs = rememberCoroutineScope()
     Row(Modifier.height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
         val interactionSource = remember { MutableInteractionSource() }
         OutlinedTextField(
-            library.absolutePath,
-            { changeLibrary(File(it)) },
+            library.absolutePathString(),
+            { changeLibrary(Path.of(it)) },
             Modifier.weight(1f),
             label = { SingleLineText(stringResource(Res.string.music_library_folder), style = LocalTextStyle.current) },
             maxLines = 1,
@@ -111,7 +113,7 @@ private fun LibraryDirectorySetting(library: File, changeLibrary: (File) -> Unit
             leadingIcon = {
                 Icon(Icons.Default.LibraryMusic, null)
             },
-            isError = !library.isDirectory,
+            isError = !library.isDirectory(),
             interactionSource = interactionSource,
         )
         Surface(
@@ -131,7 +133,7 @@ private fun LibraryDirectorySetting(library: File, changeLibrary: (File) -> Unit
                                 title = chooseLibraryStr,
                                 directory = true,
                                 multiple = false,
-                            ).singleOrNull()?.toFile()
+                            ).singleOrNull()
                             if (file != null) {
                                 changeLibrary(file)
                             }

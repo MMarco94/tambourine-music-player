@@ -11,7 +11,7 @@ class AppendOnlyList<T> private constructor(
 
     // It is guaranteed for the returned list to be "immutable" from the perspective of the user
     override fun subList(fromIndex: Int, toIndex: Int): List<T> {
-        require(fromIndex in 0 until size)
+        require(fromIndex in indices)
         require(toIndex in 0..size)
         require(fromIndex <= toIndex)
         return object : AbstractList<T>() {

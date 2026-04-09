@@ -10,21 +10,23 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.bjoernpetersen.m3u.M3uParser
 import net.bjoernpetersen.m3u.model.M3uEntry
-import java.io.File
 import java.nio.file.*
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.io.path.exists
+import kotlin.io.path.extension
+import kotlin.io.path.isDirectory
 import kotlin.time.TimeSource
 
 private val logger = KotlinLogging.logger {}
 
 class LiveLibrary(
     private val scope: CoroutineScope,
-    private val roots: Set<File>
+    private val roots: Set<Path>
 ) {
     private val creationTime = TimeSource.Monotonic.markNow()
     private val watchService: WatchService = FileSystems.getDefault().newWatchService()
     private val watchServiceMutex = Mutex()
-    private val registeredKeys = mutableMapOf<File, WatchKey>()
+    private val registeredKeys = mutableMapOf<Path, WatchKey>()
     private val pendingEvents = AtomicInteger(0)
 
     private var eventChannel = Channel<InternalEvent>()
@@ -51,18 +53,18 @@ class LiveLibrary(
                 }
             }
             scope.launch {
-                val rawMetadatas = mutableMapOf<File, RawMetadataSong>()
-                val rawPlaylists = mutableMapOf<File, List<M3uEntry>>()
+                val rawMetadatas = mutableMapOf<Path, RawMetadataSong>()
+                val rawPlaylists = mutableMapOf<Path, List<M3uEntry>>()
                 while (true) {
                     when (val event = eventChannel.receive()) {
                         is InternalEvent.NewSong -> rawMetadatas[event.file] = event.metadata
                         is InternalEvent.NewPlaylist -> rawPlaylists[event.file] = event.playlist
                         is InternalEvent.FileDeleted -> {
                             rawMetadatas.keys.removeIf { song ->
-                                song.path.startsWith(event.fileOrFolder.absolutePath)
+                                song.startsWith(event.fileOrFolder)
                             }
                             rawPlaylists.keys.removeIf { song ->
-                                song.path.startsWith(event.fileOrFolder.absolutePath)
+                                song.startsWith(event.fileOrFolder)
                             }
                         }
 
@@ -95,7 +97,7 @@ class LiveLibrary(
     }
 
     private fun onFileEvent(dirPath: Path, event: WatchEvent<*>, decoder: CoversDecoder) {
-        val file = dirPath.resolve(event.context() as Path).toFile()
+        val file = dirPath.resolve(event.context() as Path)
         when (event.kind()) {
             StandardWatchEventKinds.ENTRY_CREATE -> onNew(file, decoder)
             StandardWatchEventKinds.ENTRY_DELETE -> onDeleted(file)
@@ -103,10 +105,10 @@ class LiveLibrary(
         }
     }
 
-    private fun onNew(fileOrFolder: File, decoder: CoversDecoder) {
+    private fun onNew(fileOrFolder: Path, decoder: CoversDecoder) {
         pendingEvents.incrementAndGet()
         scope.launch {
-            if (fileOrFolder.isDirectory) {
+            if (fileOrFolder.isDirectory()) {
                 onNewFolder(fileOrFolder, decoder)
             } else {
                 onNewFile(fileOrFolder, decoder)
@@ -115,14 +117,18 @@ class LiveLibrary(
     }
 
     /** Warning: increment pendingEvents before calling this! */
-    private suspend fun onNewFolder(folder: File, decoder: CoversDecoder) {
-        folder.listFiles()?.forEach { file ->
-            onNew(file, decoder)
+    private suspend fun onNewFolder(folder: Path, decoder: CoversDecoder) {
+        withContext(Dispatchers.IO) {
+            Files.newDirectoryStream(folder).use { stream ->
+                stream.forEach { file ->
+                    onNew(file, decoder)
+                }
+            }
         }
         watchServiceMutex.withLock {
             registeredKeys.remove(folder)?.cancel()
             if (folder.exists()) {
-                registeredKeys[folder] = folder.toPath().register(
+                registeredKeys[folder] = folder.register(
                     watchService,
                     StandardWatchEventKinds.ENTRY_CREATE,
                     StandardWatchEventKinds.ENTRY_MODIFY,
@@ -134,7 +140,7 @@ class LiveLibrary(
     }
 
     /** Warning: increment pendingEvents before calling this! */
-    private suspend fun onNewFile(file: File, decoder: CoversDecoder) {
+    private suspend fun onNewFile(file: Path, decoder: CoversDecoder) {
         if (file.extension == "m3u") {
             onNewPlaylist(file)
         } else {
@@ -142,13 +148,11 @@ class LiveLibrary(
         }
     }
 
-    private suspend fun onNewSong(file: File, decoder: CoversDecoder) {
+    private suspend fun onNewSong(file: Path, decoder: CoversDecoder) {
         try {
+            val songInfo = RawMetadataSong.fromMusicFile(file, decoder)
             eventChannel.send(
-                InternalEvent.NewSong(
-                    file,
-                    RawMetadataSong.fromMusicFile(file, decoder)
-                )
+                InternalEvent.NewSong(file, songInfo)
             )
         } catch (e: Exception) {
             eventChannel.send(InternalEvent.FileIgnored)
@@ -158,13 +162,11 @@ class LiveLibrary(
         }
     }
 
-    private suspend fun onNewPlaylist(file: File) {
+    private suspend fun onNewPlaylist(file: Path) {
         try {
+            val playlistInfo = M3uParser.parse(file)
             eventChannel.send(
-                InternalEvent.NewPlaylist(
-                    file,
-                    M3uParser.parse(file.toPath())
-                )
+                InternalEvent.NewPlaylist(file, playlistInfo)
             )
         } catch (e: Exception) {
             eventChannel.send(InternalEvent.FileIgnored)
@@ -174,7 +176,7 @@ class LiveLibrary(
         }
     }
 
-    private fun onDeleted(fileOrFolder: File) {
+    private fun onDeleted(fileOrFolder: Path) {
         pendingEvents.incrementAndGet()
         scope.launch {
             watchServiceMutex.withLock {
@@ -184,23 +186,23 @@ class LiveLibrary(
         }
     }
 
-    private fun onModified(fileOrFolder: File, decoder: CoversDecoder) {
+    private fun onModified(fileOrFolder: Path, decoder: CoversDecoder) {
         onNew(fileOrFolder, decoder)
     }
 
     private sealed interface InternalEvent {
         data class NewSong(
-            val file: File,
+            val file: Path,
             val metadata: RawMetadataSong,
         ) : InternalEvent
 
         data class NewPlaylist(
-            val file: File,
+            val file: Path,
             val playlist: List<M3uEntry>,
         ) : InternalEvent
 
         data class FileDeleted(
-            val fileOrFolder: File,
+            val fileOrFolder: Path,
         ) : InternalEvent
 
         object FileIgnored : InternalEvent
@@ -209,7 +211,7 @@ class LiveLibrary(
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-fun Flow<Set<File>>.toLibrary(): Flow<Library?> {
+fun Flow<Set<Path>>.toLibrary(): Flow<Library?> {
     return transformLatest { roots ->
         emit(null)
         withContext(Dispatchers.Default) {

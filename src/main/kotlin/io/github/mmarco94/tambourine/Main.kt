@@ -29,7 +29,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.slf4j.bridge.SLF4JBridgeHandler
-import java.io.File
+import java.nio.file.Path
 import kotlin.time.Clock
 
 private val firstInstruction = Clock.System.now()
@@ -39,7 +39,7 @@ private val logger = KotlinLogging.logger {}
 
 fun main(args: Array<String>) {
     Thread.currentThread().priority = Thread.MAX_PRIORITY
-    val filesFromArgs = args.map { File(it) }
+    val filesFromArgs = args.map { Path.of(it) }
     runBlocking {
         // Start loading ASAP
         val musicLibrary = Preferences.libraryFolder
@@ -130,12 +130,12 @@ fun main(args: Array<String>) {
     }
 }
 
-private fun createQueue(library: Library, filesFromArgs: List<File>): SongQueue? {
+private fun createQueue(library: Library, filesFromArgs: List<Path>): SongQueue? {
     val songs = filesFromArgs
         .flatMap { arg ->
             library.songs
-                .filter { s -> s.file.path.startsWith(arg.path) }
-                .sortedWith(compareBy<Song> { it.disk }.thenBy { it.track }.thenBy { it.file.path })
+                .filter { s -> s.file.startsWith(arg) }
+                .sortedWith(compareBy<Song> { it.disk }.thenBy { it.track }.thenBy { it.file })
         }
     return if (songs.isEmpty()) null
     else SongQueue.of(null, songs, songs.first())

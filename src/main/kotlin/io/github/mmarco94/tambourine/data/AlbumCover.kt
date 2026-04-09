@@ -12,7 +12,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.skia.Image
-import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.io.path.writeBytes
 
 private val logger = KotlinLogging.logger {}
 
@@ -49,9 +51,9 @@ class AlbumCover(
         }
     }
 
-    val file: File? by lazy {
+    val file: Path? by lazy {
         try {
-            val f = File.createTempFile("album-cover-", ".png")
+            val f = Files.createTempFile("album-cover-", ".png")
             f.writeBytes(rawImage.bytes)
             f
         } catch (e: Exception) {

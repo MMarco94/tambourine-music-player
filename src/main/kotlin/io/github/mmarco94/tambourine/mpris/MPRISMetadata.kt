@@ -4,7 +4,7 @@ import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.utils.variant
 import org.freedesktop.dbus.types.Variant
 import org.mpris.MediaPlayer2.TrackId
-import java.io.File
+import java.nio.file.Path
 import kotlin.time.Duration
 
 // See https://www.freedesktop.org/wiki/Specifications/mpris-spec/metadata/
@@ -17,7 +17,7 @@ data class MPRISMetadata(
     val title: String,
     val trackNumber: Long?,
     val discNumber: Long?,
-    val artUrl: File?,
+    val artUrl: Path?,
     val lyrics: String?,
 ) {
 
@@ -35,7 +35,7 @@ data class MPRISMetadata(
             put("xesam:discNumber", discNumber.variant())
         }
         if (artUrl != null) {
-            val artUri = artUrl.toURI().toString().replace("file:", "file://")
+            val artUri = artUrl.toUri().toString().replace("file:", "file://")
             //val artUri = "file://${artUrl.absolutePath}"
             put("mpris:artUrl", artUri.variant())
         }

@@ -8,11 +8,12 @@ import kotlinx.coroutines.awaitAll
 import net.bjoernpetersen.m3u.model.M3uEntry
 import net.bjoernpetersen.m3u.model.MediaPath
 import net.bjoernpetersen.m3u.model.MediaUrl
-import java.io.File
+import java.nio.file.Path
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 import kotlin.io.path.name
+import kotlin.io.path.nameWithoutExtension
 import kotlin.time.Duration
 
 private val logger = KotlinLogging.logger {}
@@ -31,7 +32,7 @@ data class Album(
 
 data class Playlist(
     val name: String,
-    val file: File,
+    val file: Path,
     val songs: List<Song>,
 ) {
     val songSet = songs.toSet()
@@ -43,7 +44,7 @@ data class Playlist(
 }
 
 class Song(
-    val file: File,
+    val file: Path,
     override val disk: Int?,
     override val track: Int?,
     val title: String,
@@ -77,7 +78,7 @@ class Song(
     }
 
     fun audioStream(): AudioInputStream {
-        val audioStream: AudioInputStream = AudioSystem.getAudioInputStream(file)
+        val audioStream: AudioInputStream = AudioSystem.getAudioInputStream(file.toFile())
         val format: AudioFormat = audioStream.format
         val pcmFormat = AudioFormat(
             AudioFormat.Encoding.PCM_SIGNED,
@@ -102,7 +103,7 @@ data class Library(
 ) {
     val stats = SongCollectionStats.of(songs)
 
-    fun filter(artist: Artist?, album: Album?, playlist: File?, query: String): Library {
+    fun filter(artist: Artist?, album: Album?, playlist: Path?, query: String): Library {
         val playlist = playlists.singleOrNull { it.file == playlist }
         val queryFilter = query.split(queryStringDelimiters)
         val songs = songs.filter { it.matches(artist, album, playlist, queryFilter) }
@@ -172,7 +173,7 @@ data class Library(
 
         suspend fun from(
             metadata: Collection<RawMetadataSong>,
-            rawPlaylists: Set<Map.Entry<File, List<M3uEntry>>>,
+            rawPlaylists: Set<Map.Entry<Path, List<M3uEntry>>>,
         ): Library {
             val artists = buildArtists(metadata)
             val albums = buildAlbums(metadata, artists)
@@ -232,7 +233,7 @@ data class Library(
             } else {
                 logger.debug { "Multiple possible matches for playlist entry ${entry.location}: finding best possible song based on path similarity" }
                 candidates.maxBy { song ->
-                    pathSimilarity(location, song.file.toPath())
+                    pathSimilarity(location, song.file)
                 }
             }
         }

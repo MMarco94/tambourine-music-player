@@ -51,7 +51,6 @@ data class VBox(
             ColorAxis.GREEN -> vbox.greenEnd
             ColorAxis.BLUE -> vbox.blueEnd
         }
-        val width = (end - start) + 1
         val count = vbox.count
         fun changeBounds(start: Int = this.start, end: Int = this.end): VboxView {
             return copy(

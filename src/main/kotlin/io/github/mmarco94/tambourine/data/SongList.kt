@@ -1,6 +1,6 @@
 package io.github.mmarco94.tambourine.data
 
-import java.io.File
+import java.nio.file.Path
 
 data class SongListOptions(
     val artistSorter: ArtistSorter = ArtistSorter.ALPHABETICAL,
@@ -10,7 +10,7 @@ data class SongListOptions(
     val queryFilter: String = "",
     val artistFilter: Artist? = null,
     val albumFilter: Album? = null,
-    val playlistFilter: File? = null,
+    val playlistFilter: Path? = null,
 ) {
     val isInAlbumMode: Boolean
         get() {
@@ -49,7 +49,7 @@ data class SongListOptions(
         )
     }
 
-    fun withPlaylistFilter(playlist: File?): SongListOptions {
+    fun withPlaylistFilter(playlist: Path?): SongListOptions {
         return copy(
             playlistFilter = playlist,
         )

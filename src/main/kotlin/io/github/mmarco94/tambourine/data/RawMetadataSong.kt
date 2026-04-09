@@ -6,12 +6,13 @@ import kotlinx.coroutines.Deferred
 import kotlinx.datetime.LocalDate
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.nameWithoutExtension
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 data class RawMetadataSong(
-    val file: File,
+    val file: Path,
     override val disk: Int?,
     override val track: Int?,
     override val length: Duration,
@@ -30,8 +31,8 @@ data class RawMetadataSong(
 
     companion object {
 
-        suspend fun fromMusicFile(file: File, decoder: CoversDecoder): RawMetadataSong {
-            val f = AudioFileIO.read(file)
+        suspend fun fromMusicFile(file: Path, decoder: CoversDecoder): RawMetadataSong {
+            val f = AudioFileIO.read(file.toFile())
             val tag = f.tag
             val header = f.audioHeader
 

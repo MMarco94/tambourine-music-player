@@ -10,8 +10,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
-import java.io.File
+import java.nio.file.Path
 import java.util.prefs.Preferences
+import kotlin.io.path.absolutePathString
 
 object Preferences {
 
@@ -24,7 +25,7 @@ object Preferences {
     private val useSystemDecorationsSignal = MutableStateFlow(Any())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val libraryFolder: Flow<File> = librarySignal
+    val libraryFolder: Flow<Path> = librarySignal
         .mapLatest { getLibraryFolder() }
         .flowOn(Dispatchers.IO)
 
@@ -41,10 +42,10 @@ object Preferences {
         librarySignal.value = Any()
     }
 
-    fun getLibraryFolder() = File(prefs.get(KEY_LIBRARY, System.getProperty("user.home") + "/Music"))
+    fun getLibraryFolder() = Path.of(prefs.get(KEY_LIBRARY, System.getProperty("user.home") + "/Music"))
 
-    fun setLibraryFolder(library: File) {
-        prefs.put(KEY_LIBRARY, library.absolutePath)
+    fun setLibraryFolder(library: Path) {
+        prefs.put(KEY_LIBRARY, library.absolutePathString())
         prefs.flush()
         librarySignal.value = Any()
     }
