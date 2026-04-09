@@ -235,7 +235,9 @@ fun LibraryHeader(
                         artistRenderer.Tag(tab, setTab)
                         albumRenderer.Tag(tab, setTab)
                         songRenderer.Tag(tab, setTab)
-                        playlistRenderer.Tag(tab, setTab)
+                        if (library.playlists.isNotEmpty() || playlistRenderer.selectedOption != null) {
+                            playlistRenderer.Tag(tab, setTab)
+                        }
                         Box(Modifier.onGloballyPositioned {
                             searchTagPos = it.localToWindow(Offset.Zero)
                             searchTagSize = it.size
