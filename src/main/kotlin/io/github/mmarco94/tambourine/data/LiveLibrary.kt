@@ -61,6 +61,9 @@ class LiveLibrary(
                             rawMetadatas.keys.removeIf { song ->
                                 song.path.startsWith(event.fileOrFolder.absolutePath)
                             }
+                            rawPlaylists.keys.removeIf { song ->
+                                song.path.startsWith(event.fileOrFolder.absolutePath)
+                            }
                         }
 
                         is InternalEvent.FolderProcessed -> {}
@@ -72,7 +75,7 @@ class LiveLibrary(
                         System.gc()
                         logger.info {
                             val diff = creationTime.elapsedNow()
-                            "Processed ${rawMetadatas.size} songs ($diff since beginning)"
+                            "Processed ${rawMetadatas.size} songs, ${rawPlaylists.size} playlists ($diff since beginning)"
                         }
                         flowCollector.emit(library)
                     }
