@@ -2,6 +2,8 @@ package io.github.mmarco94.tambourine.data
 
 import io.github.mmarco94.tambourine.utils.mostCommonOrNull
 import io.github.mmarco94.tambourine.utils.orNoop
+import io.github.mmarco94.tambourine.utils.pathSimilarity
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.awaitAll
 import net.bjoernpetersen.m3u.model.M3uEntry
 import net.bjoernpetersen.m3u.model.MediaPath
@@ -12,6 +14,8 @@ import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 import kotlin.io.path.name
 import kotlin.time.Duration
+
+private val logger = KotlinLogging.logger {}
 
 data class Artist(
     val name: String,
@@ -212,14 +216,25 @@ data class Library(
             entry: M3uEntry,
             songsByName: Map<String, List<Song>>,
         ): Song? {
-            // TODO: log when/why there are no matches
             val location = when (val loc = entry.location) {
                 is MediaPath -> loc.path
-                is MediaUrl -> return null
+                is MediaUrl -> {
+                    logger.debug { "Playlist entry ${entry.location} ignored: only local files are supported, URL given" }
+                    return null
+                }
             }
-            val candidates = songsByName[location.name] ?: return null
-            // TODO: find best candidate
-            return candidates.first()
+            val candidates = songsByName[location.name]
+            return if (candidates == null) {
+                logger.debug { "Playlist entry ${entry.location} ignored: no songs found that match the name '${location.name}'" }
+                null
+            } else if (candidates.size == 1) {
+                candidates.single()
+            } else {
+                logger.debug { "Multiple possible matches for playlist entry ${entry.location}: finding best possible song based on path similarity" }
+                candidates.maxBy { song ->
+                    pathSimilarity(location, song.file.toPath())
+                }
+            }
         }
     }
 }
