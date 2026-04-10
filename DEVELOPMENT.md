@@ -6,6 +6,12 @@
 ./gradlew run
 ```
 
+If you want to override the language, you can use `-Duser.country` and `-Duser.language`, for example:
+
+```
+./gradlew run -Duser.country=BR -Duser.language=pt
+```
+
 ## Packaging
 
 Tambourine uses Flatpak as the main packaging system.
