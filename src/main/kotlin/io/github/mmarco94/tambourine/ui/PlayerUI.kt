@@ -294,16 +294,17 @@ private fun Seeker(
 ) {
     val cs = rememberCoroutineScope()
     var seeking by remember { mutableStateOf(false) }
-    var mousePositionX by remember { mutableStateOf<Float?>(null) }
-    val sliderState = rememberSliderState(
-        valueRange = 0f..song.length.toFloat(DurationUnit.MILLISECONDS),
-        onValueChangeFinished = {
-            seeking = false
-            cs.launch {
-                player.endSeek()
-            }
-        },
-    )
+    val sliderState = remember(song.length, player) {
+        SliderState(
+            valueRange = 0f..song.length.toFloat(DurationUnit.MILLISECONDS),
+            onValueChangeFinished = {
+                seeking = false
+                cs.launch {
+                    player.endSeek()
+                }
+            },
+        )
+    }
     player.ObservePosition {
         sliderState.value = it.toFloat(DurationUnit.MILLISECONDS)
     }
@@ -320,27 +321,29 @@ private fun Seeker(
 
     }
     Slider(
-        modifier = modifier.pointerInput(Unit) {
-            awaitPointerEventScope {
-                while (true) {
-                    val e = awaitPointerEvent(PointerEventPass.Initial)
-                    if (e.type == PointerEventType.Move) {
-                        mousePositionX = e.changes.last().position.x
-                    } else if (e.type == PointerEventType.Exit) {
-                        mousePositionX = null
-                    }
-                }
-            }
-        },
+        modifier = modifier,
         state = sliderState,
         track = { pos ->
-            val p = mousePositionX
+            var mousePositionX by remember { mutableStateOf<Float?>(null) }
             val decodedSongData = player.DecodedSongData()
             WaveformUI(
-                Modifier.fillMaxWidth(),
-                decodedSongData,
-                { pos.value / pos.valueRange.endInclusive },
-                if (p == null) null else { size -> p / size.width },
+                modifier = Modifier.fillMaxWidth().pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val e = awaitPointerEvent(PointerEventPass.Initial)
+                            if (e.type == PointerEventType.Move) {
+                                mousePositionX = e.changes.last().position.x
+                            } else if (e.type == PointerEventType.Exit) {
+                                mousePositionX = null
+                            }
+                        }
+                    }
+                },
+                wf = decodedSongData,
+                activePercent = { pos.value / pos.valueRange.endInclusive },
+                mousePercent = mousePositionX?.let { p ->
+                    { size -> p / size.width }
+                },
             )
         },
         thumb = { }
@@ -355,8 +358,9 @@ private fun SeekerTime(
 ) {
     Row(modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
         val decimals by player.Position { it.decimalsRounded() }
+        val songLength by rememberUpdatedState(song.length)
         val remainingDecimals by player.Position {
-            (it - song.length).coerceAtMost(ZERO).decimalsRounded()
+            (it - songLength).coerceAtMost(ZERO).decimalsRounded()
         }
         val style = MaterialTheme.typography.labelMedium
         SingleLineText(formatDuration(decimals), style = style)
