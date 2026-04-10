@@ -41,7 +41,7 @@ fun BigSongRow(
                         .padding(
                             top = sidePanelPadding,
                             bottom = sidePanelPadding,
-                            start = sidePanelPadding,
+                            start = 16.dp,
                         ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {

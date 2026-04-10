@@ -26,6 +26,7 @@ fun AlbumRow(
     sideOffset: Int,
     controller: SongQueueController,
 ) {
+    // Note: please update rememberSongListScrollbarAdapter when the height of this item changes
     val showAlbumInfo = songs.size > 3
     val showAlbumStats = songs.size > 6
     val estimatedHeightWithInfo = 60.dp * songs.size

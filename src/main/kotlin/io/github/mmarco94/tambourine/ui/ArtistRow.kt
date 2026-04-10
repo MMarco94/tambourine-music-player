@@ -16,7 +16,7 @@ fun ArtistRow(
     sideOffset: Int,
     controller: SongQueueController,
 ) {
-    val showArtistStats = songs.size > 6
+    val showArtistStats = songs.size >= 3
 
     BigSongRow(
         maxTrackNumber,

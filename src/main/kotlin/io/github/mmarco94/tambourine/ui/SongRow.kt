@@ -84,6 +84,13 @@ fun SongRow(
     )
 }
 
+/**
+ * Approximate height is:
+ *  - 40.dp
+ *  - 60.dp when showAlbumInfo || showArtistInfo
+ *  - 64.dp when showAlbumCover
+ *  Please update rememberSongListScrollbarAdapter and AlbumRow when the height of this item changes
+ */
 @Composable
 private fun BaseSongRow(
     modifier: Modifier,
@@ -133,7 +140,7 @@ private fun BaseSongRow(
             shadowElevation = if (isCurrentSong) 2.dp else 0.dp,
         ) {
             Row(
-                Modifier.clickable { play(null) }.padding(8.dp),
+                Modifier.clickable { play(null) }.heightIn(min = 40.dp).padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
