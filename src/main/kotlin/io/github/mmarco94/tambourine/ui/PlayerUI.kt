@@ -43,6 +43,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.ceil
 import kotlin.math.roundToInt
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
@@ -303,10 +304,13 @@ private fun Seeker(
                     player.endSeek()
                 }
             },
-        )
+        ).apply {
+            value = player.position(Clock.System.now()).toFloat(DurationUnit.MILLISECONDS)
+        }
     }
+    val wrappedSliderState by rememberUpdatedState(sliderState)
     player.ObservePosition {
-        sliderState.value = it.toFloat(DurationUnit.MILLISECONDS)
+        wrappedSliderState.value = it.toFloat(DurationUnit.MILLISECONDS)
     }
     sliderState.onValueChange = {
         val newPosition = it.roundToInt().milliseconds
