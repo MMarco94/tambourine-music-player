@@ -256,10 +256,10 @@ class PlayerController(
     }
 
     private var observableState by mutableStateOf(State.initial)
-    val level get() = observableState.level
-    val queue get() = observableState.currentlyPlaying?.queue
-    val pause get() = observableState.pause
-    val position get() = observableState.position
+    val level by derivedStateOf { observableState.level }
+    val queue by derivedStateOf { observableState.currentlyPlaying?.queue }
+    val pause by derivedStateOf { observableState.pause }
+    val position by derivedStateOf { observableState.position }
 
     fun position(now: Instant): Duration {
         return observableState.calculateCurrentPosition(now)
