@@ -35,7 +35,14 @@ fun SongListUI(
             modifier = Modifier.fillMaxSize(),
             contentPadding = contentPadding,
         ) {
-            itemsIndexed(items) { index, item ->
+            itemsIndexed(items, key = { _, item ->
+                when (item) {
+                    is SongListItem.AlbumListItem -> item.album
+                    is SongListItem.ArtistListItem -> item.artist
+                    is SongListItem.QueuedSongListItem -> item.song
+                    is SongListItem.SongListItem -> item.song
+                }
+            }) { index, item ->
                 val offset = if (index == state.firstVisibleItemIndex) state.firstVisibleItemScrollOffset else 0
                 when (item) {
                     is SongListItem.ArtistListItem -> {
