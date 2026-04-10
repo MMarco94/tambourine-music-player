@@ -207,7 +207,7 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
                             s.lyrics,
                             getPosition = { transform ->
                                 var pos by remember { mutableStateOf(transform(ZERO)) }
-                                val position = player.Position(transform)
+                                val position by player.Position(transform)
                                 if (player.queue?.currentSong == s) {
                                     pos = position
                                 }
@@ -353,8 +353,8 @@ private fun SeekerTime(
     song: Song,
 ) {
     Row(modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-        val decimals = player.Position { it.decimalsRounded() }
-        val remainingDecimals = player.Position {
+        val decimals by player.Position { it.decimalsRounded() }
+        val remainingDecimals by player.Position {
             (it - song.length).coerceAtMost(ZERO).decimalsRounded()
         }
         val style = MaterialTheme.typography.labelMedium

@@ -1,13 +1,9 @@
 package io.github.mmarco94.tambourine.ui
 
-import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -18,6 +14,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import io.github.mmarco94.tambourine.audio.PlayerController
 import io.github.mmarco94.tambourine.ui.SpectrometerStyle.AREA
 import io.github.mmarco94.tambourine.ui.SpectrometerStyle.BOXES
@@ -103,13 +100,19 @@ fun SmallFakeSpectrometers(
     player: PlayerController,
     color: Color = Color.White,
 ) {
-    val position = player.Position()
+    val position by player.Position()
     val songLength = player.queue?.currentSong?.length
     val decodedSongData = player.DecodedSongData()
-    val amplitude: Float = if (player.pause) {
-        0f
-    } else
-        if (songLength != null && decodedSongData != null) {
+    val playPauseAmplitude by animateFloatAsState(
+        if (player.pause) {
+            0f
+        } else {
+            1f
+        }
+    )
+    val padding = 2.dp
+    Canvas(modifier.padding(padding)) {
+        val songAmplitude = if (songLength != null && decodedSongData != null) {
             val percent = position / songLength
             val realAmpl = decodedSongData.waveformsPerChannelHiRes.maxOf {
                 val index = (it.size * percent).roundToInt().coerceIn(it.indices)
@@ -119,22 +122,19 @@ fun SmallFakeSpectrometers(
         } else {
             0.2f
         }
-
-    val ampl by animateFloatAsState(amplitude)
-    val low by FakeAnimatedValue(position / 400.milliseconds, spring(stiffness = Spring.StiffnessVeryLow))
-    val mid by FakeAnimatedValue(position / 200.milliseconds, spring(stiffness = Spring.StiffnessMedium))
-    val high by FakeAnimatedValue(position / 100.milliseconds, spring(stiffness = Spring.StiffnessHigh))
-    val values = listOf(low * ampl, mid * ampl, high * ampl)
-
-    val padding = 2.dp
-    Canvas(modifier.padding(padding)) {
+        val ampl = playPauseAmplitude * songAmplitude
+        val values = listOf(
+            getFakePosition(position / 400.milliseconds) * ampl,
+            getFakePosition(position / 200.milliseconds) * ampl,
+            getFakePosition(position / 100.milliseconds) * ampl,
+        )
         val paddingPx = padding.toPx()
         for ((index, height) in values.withIndex()) {
             val start = index.toFloat() / values.size
             val end = (index + 1).toFloat() / values.size
             val s = start * size.width
             val e = end * size.width
-            val h = height * size.height
+            val h = (height * size.height).coerceAtLeast(1.dp.toPx())
             drawRect(
                 color,
                 topLeft = Offset(s + paddingPx, size.height - h - paddingPx),
@@ -144,11 +144,9 @@ fun SmallFakeSpectrometers(
     }
 }
 
-@Composable
-private fun FakeAnimatedValue(
-    seed: Double,
-    animationSpec: AnimationSpec<Float> = spring(),
-): State<Float> {
-    val value = Random(seed.roundToInt()).nextFloat()
-    return animateFloatAsState(value, animationSpec)
+private fun getFakePosition(seed: Double): Float {
+    val prev = seed.toInt()
+    val prevPos = Random(prev).nextFloat()
+    val nextPos = Random(prev + 1).nextFloat()
+    return lerp(prevPos, nextPos, seed.toFloat().mod(1f))
 }

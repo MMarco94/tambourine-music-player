@@ -267,21 +267,20 @@ class PlayerController(
 
     @Composable
     fun DecodedSongData(): SongDecoder.DecodedSongData? {
-        val cp = observableState.currentlyPlaying
+        val cp = derivedStateOf { observableState.currentlyPlaying }.value
         return if (cp != null) {
             val data by cp.decodedSongData.collectAsState(null)
             data
         } else {
             null
         }
-
     }
 
     /**
      * Warning: the function re-composes like crazy!
      */
     @Composable
-    fun Position(): Duration {
+    fun Position(): androidx.compose.runtime.State<Duration> {
         return Position { it }
     }
 
@@ -291,14 +290,14 @@ class PlayerController(
     @Composable
     fun <T> Position(
         transform: (Duration) -> T
-    ): T {
-        var ret by remember {
+    ): androidx.compose.runtime.State<T> {
+        val ret = remember {
             mutableStateOf(
                 transform(observableState.calculateCurrentPosition(Clock.System.now()))
             )
         }
         ObservePosition {
-            ret = transform(it)
+            ret.value = transform(it)
         }
         return ret
     }
