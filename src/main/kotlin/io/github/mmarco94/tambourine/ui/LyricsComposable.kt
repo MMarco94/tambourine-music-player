@@ -58,7 +58,9 @@ fun SynchronizedLyricsComposable(
         val offset = (verticalPadding + 32.dp).toPxApprox()
 
         val ss = rememberLazyListState()
-        val activeIndex = getPosition { position -> lyrics.lines.indexOfLast { it.start < position } }
+        val activeIndex = getPosition { position ->
+            lyrics.lines.indexOfLast { it.start < position }
+        }
         if (activeIndex >= 0) {
             LaunchedEffect(activeIndex) {
                 ss.animateScrollToItem(activeIndex, (offset - height / 2).roundToInt().coerceAtMost(0))
@@ -67,20 +69,11 @@ fun SynchronizedLyricsComposable(
         LyricsContainer(ss) {
             itemsIndexed(lyrics.lines) { index, line ->
                 val isActive = index == activeIndex
-                val alpha by animateFloatAsState(if (isActive) 1f else .5f)
-                val weight by animateFloatAsState((if (isActive) FontWeight.Bold else FontWeight.Normal).weight.toFloat())
-
+                val alpha by animateFloatAsState(if (isActive) 1f else .3f)
                 Surface(shape = MaterialTheme.shapes.small, color = Color.Transparent) {
-                    // This text is identical, but "as big as it can be"
                     Text(
                         line.content,
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.alpha(0f).padding(8.dp),
-                        textAlign = TextAlign.Center,
-                    )
-                    Text(
-                        line.content,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight(weight.roundToInt())),
                         modifier = Modifier.alpha(alpha).clickable { setPosition(line.start) }.padding(8.dp),
                         textAlign = TextAlign.Center,
                     )

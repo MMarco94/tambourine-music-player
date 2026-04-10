@@ -207,9 +207,10 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
                             s.lyrics,
                             getPosition = { transform ->
                                 var pos by remember { mutableStateOf(transform(ZERO)) }
-                                val position by player.Position(transform)
-                                if (player.queue?.currentSong == s) {
-                                    pos = position
+                                player.ObservePosition {
+                                    if (player.queue?.currentSong == s) {
+                                        pos = transform(it)
+                                    }
                                 }
                                 pos
                             },
