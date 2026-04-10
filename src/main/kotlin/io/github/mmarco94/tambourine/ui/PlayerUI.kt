@@ -5,7 +5,6 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeDown
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
@@ -17,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -109,7 +107,10 @@ fun PlayerUI(
                 SingleLineText(song.album.artist.name, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(24.dp))
 
-                Seeker(Modifier.widthIn(max = 480.dp), player, song, queue)
+                Column(Modifier.widthIn(max = 480.dp)) {
+                    Seeker(Modifier, player, song, queue)
+                    SeekerTime(Modifier, player, song)
+                }
                 Spacer(Modifier.height(24.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -201,15 +202,17 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
             ) { s ->
                 if (s?.lyrics != null) {
                     val player = playerController.current
-                    var pos by remember { mutableStateOf(ZERO) }
-                    val position = player.Position()
-                    if (player.queue?.currentSong == s) {
-                        pos = position
-                    }
                     CompositionLocalProvider(LocalContentColor provides contentColor) {
                         LyricsComposable(
                             s.lyrics,
-                            getPosition = { pos },
+                            getPosition = { transform ->
+                                var pos by remember { mutableStateOf(transform(ZERO)) }
+                                val position = player.Position(transform)
+                                if (player.queue?.currentSong == s) {
+                                    pos = position
+                                }
+                                pos
+                            },
                             setPosition = { position ->
                                 cs.launch {
                                     player.seek(player.queue, position)
@@ -291,72 +294,73 @@ private fun Seeker(
     val cs = rememberCoroutineScope()
     var seeking by remember { mutableStateOf(false) }
     var mousePositionX by remember { mutableStateOf<Float?>(null) }
-    val position = player.Position()
-    Column(modifier) {
-        val thumbRadius = 10.dp
-        Slider(
-            modifier = Modifier.pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        val e = awaitPointerEvent(PointerEventPass.Initial)
-                        if (e.type == PointerEventType.Move) {
-                            mousePositionX = e.changes.last().position.x
-                        } else if (e.type == PointerEventType.Exit) {
-                            mousePositionX = null
-                        }
-                    }
-                }
-            },
-            value = position.toFloat(DurationUnit.MILLISECONDS),
-            valueRange = 0f..song.length.toFloat(DurationUnit.MILLISECONDS),
-            onValueChange = {
-                val newPosition = it.roundToInt().milliseconds
-                val startSeek = !seeking
-                seeking = true
-                cs.launch {
-                    if (startSeek) {
-                        player.startSeek()
-                    }
-                    player.seek(queue, newPosition)
-                }
-            },
-            onValueChangeFinished = {
-                seeking = false
-                cs.launch {
-                    player.endSeek()
-                }
-            },
-            track = { pos ->
-                val p = mousePositionX
-                val decodedSongData = player.DecodedSongData()
-                WaveformUI(
-                    Modifier.fillMaxWidth(),
-                    decodedSongData,
-                    { pos.value / pos.valueRange.endInclusive },
-                    if (p == null) null else { size -> (p - thumbRadius.toPx()) / size.width },
-                )
-            },
-            thumb = {
-                val animProgress by animateFloatAsState(
-                    0f,
-                    //if (player.waveform == null) 1f else 0f,
-                    spring(stiffness = Spring.StiffnessVeryLow)
-                )
-                Surface(
-                    Modifier.size(thumbRadius * 2)
-                        .alpha(animProgress)
-                        .scale((0.2f..1f).progress(animProgress)),
-                    color = Color.White,
-                    shape = CircleShape,
-                ) {}
+    val sliderState = rememberSliderState(
+        valueRange = 0f..song.length.toFloat(DurationUnit.MILLISECONDS),
+        onValueChangeFinished = {
+            seeking = false
+            cs.launch {
+                player.endSeek()
             }
-        )
-        Row(Modifier.padding(horizontal = thumbRadius), verticalAlignment = Alignment.CenterVertically) {
-            val style = MaterialTheme.typography.labelMedium
-            SingleLineText(position.format(), style = style)
-            Spacer(Modifier.weight(1f))
-            SingleLineText((position - song.length).coerceAtMost(ZERO).format(), style = style)
+        },
+    )
+    player.ObservePosition {
+        sliderState.value = it.toFloat(DurationUnit.MILLISECONDS)
+    }
+    sliderState.onValueChange = {
+        val newPosition = it.roundToInt().milliseconds
+        val startSeek = !seeking
+        seeking = true
+        cs.launch {
+            if (startSeek) {
+                player.startSeek()
+            }
+            player.seek(queue, newPosition)
         }
+
+    }
+    Slider(
+        modifier = modifier.pointerInput(Unit) {
+            awaitPointerEventScope {
+                while (true) {
+                    val e = awaitPointerEvent(PointerEventPass.Initial)
+                    if (e.type == PointerEventType.Move) {
+                        mousePositionX = e.changes.last().position.x
+                    } else if (e.type == PointerEventType.Exit) {
+                        mousePositionX = null
+                    }
+                }
+            }
+        },
+        state = sliderState,
+        track = { pos ->
+            val p = mousePositionX
+            val decodedSongData = player.DecodedSongData()
+            WaveformUI(
+                Modifier.fillMaxWidth(),
+                decodedSongData,
+                { pos.value / pos.valueRange.endInclusive },
+                if (p == null) null else { size -> p / size.width },
+            )
+        },
+        thumb = { }
+    )
+}
+
+@Composable
+private fun SeekerTime(
+    modifier: Modifier,
+    player: PlayerController,
+    song: Song,
+) {
+    Row(modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        val decimals = player.Position { it.decimalsRounded() }
+        val remainingDecimals = player.Position {
+            (it - song.length).coerceAtMost(ZERO).decimalsRounded()
+        }
+        val style = MaterialTheme.typography.labelMedium
+        SingleLineText(formatDuration(decimals), style = style)
+        Spacer(Modifier.weight(1f))
+        SingleLineText(formatDuration(remainingDecimals), style = style)
     }
 }
 

@@ -29,7 +29,7 @@ private val verticalPadding = 48.dp
 @Composable
 fun LyricsComposable(
     lyrics: Lyrics,
-    getPosition: () -> Duration,
+    getPosition: @Composable ((Duration) -> Int) -> Int,
     setPosition: (Duration) -> Unit
 ) {
     when (lyrics) {
@@ -50,7 +50,7 @@ fun PlainLyricsComposable(lyrics: Lyrics.Plain) {
 @Composable
 fun SynchronizedLyricsComposable(
     lyrics: Lyrics.Synchronized,
-    getPosition: () -> Duration,
+    getPosition: @Composable ((Duration) -> Int) -> Int,
     setPosition: (Duration) -> Unit
 ) {
     BoxWithConstraints {
@@ -58,8 +58,7 @@ fun SynchronizedLyricsComposable(
         val offset = (verticalPadding + 32.dp).toPxApprox()
 
         val ss = rememberLazyListState()
-        val position = getPosition()
-        val activeIndex = lyrics.lines.indexOfLast { it.start < position }
+        val activeIndex = getPosition { position -> lyrics.lines.indexOfLast { it.start < position } }
         if (activeIndex >= 0) {
             LaunchedEffect(activeIndex) {
                 ss.animateScrollToItem(activeIndex, (offset - height / 2).roundToInt().coerceAtMost(0))

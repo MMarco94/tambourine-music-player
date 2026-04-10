@@ -277,17 +277,53 @@ class PlayerController(
 
     }
 
+    /**
+     * Warning: the function re-composes like crazy!
+     */
     @Composable
     fun Position(): Duration {
-        var instant by remember { mutableStateOf(observableState.calculateCurrentPosition(Clock.System.now())) }
-        LaunchedEffect(Unit) {
-            while (true) {
-                instant = withFrameNanos {
-                    observableState.calculateCurrentPosition(Clock.System.now())
+        return Position { it }
+    }
+
+    /**
+     * Warning: the function re-composes like crazy!
+     */
+    @Composable
+    fun <T> Position(
+        transform: (Duration) -> T
+    ): T {
+        var ret by remember {
+            mutableStateOf(
+                transform(observableState.calculateCurrentPosition(Clock.System.now()))
+            )
+        }
+        ObservePosition {
+            ret = transform(it)
+        }
+        return ret
+    }
+
+    /**
+     * `onPositionChange` will be called like crazy
+     */
+    @Composable
+    fun ObservePosition(
+        onPositionChange: (Duration) -> Unit,
+    ) {
+        onPositionChange(observableState.calculateCurrentPosition(Clock.System.now()))
+        if (!pause) {
+            LaunchedEffect(Unit) {
+                while (true) {
+                    withFrameNanos {
+                        onPositionChange(observableState.calculateCurrentPosition(Clock.System.now()))
+                    }
                 }
             }
+        } else {
+            LaunchedEffect(observableState.position) {
+                onPositionChange(observableState.calculateCurrentPosition(Clock.System.now()))
+            }
         }
-        return instant
     }
 
     suspend fun play() {

@@ -14,17 +14,30 @@ private val secondsWithDecimalsFormatter = NumberFormat.getNumberInstance().appl
     this.maximumFractionDigits = 1
 }
 
+fun Duration.decimalsRounded(): Long {
+    val ms = inWholeMilliseconds
+    return if (ms == Long.MAX_VALUE || ms == Long.MIN_VALUE) {
+        ms
+    } else {
+        (ms / 100f).roundToLong()
+    }
+}
+
 @Composable
 fun Duration.format(): String {
-    if (isNegative()) return stringResource(Res.string.duration_negative, (-this).format())
-    else if (isInfinite()) return stringResource(Res.string.duration_infinite)
+    return formatDuration(decimalsRounded())
+}
 
-    val rounded = (this.inWholeMilliseconds / 100f).roundToLong()
-    val min = rounded / 600
-    val sec = rounded.mod(600) / 10
+@Composable
+fun formatDuration(decimals: Long): String {
+    if (decimals < 0) return stringResource(Res.string.duration_negative, formatDuration(-decimals))
+    else if (decimals == Long.MAX_VALUE) return stringResource(Res.string.duration_infinite)
+
+    val min = decimals / 600
+    val sec = decimals.mod(600) / 10
 
     return if (min == 0L && sec.absoluteValue < 60) {
-        val secondsStr = secondsWithDecimalsFormatter.format(this.inWholeMilliseconds / 1000f)
+        val secondsStr = secondsWithDecimalsFormatter.format(decimals / 10f)
         stringResource(Res.string.duration_seconds, secondsStr)
     } else if (min < 60) {
         stringResource(Res.string.duration_minutes, min) + " " +
