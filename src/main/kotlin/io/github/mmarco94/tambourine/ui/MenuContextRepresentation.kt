@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.round
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
 object MenuContextRepresentation : ContextMenuRepresentation {
     @Composable
@@ -29,11 +31,10 @@ object MenuContextRepresentation : ContextMenuRepresentation {
                 onDismissRequest = { state.status = ContextMenuState.Status.Closed },
             ) {
                 items().forEach { item ->
+                    item as ContextMenuItemWithIcon
                     DropdownMenuItem(
-                        text = { SingleLineText(item.label, style = LocalTextStyle.current) },
-                        leadingIcon = if (item is ContextMenuItemWithIcon) {
-                            { Icon(item.icon, null) }
-                        } else null,
+                        text = { SingleLineText(stringResource(item.labelRes), style = LocalTextStyle.current) },
+                        leadingIcon = { Icon(item.icon, null) },
                         onClick = {
                             item.onClick()
                             state.status = ContextMenuState.Status.Closed
@@ -47,6 +48,6 @@ object MenuContextRepresentation : ContextMenuRepresentation {
 
 class ContextMenuItemWithIcon(
     val icon: ImageVector,
-    label: String,
+    val labelRes: StringResource,
     onClick: () -> Unit,
-) : ContextMenuItem(label, onClick)
+) : ContextMenuItem("", onClick)
