@@ -103,6 +103,7 @@ fun main(args: Array<String>) {
                     MainWindow(
                         title = "Tambourine",
                         onCloseRequest = ::exitApplication,
+                        // 980x680 for screenshot
                         state = rememberWindowState(size = DpSize(1440.dp, 960.dp)),
                         onPreviewKeyEvent = { event ->
                             handleKeypress(
