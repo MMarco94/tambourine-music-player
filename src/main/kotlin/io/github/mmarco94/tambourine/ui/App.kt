@@ -22,13 +22,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import io.github.mmarco94.tambourine.LocalAppearanceSettings
 import io.github.mmarco94.tambourine.data.*
 import io.github.mmarco94.tambourine.generated.resources.*
 import io.github.mmarco94.tambourine.playerController
 import io.github.mmarco94.tambourine.ui.LibraryUIState.*
 import io.github.mmarco94.tambourine.ui.Panel.*
+import io.github.mmarco94.tambourine.utils.hsb
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.absoluteValue
 
 enum class Panel(
     val icon: ImageVector,
@@ -51,7 +54,8 @@ fun App(
 ) {
     var listOptions by remember(library) { mutableStateOf(SongListOptions()) }
     val player = playerController.current
-    val mainImage = player.queue?.currentSong?.cover ?: library?.songs?.firstOrNull()?.cover
+    val mainImage = player.queue?.currentSong?.cover
+        ?: library?.findCoverByColor(LocalAppearanceSettings.current.accentColor)
 
     MaterialTheme(
         typography = TambourineTheme.typography,
@@ -108,6 +112,23 @@ fun App(
                 }
             }
         }
+    }
+}
+
+private fun Library.findCoverByColor(color: Triple<Double, Double, Double>?): AlbumCover? {
+    return if (color == null) {
+        songs.firstOrNull()?.cover
+    } else {
+        val accentColor = Color(color.first.toFloat(), color.second.toFloat(), color.third.toFloat()).hsb()
+        songs
+            .mapNotNullTo(mutableSetOf()) { it.cover }
+            .minByOrNull {
+                val color = it.colorPalette.first().hsb()
+                // Multiplied by how important each component is
+                5 * color.hueDistance(accentColor) / 180f +
+                        (color.lightness - accentColor.lightness).absoluteValue +
+                        (color.saturation - accentColor.saturation).absoluteValue
+            }
     }
 }
 

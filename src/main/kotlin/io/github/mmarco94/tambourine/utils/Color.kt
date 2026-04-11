@@ -3,6 +3,7 @@ package io.github.mmarco94.tambourine.utils
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import io.github.mmarco94.tambourine.color.MMCQ
+import kotlin.math.absoluteValue
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
@@ -30,6 +31,14 @@ data class HSLColor(
                 lightness < .5f -> lightness / strength
                 else -> 1f - (1f - lightness) / strength
             }
+        )
+    }
+
+    fun hueDistance(another: HSLColor): Float {
+        return minOf(
+            (hue - another.hue).absoluteValue,
+            (hue - another.hue + 360f).absoluteValue,
+            (hue - another.hue - 360f).absoluteValue,
         )
     }
 
