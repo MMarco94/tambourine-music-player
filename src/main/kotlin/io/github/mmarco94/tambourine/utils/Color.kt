@@ -37,14 +37,11 @@ data class HSLColor(
         return HSLColor(
             (hue + 30f).mod(360f),
             saturation / 2f,
-            when {
-                lightness < .2f -> .8f
-                lightness < .4f -> .9f
-                lightness < .5f -> 1f
-                lightness < .6f -> .1f
-                lightness < .8f -> .15f
-                else -> .2f
-            }
+            if (lightness < .5f) {
+                0.8f + lightness * 2 * 0.2f
+            } else {
+                0.1f + (1 - lightness) * 2 * 0.15f
+            },
         )
     }
 

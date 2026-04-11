@@ -23,8 +23,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
 import org.jetbrains.compose.resources.StringResource
 
-val ColorScheme.onSurfaceSecondary get() = onSurface.copy(alpha = 0.55f)
-
 private val logger = KotlinLogging.logger {}
 
 // See Material3.ColorScheme
@@ -113,7 +111,8 @@ object TambourineTheme {
                 tertiaryContainer = tertiary.darker().color,
                 onTertiaryContainer = tertiary.darker().contrast().color,
                 outlineVariant = Color.White.copy(alpha = 0.2f),
-            ), light = lightColorScheme(
+            ),
+            light = lightColorScheme(
                 primary = primary.color,
                 onPrimary = primary.contrast().color,
                 primaryContainer = primary.lighter().color,
@@ -130,7 +129,7 @@ object TambourineTheme {
                 onTertiary = tertiary.contrast().color,
                 tertiaryContainer = tertiary.lighter().color,
                 onTertiaryContainer = tertiary.lighter().contrast().color,
-                outlineVariant = Color.White.copy(alpha = 0.2f),
+                outlineVariant = Color.Black.copy(alpha = 0.1f),
             )
         )
     }

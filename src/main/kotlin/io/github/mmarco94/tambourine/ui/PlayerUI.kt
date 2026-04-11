@@ -184,7 +184,7 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
                 baseColor.hsb().makeContrasty().color
             }
             val bgColorAnimated by animateColorAsState(
-                bgColor.copy(if (hasLyrics) .75f else 0f)
+                bgColor.copy(if (hasLyrics) 0.75f else 0f)
             )
             val contentColor by animateColorAsState(
                 bgColor.hsb().contrast().color

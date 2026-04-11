@@ -154,7 +154,7 @@ private fun BaseSongRow(
                     SingleLineText(
                         song.track?.toString().orEmpty().padStart(maxDigits, ' '),
                         fontFamily = FontFamily.Monospace,
-                        color = MaterialTheme.colorScheme.onSurfaceSecondary,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         style = MaterialTheme.typography.labelMedium,
                     )
                 }
@@ -213,7 +213,7 @@ private fun BaseSongRow(
                 }
                 SingleLineText(
                     song.length.format(),
-                    color = MaterialTheme.colorScheme.onSurfaceSecondary,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     style = MaterialTheme.typography.labelMedium,
                 )
             }

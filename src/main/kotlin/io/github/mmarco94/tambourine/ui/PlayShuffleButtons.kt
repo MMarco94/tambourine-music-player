@@ -5,9 +5,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import io.github.mmarco94.tambourine.audio.Position
 import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongQueue
@@ -25,22 +28,27 @@ fun PlayShuffleButtons(
 ) {
     val cs = rememberCoroutineScope()
     val player = playerController.current
-    Row(modifier) {
-        IconButtonWithBG({
-            cs.launch {
-                player.changeQueue(SongQueue.of(player.queue, songs, songs.first()).unshuffled(), Position.Beginning)
-                player.play()
+    CompositionLocalProvider(LocalContentColor provides Color.White) {
+        Row(modifier) {
+            IconButtonWithBG({
+                cs.launch {
+                    player.changeQueue(
+                        SongQueue.of(player.queue, songs, songs.first()).unshuffled(),
+                        Position.Beginning
+                    )
+                    player.play()
+                }
+            }) {
+                Icon(Icons.Default.PlayArrow, stringResource(Res.string.action_play))
             }
-        }) {
-            Icon(Icons.Default.PlayArrow, stringResource(Res.string.action_play))
-        }
-        IconButtonWithBG({
-            cs.launch {
-                player.changeQueue(SongQueue.of(player.queue, songs, songs.random()).shuffled(), Position.Beginning)
-                player.play()
+            IconButtonWithBG({
+                cs.launch {
+                    player.changeQueue(SongQueue.of(player.queue, songs, songs.random()).shuffled(), Position.Beginning)
+                    player.play()
+                }
+            }) {
+                Icon(Icons.Default.Shuffle, stringResource(Res.string.action_shuffle_from_here))
             }
-        }) {
-            Icon(Icons.Default.Shuffle, stringResource(Res.string.action_shuffle_from_here))
         }
     }
 }

@@ -14,7 +14,7 @@ import org.jetbrains.compose.resources.pluralStringResource
 fun SongCollectionStatsComposable(stats: SongCollectionStats, yearOnly: Boolean = false) {
     val style = MaterialTheme.typography.labelMedium.merge(
         TextStyle(
-            color = MaterialTheme.colorScheme.onSurfaceSecondary,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
             textAlign = TextAlign.Center,
         )
     )
