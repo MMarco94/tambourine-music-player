@@ -23,7 +23,7 @@ fun AppToolbar(
     modifier: Modifier = Modifier.fillMaxWidth(),
     autoSize: Boolean = true,
 ) {
-    val useSystemDecorations by Preferences.useSystemDecorations
+    val useSystemDecorations by Preferences.useSystemDecorations.state
     Row(
         modifier = if (autoSize) {
             modifier.heightIn(min = 64.dp).padding(8.dp)
@@ -69,7 +69,7 @@ fun AppSettingsButton(
                 text = { SingleLineText(stringResource(Res.string.reload_library), style = LocalTextStyle.current) },
                 leadingIcon = { Icon(Icons.Default.Refresh, null) },
                 onClick = {
-                    Preferences.reloadLibrary()
+                    Preferences.libraryFolder.reload()
                     showMenu = false
                 },
             )

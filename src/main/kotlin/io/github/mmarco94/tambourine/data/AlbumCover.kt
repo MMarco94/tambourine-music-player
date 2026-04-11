@@ -5,7 +5,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asComposeImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
-import io.github.mmarco94.tambourine.ui.MusicPlayerTheme
+import io.github.mmarco94.tambourine.ui.TambourineTheme
 import io.github.mmarco94.tambourine.utils.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
@@ -41,7 +41,7 @@ class AlbumCover(
     val previewImage: ImageBitmap,
 ) {
     val colorPalette = previewImage.palette(4)
-    val colorScheme = MusicPlayerTheme.colorScheme(colorPalette.map { it.hsb() })
+    val colorScheme = TambourineTheme.colorScheme(colorPalette.map { it.hsb() })
 
     suspend fun decodeFullImage(): ImageBitmap {
         return withContext(Dispatchers.Default) {

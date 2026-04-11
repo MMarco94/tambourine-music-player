@@ -31,7 +31,7 @@ fun MainWindow(
     content: @Composable FrameWindowScope.() -> Unit
 
 ) {
-    val useSystemDecorations by Preferences.useSystemDecorations
+    val useSystemDecorations by Preferences.useSystemDecorations.state
     key(useSystemDecorations) {
         Window(
             onCloseRequest = onCloseRequest,
@@ -57,7 +57,7 @@ fun MainWindow(
 
 @Composable
 fun Scaled(content: @Composable () -> Unit) {
-    val fontScale by Preferences.fontScale
+    val fontScale by Preferences.fontScale.state
     CompositionLocalProvider(
         LocalDensity provides Density(
             LocalDensity.current.density,

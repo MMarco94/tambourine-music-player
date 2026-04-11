@@ -40,7 +40,7 @@ fun main(args: Array<String>) {
     val filesFromArgs = args.map { Path.of(it) }
     runBlocking {
         // Start loading ASAP
-        val musicLibrary = Preferences.libraryFolder
+        val musicLibrary = Preferences.libraryFolder.flow
             .map { lib -> setOf(lib) + filesFromArgs }
             .toLibrary()
             .stateIn(this, started = SharingStarted.Eagerly, null)
@@ -68,7 +68,7 @@ fun main(args: Array<String>) {
                     raise = { bringToTop = true }
                 )
             }
-            MaterialTheme(MusicPlayerTheme.defaultScheme) {
+            MaterialTheme(TambourineTheme.defaultScheme.auto()) {
                 CompositionLocalProvider(playerController provides player) {
                     var selectedPanel by remember { mutableStateOf(Panel.LIBRARY) }
                     var libraryTab: LibraryHeaderTab? by remember { mutableStateOf(null) }

@@ -3,6 +3,7 @@ package io.github.mmarco94.tambourine.utils
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import io.github.mmarco94.tambourine.color.MMCQ
+import kotlin.math.pow
 import kotlin.math.roundToInt
 
 fun ImageBitmap.palette(maxColors: Int, reduction: Int = 8): List<Color> {
@@ -16,7 +17,9 @@ data class HSLColor(
 ) {
     val color = Color.hsl(hue, saturation, lightness)
 
-    fun darker() = copy(lightness = lightness / 2f)
+    fun darker(strength: Float = 1f) = copy(lightness = lightness / 2f.pow(strength))
+
+    fun lighter(strength: Float = 1f) = copy(lightness = 1 - (1 - lightness) / 1.5f.pow(strength))
 
     fun makeContrasty(strength: Float = 3f): HSLColor {
         return HSLColor(
@@ -38,8 +41,8 @@ data class HSLColor(
                 lightness < .2f -> .8f
                 lightness < .4f -> .9f
                 lightness < .5f -> 1f
-                lightness < .6f -> .0f
-                lightness < .8f -> .1f
+                lightness < .6f -> .1f
+                lightness < .8f -> .15f
                 else -> .2f
             }
         )

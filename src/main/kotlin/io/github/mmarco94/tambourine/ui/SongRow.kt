@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -184,7 +185,11 @@ private fun BaseSongRow(
                 Box(Modifier.height(24.dp).animateContentSize()) {
                     if (isCurrentSong && !showAlbumCover) {
                         Row {
-                            SmallFakeSpectrometers(Modifier.size(24.dp), player)
+                            SmallFakeSpectrometers(
+                                Modifier.size(24.dp),
+                                player,
+                                color = LocalContentColor.current,
+                            )
                         }
                     }
                 }

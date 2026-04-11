@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material.icons.filled.ZoomIn
@@ -39,8 +40,8 @@ private val logger = KotlinLogging.logger {}
 
 @Composable
 fun AppSettingsWindow(close: () -> Unit) {
-    val fontScale by Preferences.fontScale
-    val useSystemDecorations by Preferences.useSystemDecorations
+    val fontScale by Preferences.fontScale.state
+    val useSystemDecorations by Preferences.useSystemDecorations.state
     var maintainOnTop by remember { mutableStateOf(0) }
     val cs = rememberCoroutineScope()
 
@@ -48,7 +49,7 @@ fun AppSettingsWindow(close: () -> Unit) {
         onCloseRequest = close,
         title = stringResource(Res.string.settings),
         state = rememberWindowState(
-            size = DpSize(560.dp, 480.dp),
+            size = DpSize(560.dp, 560.dp),
         ),
         alwaysOnTop = maintainOnTop > 0,
         onPreviewKeyEvent = { event ->
@@ -74,18 +75,20 @@ fun AppSettingsWindow(close: () -> Unit) {
                     maintainOnTop = 0
                 }
             }
-            Preferences.setUseSystemDecorations(value)
+            Preferences.useSystemDecorations.set(value)
         }
 
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 LibraryDirectorySetting(
                     onSelectingFolder = { maintainOnTop = 0 },
                 )
 
+                ThemeSetting()
+
                 PreferenceItem(
-                    stringResource(Res.string.use_system_decorations),
-                    stringResource(if (useSystemDecorations) Res.string.yes else Res.string.no),
+                    title = stringResource(Res.string.use_system_decorations),
+                    value = stringResource(if (useSystemDecorations) Res.string.yes else Res.string.no),
                     modifier = Modifier.clickable { setUseSystemDecorations(!useSystemDecorations) },
                     leadingContent = { Icon(Icons.Default.Tab, contentDescription = null) },
                     tailingContent = {
@@ -96,7 +99,7 @@ fun AppSettingsWindow(close: () -> Unit) {
                 )
 
                 PreferenceItem(
-                    stringResource(Res.string.font_size),
+                    title = stringResource(Res.string.font_size),
                     value = NumberFormat.getPercentInstance().format(fontScale),
                     leadingContent = { Icon(Icons.Default.ZoomIn, contentDescription = null) },
                 ) {
@@ -104,15 +107,50 @@ fun AppSettingsWindow(close: () -> Unit) {
                         fontScale,
                         {
                             val rounded = (it * 10).roundToInt() / 10f
-                            Preferences.setFontScale(rounded)
+                            Preferences.fontScale.set(rounded)
                         },
                         steps = 14,
                         valueRange = 0.5f..2f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = LocalContentColor.current,
+                            activeTrackColor = LocalContentColor.current,
+                            inactiveTickColor = LocalContentColor.current,
+                        ),
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun ThemeSetting() {
+    val theme by Preferences.theme.state
+    var open by remember { mutableStateOf(false) }
+
+    PreferenceItem(
+        title = stringResource(Res.string.theme),
+        value = stringResource(theme.nameRes),
+        modifier = Modifier.clickable { open = true },
+        leadingContent = { Icon(Icons.Default.DarkMode, contentDescription = null) },
+        tailingContent = {
+            DropdownMenu(
+                expanded = open,
+                onDismissRequest = { open = false },
+                content = {
+                    for (theme in TambourineTheme.UserPreference.entries) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(theme.nameRes)) },
+                            onClick = {
+                                Preferences.theme.set(theme)
+                                open = false
+                            },
+                        )
+                    }
+                }
+            )
+        }
+    )
 }
 
 @Composable
@@ -132,7 +170,7 @@ private fun LibraryDirectorySetting(onSelectingFolder: () -> Unit = {}) {
                     ).singleOrNull()
                     logger.info { "Selected file $file" }
                     if (file != null && file.isDirectory()) {
-                        Preferences.setLibraryFolder(file)
+                        Preferences.libraryFolder.set(file)
                     }
                 } catch (e: Exception) {
                     logger.error(e) { "Error while picking file" }
@@ -141,7 +179,7 @@ private fun LibraryDirectorySetting(onSelectingFolder: () -> Unit = {}) {
         }
     }
 
-    val libraryFolder by Preferences.libraryFolder.collectAsState(Preferences.getLibraryFolder())
+    val libraryFolder by Preferences.libraryFolder.state
     PreferenceItem(
         title = stringResource(Res.string.music_library_folder),
         value = libraryFolder.toString(),

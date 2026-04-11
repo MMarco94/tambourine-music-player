@@ -18,7 +18,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -180,7 +179,7 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
             val blur = 16.dp * lyricToNormal
             val paper = 0.075f * lyricToNormal
             val saturation by animateFloatAsState(if (hasLyrics) 0.6f else 1f)
-            val baseColor = song.cover?.colorPalette?.first() ?: MusicPlayerTheme.defaultScheme.primary
+            val baseColor = song.cover?.colorPalette?.first() ?: TambourineTheme.defaultScheme.auto().primary
             val bgColor = remember(baseColor) {
                 baseColor.hsb().makeContrasty().color
             }
@@ -441,6 +440,7 @@ private fun ActualWaveform(
     activeAlpha: Float,
     endAlpha: Float,
 ) {
+    val color = LocalContentColor.current
     Spectrometer(
         modifier,
         animatedWaveform,
@@ -448,9 +448,9 @@ private fun ActualWaveform(
         linear = true,
         invert = invert,
         brush = { size ->
-            val s = Color.White.copy(alpha = startAlpha)
-            val a = Color.White.copy(alpha = activeAlpha)
-            val e = Color.White.copy(alpha = endAlpha)
+            val s = color.copy(alpha = startAlpha)
+            val a = color.copy(alpha = activeAlpha)
+            val e = color.copy(alpha = endAlpha)
             val mp = mousePercent(this, size)
             Brush.horizontalGradient(
                 0f to s,
@@ -520,9 +520,9 @@ fun VolumeSlider(player: PlayerController) {
             },
             modifier = Modifier.width(176.dp),
             colors = SliderDefaults.colors(
-                thumbColor = Color.White,
-                activeTrackColor = Color.White,
-            )
+                thumbColor = LocalContentColor.current,
+                activeTrackColor = LocalContentColor.current,
+            ),
         )
         PlayerIcon(
             cs,

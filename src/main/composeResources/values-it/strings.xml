@@ -81,6 +81,11 @@
     <string name="empty_library">Libreria vuota</string>
     <string name="no_search_results">Nessun risultato</string>
 
+    <string name="theme">Tema</string>
+    <string name="theme_auto">Automatico</string>
+    <string name="theme_dark">Scuro</string>
+    <string name="theme_light">Chiaro</string>
+
     <string name="help_play_a_song_title">Riproduci una canzone</string>
     <string name="help_play_a_song_message">Per iniziare, seleziona una canzone dalla libreria</string>
 

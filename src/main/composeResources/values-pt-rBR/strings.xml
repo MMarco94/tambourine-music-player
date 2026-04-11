@@ -81,6 +81,11 @@
     <string name="empty_library">Biblioteca vazia</string>
     <string name="no_search_results">Nenhum resultado de busca</string>
 
+    <string name="theme">Tema</string>
+    <string name="theme_auto">Automático</string>
+    <string name="theme_dark">Escuro</string>
+    <string name="theme_light">Claro</string>
+
     <string name="help_play_a_song_title">Tocar uma música</string>
     <string name="help_play_a_song_message">Para começar, selecione uma música da sua biblioteca</string>
 

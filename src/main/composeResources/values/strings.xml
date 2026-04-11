@@ -81,6 +81,11 @@
     <string name="empty_library">Empty library</string>
     <string name="no_search_results">No search results</string>
 
+    <string name="theme">Theme</string>
+    <string name="theme_auto">Automatic</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+
     <string name="help_play_a_song_title">Play a song</string>
     <string name="help_play_a_song_message">To begin, select a song from your library</string>
 

@@ -54,16 +54,16 @@ fun App(
     val mainImage = player.queue?.currentSong?.cover ?: library?.songs?.firstOrNull()?.cover
 
     MaterialTheme(
-        typography = MusicPlayerTheme.typography,
-        colorScheme = mainImage?.colorScheme ?: MusicPlayerTheme.defaultScheme,
-        shapes = MusicPlayerTheme.shapes,
+        typography = TambourineTheme.typography,
+        colorScheme = mainImage?.colorScheme?.auto() ?: TambourineTheme.defaultScheme.auto(),
+        shapes = TambourineTheme.shapes,
     ) {
         CompositionLocalProvider(
             LocalScrollbarStyle provides defaultScrollbarStyle().copy(
                 thickness = 12.dp,
                 shape = RoundedCornerShape(6.dp),
-                unhoverColor = Color.White.copy(alpha = .12f),
-                hoverColor = Color.White.copy(alpha = .5f),
+                unhoverColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .12f),
+                hoverColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
             ),
             LocalContextMenuRepresentation provides MenuContextRepresentation,
         ) {

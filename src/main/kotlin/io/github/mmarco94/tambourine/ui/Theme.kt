@@ -1,14 +1,23 @@
 package io.github.mmarco94.tambourine.ui
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import io.github.mmarco94.tambourine.generated.resources.Res
+import io.github.mmarco94.tambourine.generated.resources.theme_auto
+import io.github.mmarco94.tambourine.generated.resources.theme_dark
+import io.github.mmarco94.tambourine.generated.resources.theme_light
 import io.github.mmarco94.tambourine.utils.HSLColor
+import io.github.mmarco94.tambourine.utils.Preferences
 import io.github.mmarco94.tambourine.utils.hsb
-
+import org.jetbrains.compose.resources.StringResource
 
 val ColorScheme.onSurfaceSecondary get() = onSurface.copy(alpha = 0.55f)
 
@@ -18,10 +27,14 @@ private const val TOO_DARK_THRESHOLD = 0.15
 private const val TOO_BRIGHT_THRESHOLD_LIGHT = 0.85
 private const val TOO_BRIGHT_THRESHOLD_SATURATION = 0.3
 
-/**
- * Inspired by https://github.com/gtk-flutter/adwaita/blob/main/lib/src/theme.dart
- */
-object MusicPlayerTheme {
+object TambourineTheme {
+
+    enum class UserPreference(val nameRes: StringResource) {
+        AUTO(Res.string.theme_auto),
+        LIGHT(Res.string.theme_light),
+        DARK(Res.string.theme_dark),
+    }
+
     val shapes: Shapes = Shapes(
         extraSmall = RoundedCornerShape(size = 4.dp),
         small = RoundedCornerShape(size = 6.dp),
@@ -36,9 +49,24 @@ object MusicPlayerTheme {
         Color(red = 239, green = 184, blue = 200),
     ).map { it.hsb() }
 
+    data class ColorSchemeContainer(
+        val light: ColorScheme,
+        val dark: ColorScheme,
+    ) {
+        @Composable
+        fun auto(): ColorScheme {
+            val theme by Preferences.theme.state
+            return when (theme) {
+                UserPreference.LIGHT -> light
+                UserPreference.DARK -> dark
+                UserPreference.AUTO -> if (isSystemInDarkTheme()) dark else light
+            }
+        }
+    }
+
     val defaultScheme = colorScheme(defaultPalette)
 
-    fun colorScheme(palette: List<HSLColor>): ColorScheme {
+    fun colorScheme(palette: List<HSLColor>): ColorSchemeContainer {
         fun penalty(color: HSLColor): Float {
             return if (color.lightness < TOO_DARK_THRESHOLD) {
                 1 - color.lightness
@@ -51,23 +79,45 @@ object MusicPlayerTheme {
         val primary = sorted[0].pastel()
         val secondary = sorted.getOrNull(1)?.pastel() ?: primary
         val tertiary = sorted.getOrNull(2)?.pastel() ?: secondary
-        val primaryContainer = primary.darker()
-        val secondaryContainer = secondary.darker()
-        val tertiaryContainer = tertiary.darker()
-        return darkColorScheme(
-            primary = primary.color,
-            onPrimary = primary.contrast().color,
-            primaryContainer = primaryContainer.color,
-            onPrimaryContainer = primaryContainer.contrast().color,
-            secondary = secondary.color,
-            onSecondary = secondary.contrast().color,
-            secondaryContainer = secondaryContainer.color,
-            onSecondaryContainer = secondaryContainer.contrast().color,
-            tertiary = tertiary.color,
-            onTertiary = tertiary.contrast().color,
-            tertiaryContainer = tertiaryContainer.color,
-            onTertiaryContainer = tertiaryContainer.contrast().color,
-            outlineVariant = Color.White.copy(alpha = 0.2f),
+        return ColorSchemeContainer(
+            dark = darkColorScheme(
+                primary = primary.color,
+                onPrimary = primary.contrast().color,
+                primaryContainer = primary.darker().color,
+                onPrimaryContainer = primary.darker().contrast().color,
+                surface = primary.darker(2f).color,
+                onSurface = primary.darker(2f).contrast().color,
+                background = primary.darker(3f).color,
+                onBackground = primary.darker(3f).contrast().color,
+                secondary = secondary.color,
+                onSecondary = secondary.contrast().color,
+                secondaryContainer = secondary.darker().color,
+                onSecondaryContainer = secondary.darker().contrast().color,
+                tertiary = tertiary.color,
+                onTertiary = tertiary.contrast().color,
+                tertiaryContainer = tertiary.darker().color,
+                onTertiaryContainer = tertiary.darker().contrast().color,
+                outlineVariant = Color.White.copy(alpha = 0.2f),
+            ),
+            light = lightColorScheme(
+                primary = primary.color,
+                onPrimary = primary.contrast().color,
+                primaryContainer = primary.lighter().color,
+                onPrimaryContainer = primary.lighter().contrast().color,
+                surface = primary.lighter(2f).color,
+                onSurface = primary.lighter(2f).contrast().color,
+                background = primary.lighter(3f).color,
+                onBackground = primary.lighter(3f).contrast().color,
+                secondary = secondary.color,
+                onSecondary = secondary.contrast().color,
+                secondaryContainer = secondary.lighter().color,
+                onSecondaryContainer = secondary.lighter().contrast().color,
+                tertiary = tertiary.color,
+                onTertiary = tertiary.contrast().color,
+                tertiaryContainer = tertiary.lighter().color,
+                onTertiaryContainer = tertiary.lighter().contrast().color,
+                outlineVariant = Color.White.copy(alpha = 0.2f),
+            )
         )
     }
 
