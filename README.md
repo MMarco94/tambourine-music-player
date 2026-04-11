@@ -25,6 +25,7 @@ A simple and straight-to-the point music player for your local library.
 ## Screenshots
 
 ![The currently playing queue](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/2e6970c977d941db62e6b58d3a73d82e308bf86c/screenshots/queue.png)
+![Light theme](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/7b7280ba2f4faf6f379e5c49545549a8c17f6f6b/screenshots/light_theme.png)
 ![Artist filter and sorting options](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/2e6970c977d941db62e6b58d3a73d82e308bf86c/screenshots/filters.png)
 ![Artist filter with lyrics](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/2e6970c977d941db62e6b58d3a73d82e308bf86c/screenshots/filter_lyrics.png)
 ![The search interface](https://raw.githubusercontent.com/MMarco94/tambourine-music-player/2e6970c977d941db62e6b58d3a73d82e308bf86c/screenshots/search.png)
