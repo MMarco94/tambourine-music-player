@@ -18,5 +18,3 @@ mv build/compose/binaries/main-release/app/tambourine/lib/app/tambourine.cfg.bkp
 
 # Build and install flatpak
 flatpak-builder --user --install --force-clean build-dir flatpak/io.github.mmarco94.tambourine.yml
-# Clean install
-rm -rf "$HOME"/.var/app/io.github.mmarco94.tambourine
