@@ -18,10 +18,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.data.SongListItem
 import io.github.mmarco94.tambourine.data.SongQueueController
-import io.github.mmarco94.tambourine.utils.logger
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
+
+private val logger = KotlinLogging.logger {}
 
 @Composable
 fun SongListUI(

@@ -7,9 +7,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.system.measureTimeMillis
 import kotlin.time.Duration.Companion.milliseconds
 
-@PublishedApi
-internal val logger = KotlinLogging.logger {}
-
 inline fun <T> KLogger.debugElapsed(tag: String, f: () -> T): T {
     val ret: T
     val took = measureTimeMillis {
@@ -28,6 +25,7 @@ internal class RecompositionCounter(
 @Suppress("NOTHING_TO_INLINE")
 @Composable
 inline fun printRecompositionsCount(debugLabel: String, reducePrints: Boolean = false) {
+    val logger = remember { KotlinLogging.logger("RecompositionCounter") }
     val count = remember { RecompositionCounter() }
     val now = System.currentTimeMillis() / 1000
     if (now != count.time) {

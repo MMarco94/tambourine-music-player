@@ -46,7 +46,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
 
     // Portals
-    implementation("com.github.MMarco94:klib-portal:0.2")
+    implementation("com.github.MMarco94:klib-portal:0.3")
 
     // Logging
     implementation("io.github.oshai:kotlin-logging-jvm:8.0.01")

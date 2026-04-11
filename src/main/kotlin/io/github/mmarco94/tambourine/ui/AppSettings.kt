@@ -23,11 +23,11 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.rememberWindowState
 import io.github.mmarco94.klibportal.portals.openFile
 import io.github.mmarco94.tambourine.generated.resources.*
+import io.github.mmarco94.tambourine.utils.GLOBAL_CONNECTION
 import io.github.mmarco94.tambourine.utils.Preferences
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder
 import org.jetbrains.compose.resources.stringResource
 import java.text.NumberFormat
 import kotlin.io.path.isDirectory
@@ -160,21 +160,19 @@ private fun LibraryDirectorySetting(onSelectingFolder: () -> Unit = {}) {
     fun openFolderSelector() {
         onSelectingFolder()
         cs.launch {
-            DBusConnectionBuilder.forSessionBus().build().use { conn ->
-                try {
-                    val file = openFile(
-                        conn,
-                        title = chooseLibraryStr,
-                        directory = true,
-                        multiple = false,
-                    ).singleOrNull()
-                    logger.info { "Selected file $file" }
-                    if (file != null && file.isDirectory()) {
-                        Preferences.libraryFolder.set(file)
-                    }
-                } catch (e: Exception) {
-                    logger.error(e) { "Error while picking file" }
+            try {
+                val file = openFile(
+                    checkNotNull(GLOBAL_CONNECTION),
+                    title = chooseLibraryStr,
+                    directory = true,
+                    multiple = false,
+                ).singleOrNull()
+                logger.info { "Selected file $file" }
+                if (file != null && file.isDirectory()) {
+                    Preferences.libraryFolder.set(file)
                 }
+            } catch (e: Exception) {
+                logger.error(e) { "Error while picking file" }
             }
         }
     }

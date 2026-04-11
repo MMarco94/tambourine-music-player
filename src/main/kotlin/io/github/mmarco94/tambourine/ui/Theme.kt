@@ -1,25 +1,31 @@
 package io.github.mmarco94.tambourine.ui
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.Shapes
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import io.github.mmarco94.klibportal.portals.Settings
+import io.github.mmarco94.klibportal.portals.appearanceSettingsFlow
+import io.github.mmarco94.klibportal.portals.readAppearanceSettings
+import io.github.mmarco94.tambourine.LocalAppearanceSettings
 import io.github.mmarco94.tambourine.generated.resources.Res
 import io.github.mmarco94.tambourine.generated.resources.theme_auto
 import io.github.mmarco94.tambourine.generated.resources.theme_dark
 import io.github.mmarco94.tambourine.generated.resources.theme_light
+import io.github.mmarco94.tambourine.utils.GLOBAL_CONNECTION
 import io.github.mmarco94.tambourine.utils.HSLColor
 import io.github.mmarco94.tambourine.utils.Preferences
 import io.github.mmarco94.tambourine.utils.hsb
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOn
 import org.jetbrains.compose.resources.StringResource
 
 val ColorScheme.onSurfaceSecondary get() = onSurface.copy(alpha = 0.55f)
+
+private val logger = KotlinLogging.logger {}
 
 // See Material3.ColorScheme
 const val INACTIVE_ALPHA = .38f
@@ -27,12 +33,17 @@ private const val TOO_DARK_THRESHOLD = 0.15
 private const val TOO_BRIGHT_THRESHOLD_LIGHT = 0.85
 private const val TOO_BRIGHT_THRESHOLD_SATURATION = 0.3
 
+private val defaultSystemAppearance = Settings.Appearance(
+    colorScheme = Settings.Appearance.ColorScheme.NO_PREFERENCE,
+    accentColor = null,
+    contrast = Settings.Appearance.Contrast.NORMAL,
+    reducedMotion = Settings.Appearance.ReducedMotion.NORMAL,
+)
+
 object TambourineTheme {
 
     enum class UserPreference(val nameRes: StringResource) {
-        AUTO(Res.string.theme_auto),
-        LIGHT(Res.string.theme_light),
-        DARK(Res.string.theme_dark),
+        AUTO(Res.string.theme_auto), LIGHT(Res.string.theme_light), DARK(Res.string.theme_dark),
     }
 
     val shapes: Shapes = Shapes(
@@ -59,7 +70,11 @@ object TambourineTheme {
             return when (theme) {
                 UserPreference.LIGHT -> light
                 UserPreference.DARK -> dark
-                UserPreference.AUTO -> if (isSystemInDarkTheme()) dark else light
+                UserPreference.AUTO -> when (LocalAppearanceSettings.current.colorScheme) {
+                    Settings.Appearance.ColorScheme.LIGHT -> light
+                    Settings.Appearance.ColorScheme.NO_PREFERENCE -> light
+                    Settings.Appearance.ColorScheme.DARK -> dark
+                }
             }
         }
     }
@@ -98,8 +113,7 @@ object TambourineTheme {
                 tertiaryContainer = tertiary.darker().color,
                 onTertiaryContainer = tertiary.darker().contrast().color,
                 outlineVariant = Color.White.copy(alpha = 0.2f),
-            ),
-            light = lightColorScheme(
+            ), light = lightColorScheme(
                 primary = primary.color,
                 onPrimary = primary.contrast().color,
                 primaryContainer = primary.lighter().color,
@@ -122,5 +136,27 @@ object TambourineTheme {
     }
 
     val typography
-        get() = androidx.compose.material3.Typography()
+        get() = Typography()
+}
+
+@Composable
+fun systemAppearanceSettings(): State<Settings.Appearance> {
+    if (GLOBAL_CONNECTION == null) {
+        return mutableStateOf(defaultSystemAppearance)
+    }
+    val flow = remember {
+        appearanceSettingsFlow(GLOBAL_CONNECTION)
+            .flowOn(Dispatchers.IO)
+            .catch { e ->
+                logger.error(e) { "Failed to read appearance" }
+            }
+    }
+    return flow.collectAsState(remember {
+        try {
+            readAppearanceSettings(GLOBAL_CONNECTION)
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to read appearance" }
+            defaultSystemAppearance
+        }
+    })
 }

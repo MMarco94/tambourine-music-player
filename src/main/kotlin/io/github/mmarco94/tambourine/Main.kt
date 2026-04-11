@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import io.github.mmarco94.klibportal.portals.Settings
 import io.github.mmarco94.tambourine.audio.PlayerController
 import io.github.mmarco94.tambourine.data.Library
 import io.github.mmarco94.tambourine.data.Song
@@ -33,6 +34,7 @@ import kotlin.time.Clock
 private val firstInstruction = Clock.System.now()
 val playerController = staticCompositionLocalOf<PlayerController> { throw IllegalStateException() }
 val mainWindowScope = staticCompositionLocalOf<WindowScope> { throw IllegalStateException() }
+val LocalAppearanceSettings = compositionLocalOf<Settings.Appearance> { throw IllegalStateException() }
 private val logger = KotlinLogging.logger {}
 
 fun main(args: Array<String>) {
@@ -68,8 +70,12 @@ fun main(args: Array<String>) {
                     raise = { bringToTop = true }
                 )
             }
-            MaterialTheme(TambourineTheme.defaultScheme.auto()) {
-                CompositionLocalProvider(playerController provides player) {
+            val systemAppearance by systemAppearanceSettings()
+            CompositionLocalProvider(
+                playerController provides player,
+                LocalAppearanceSettings provides systemAppearance,
+            ) {
+                MaterialTheme(TambourineTheme.defaultScheme.auto()) {
                     var selectedPanel by remember { mutableStateOf(Panel.LIBRARY) }
                     var libraryTab: LibraryHeaderTab? by remember { mutableStateOf(null) }
                     val library by remember {

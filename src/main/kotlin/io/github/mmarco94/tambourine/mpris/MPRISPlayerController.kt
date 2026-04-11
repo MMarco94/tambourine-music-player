@@ -4,13 +4,13 @@ import io.github.mmarco94.tambourine.audio.PlayerController
 import io.github.mmarco94.tambourine.audio.Position
 import io.github.mmarco94.tambourine.data.RepeatMode.*
 import io.github.mmarco94.tambourine.data.Song
+import io.github.mmarco94.tambourine.utils.GLOBAL_CONNECTION
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.freedesktop.dbus.connections.impl.DBusConnection
-import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder
 import org.freedesktop.dbus.interfaces.Properties
 import org.mpris.MediaPlayer2.*
 import org.mpris.MediaPlayer2.LoopStatus.None
@@ -99,20 +99,12 @@ class MPRISPlayerController(
     fun start() {
         cs.launch(Dispatchers.Default) {
             try {
-                val connection: DBusConnection = DBusConnectionBuilder.forSessionBus().apply {
-                    withShared(false)
-                    receivingThreadConfig().apply {
-                        this.withSignalThreadCount(1)
-                        this.withErrorHandlerThreadCount(1)
-                        this.withMethodCallThreadCount(1)
-                        this.withMethodReturnThreadCount(1)
-                    }
-                }.build()
-                connection.exportObject("/org/mpris/MediaPlayer2", this@MPRISPlayerController)
-                connection.requestBusName("org.mpris.MediaPlayer2.io.github.mmarco94.tambourine")
+                checkNotNull(GLOBAL_CONNECTION)
+                GLOBAL_CONNECTION.exportObject("/org/mpris/MediaPlayer2", this@MPRISPlayerController)
+                GLOBAL_CONNECTION.requestBusName("org.mpris.MediaPlayer2.io.github.mmarco94.tambourine")
                 var prevEvent: LastSentPositionData? = null
                 for (state in latestState) {
-                    val newState = doSetState(connection, prevEvent, state)
+                    val newState = doSetState(GLOBAL_CONNECTION, prevEvent, state)
                     prevEvent = newState
                 }
             } catch (e: Exception) {
