@@ -26,7 +26,6 @@
     <string name="action_reset">Reset</string>
     <string name="action_close_app">Chiudi app</string>
     <string name="action_open_menu">Apri menù</string>
-    <string name="action_apply_changes">Applica cambiamenti</string>
     <string name="action_choose_library">Scegli libreria musicale</string>
     <string name="action_open_settings">Apri impostazioni</string>
     <string name="action_remove_filter">Rimuovi filtro</string>
@@ -71,10 +70,13 @@
     <string name="song_sorter_year_inverse_description">Per anno (più vecchi prima)</string>
 
     <string name="loading___">Caricamento...</string>
+    <string name="yes">Sì</string>
+    <string name="no">No</string>
     <string name="settings">Impostazioni</string>
     <string name="reload_library">Ricarica libreria</string>
     <string name="use_system_decorations">Usa decorazioni di sistema</string>
     <string name="music_library_folder">Cartella della libreria musicale</string>
+    <string name="font_size">Dimensione caratteri</string>
     <string name="empty_queue">Coda vuota</string>
     <string name="empty_library">Libreria vuota</string>
     <string name="no_search_results">Nessun risultato</string>

@@ -29,7 +29,7 @@ fun AlbumRow(
     // Note: please update rememberSongListScrollbarAdapter when the height of this item changes
     val showAlbumInfo = songs.size > 3
     val showAlbumStats = songs.size > 6
-    val estimatedHeightWithInfo = 60.dp * songs.size
+    val estimatedHeightWithInfo = songRowEstimateHeight(showInfo = true) * songs.size
     val albumSize = when (songs.size) {
         1 -> 48.dp
         2 -> 96.dp

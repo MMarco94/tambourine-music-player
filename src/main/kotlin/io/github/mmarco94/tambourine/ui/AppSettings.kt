@@ -1,14 +1,13 @@
 package io.github.mmarco94.tambourine.ui
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Tab
+import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,28 +24,33 @@ import io.github.mmarco94.klibportal.portals.openFile
 import io.github.mmarco94.tambourine.generated.resources.*
 import io.github.mmarco94.tambourine.utils.Preferences
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder
 import org.jetbrains.compose.resources.stringResource
-import java.nio.file.Path
-import kotlin.io.path.absolutePathString
+import java.text.NumberFormat
 import kotlin.io.path.isDirectory
+import kotlin.math.roundToInt
+import kotlin.random.Random
+import kotlin.random.nextInt
+import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.logger {}
 
 @Composable
 fun AppSettingsWindow(close: () -> Unit) {
-    var library by remember { mutableStateOf(Preferences.getLibraryFolder()) }
-    var useSystemDecorations by remember { mutableStateOf(Preferences.useSystemDecorations()) }
-    val preferenceLibrary by Preferences.libraryFolder.collectAsState(library)
-    val preferenceUseSystemDecorations by Preferences.useSystemDecorations
+    val fontScale by Preferences.fontScale
+    val useSystemDecorations by Preferences.useSystemDecorations
+    var maintainOnTop by remember { mutableStateOf(0) }
+    val cs = rememberCoroutineScope()
 
     Window(
-        close,
+        onCloseRequest = close,
         title = stringResource(Res.string.settings),
         state = rememberWindowState(
-            size = DpSize(640.dp, 320.dp),
+            size = DpSize(560.dp, 480.dp),
         ),
+        alwaysOnTop = maintainOnTop > 0,
         onPreviewKeyEvent = { event ->
             if (event.type == KeyEventType.KeyDown) {
                 when (event.key) {
@@ -60,36 +64,51 @@ fun AppSettingsWindow(close: () -> Unit) {
             } else false
         },
     ) {
+        fun setUseSystemDecorations(value: Boolean) {
+            // Changing this, to avoid the main window going on top of us
+            val token = Random.nextInt(1..Int.MAX_VALUE)
+            maintainOnTop = token
+            cs.launch {
+                delay(1.seconds)
+                if (maintainOnTop == token) {
+                    maintainOnTop = 0
+                }
+            }
+            Preferences.setUseSystemDecorations(value)
+        }
+
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Box(Modifier.verticalScroll(rememberScrollState())) {
-                Column(Modifier.padding(32.dp).widthIn(max = 480.dp).align(Alignment.TopCenter)) {
-                    LibraryDirectorySetting(library) {
-                        library = it
-                    }
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                LibraryDirectorySetting(
+                    onSelectingFolder = { maintainOnTop = 0 },
+                )
 
-                    Spacer(Modifier.height(16.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth().clickable { useSystemDecorations = !useSystemDecorations },
-                    ) {
+                PreferenceItem(
+                    stringResource(Res.string.use_system_decorations),
+                    stringResource(if (useSystemDecorations) Res.string.yes else Res.string.no),
+                    modifier = Modifier.clickable { setUseSystemDecorations(!useSystemDecorations) },
+                    leadingContent = { Icon(Icons.Default.Tab, contentDescription = null) },
+                    tailingContent = {
                         Checkbox(useSystemDecorations, {
-                            useSystemDecorations = it
+                            setUseSystemDecorations(it)
                         })
-                        Text(stringResource(Res.string.use_system_decorations))
                     }
+                )
 
-                    Spacer(Modifier.height(32.dp))
-                    Button(
-                        onClick = {
-                            Preferences.setLibraryFolder(library)
-                            Preferences.setUseSystemDecorations(useSystemDecorations)
-                            close()
+                PreferenceItem(
+                    stringResource(Res.string.font_size),
+                    value = NumberFormat.getPercentInstance().format(fontScale),
+                    leadingContent = { Icon(Icons.Default.ZoomIn, contentDescription = null) },
+                ) {
+                    Slider(
+                        fontScale,
+                        {
+                            val rounded = (it * 10).roundToInt() / 10f
+                            Preferences.setFontScale(rounded)
                         },
-                        enabled = (preferenceLibrary != library || preferenceUseSystemDecorations != useSystemDecorations) && library.isDirectory(),
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Text(stringResource(Res.string.action_apply_changes))
-                    }
+                        steps = 14,
+                        valueRange = 0.5f..2f,
+                    )
                 }
             }
         }
@@ -97,54 +116,64 @@ fun AppSettingsWindow(close: () -> Unit) {
 }
 
 @Composable
-private fun LibraryDirectorySetting(library: Path, changeLibrary: (Path) -> Unit) {
+private fun LibraryDirectorySetting(onSelectingFolder: () -> Unit = {}) {
     val cs = rememberCoroutineScope()
-    Row(Modifier.height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
-        val interactionSource = remember { MutableInteractionSource() }
-        OutlinedTextField(
-            library.absolutePathString(),
-            { changeLibrary(Path.of(it)) },
-            Modifier.weight(1f),
-            label = { SingleLineText(stringResource(Res.string.music_library_folder), style = LocalTextStyle.current) },
-            maxLines = 1,
-            shape = MaterialTheme.shapes.medium.copy(
-                topEnd = ZeroCornerSize, bottomEnd = ZeroCornerSize
-            ),
-            leadingIcon = {
-                Icon(Icons.Default.LibraryMusic, null)
-            },
-            isError = !library.isDirectory(),
-            interactionSource = interactionSource,
-        )
-        Surface(
-            Modifier.fillMaxHeight().width(48.dp).padding(top = 8.dp),
-            color = MaterialTheme.colorScheme.primaryContainer,
-            shape = MaterialTheme.shapes.medium.copy(
-                topStart = ZeroCornerSize, bottomStart = ZeroCornerSize
-            ),
-        ) {
-            val chooseLibraryStr = stringResource(Res.string.action_choose_library)
-            Box(Modifier.fillMaxSize().clickable {
-                cs.launch {
-                    DBusConnectionBuilder.forSessionBus().build().use { conn ->
-                        try {
-                            val file = openFile(
-                                conn,
-                                title = chooseLibraryStr,
-                                directory = true,
-                                multiple = false,
-                            ).singleOrNull()
-                            if (file != null) {
-                                changeLibrary(file)
-                            }
-                        } catch (e: Exception) {
-                            logger.error(e) { "Error while picking file" }
-                        }
+    val chooseLibraryStr = stringResource(Res.string.action_choose_library)
+    fun openFolderSelector() {
+        onSelectingFolder()
+        cs.launch {
+            DBusConnectionBuilder.forSessionBus().build().use { conn ->
+                try {
+                    val file = openFile(
+                        conn,
+                        title = chooseLibraryStr,
+                        directory = true,
+                        multiple = false,
+                    ).singleOrNull()
+                    logger.info { "Selected file $file" }
+                    if (file != null && file.isDirectory()) {
+                        Preferences.setLibraryFolder(file)
                     }
+                } catch (e: Exception) {
+                    logger.error(e) { "Error while picking file" }
                 }
-            }) {
-                Icon(Icons.Default.FolderOpen, chooseLibraryStr, Modifier.align(Alignment.Center))
             }
         }
+    }
+
+    val libraryFolder by Preferences.libraryFolder.collectAsState(Preferences.getLibraryFolder())
+    PreferenceItem(
+        title = stringResource(Res.string.music_library_folder),
+        value = libraryFolder.toString(),
+        modifier = Modifier.clickable { openFolderSelector() },
+        leadingContent = { Icon(Icons.Default.LibraryMusic, contentDescription = null) },
+    )
+}
+
+@Composable
+private fun PreferenceItem(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    leadingContent: @Composable () -> Unit = {},
+    tailingContent: @Composable () -> Unit = {},
+    content: @Composable () -> Unit = {},
+) {
+    Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Row(
+            modifier = Modifier.heightIn(min = 56.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            leadingContent()
+            Column(Modifier.weight(1f)) {
+                Scaled { // Scaling individual components, rather than whole window, so the Slider is unaffected
+                    Text(title, style = MaterialTheme.typography.titleMedium)
+                    Text(value, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            tailingContent()
+        }
+        content()
     }
 }

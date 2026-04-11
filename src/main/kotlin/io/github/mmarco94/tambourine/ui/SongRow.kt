@@ -19,7 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongListItem
@@ -83,13 +85,22 @@ fun SongRow(
     )
 }
 
-/**
- * Approximate height is:
- *  - 40.dp
- *  - 60.dp when showAlbumInfo || showArtistInfo
- *  - 64.dp when showAlbumCover
- *  Please update rememberSongListScrollbarAdapter and AlbumRow when the height of this item changes
- */
+@Composable
+fun songRowEstimateHeight(showInfo: Boolean = false, showAlbum: Boolean = false): Dp {
+    val minHeight = 40.dp
+    val padding = 16.dp
+    val albumHeight = if (showAlbum) 48.dp + padding else 0.dp
+    val textHeight = with(LocalDensity.current) {
+        MaterialTheme.typography.titleSmall.lineHeight.toDp()
+    }
+    val contentHeight = padding + if (showInfo) textHeight * 2 + 4.dp else textHeight
+    return maxOf(
+        minHeight,
+        albumHeight,
+        contentHeight,
+    )
+}
+
 @Composable
 private fun BaseSongRow(
     modifier: Modifier,

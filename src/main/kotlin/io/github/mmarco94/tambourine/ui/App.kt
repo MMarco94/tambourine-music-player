@@ -44,12 +44,12 @@ fun App(
     library: Library?,
     selectedPanel: Panel,
     selectPanel: (Panel) -> Unit,
+    openSettings: () -> Unit,
     closeApp: () -> Unit,
     libraryTab: LibraryHeaderTab?,
     selectLibraryTab: (LibraryHeaderTab?) -> Unit,
 ) {
     var listOptions by remember(library) { mutableStateOf(SongListOptions()) }
-    var openSettings by remember { mutableStateOf(false) }
     val player = playerController.current
     val mainImage = player.queue?.currentSong?.cover ?: library?.songs?.firstOrNull()?.cover
 
@@ -73,7 +73,7 @@ fun App(
                 LibraryContainer(
                     state = libUIState,
                     library = library,
-                    openSettings = { openSettings = true },
+                    openSettings = openSettings,
                     closeApp = closeApp,
                 ) { lib ->
                     BoxWithConstraints {
@@ -94,7 +94,7 @@ fun App(
                                 library = lib,
                                 listOptions = listOptions,
                                 setListOptions = { listOptions = it },
-                                openSettings = { openSettings = true },
+                                openSettings = openSettings,
                                 closeApp = closeApp,
                                 libraryTab = libraryTab,
                                 selectLibraryTab = selectLibraryTab,
@@ -105,9 +105,6 @@ fun App(
                             }
                         }
                     }
-                }
-                if (openSettings) {
-                    AppSettingsWindow { openSettings = false }
                 }
             }
         }

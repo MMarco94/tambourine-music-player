@@ -18,7 +18,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.data.SongListItem
 import io.github.mmarco94.tambourine.data.SongQueueController
+import io.github.mmarco94.tambourine.utils.logger
 import kotlin.math.abs
+import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 @Composable
@@ -92,19 +94,23 @@ private fun rememberSongListScrollbarAdapter(
     items: List<SongListItem>,
     scrollState: LazyListState,
 ): ScrollbarAdapter {
-    val itemsHeight = remember(items) {
+    val songHeight = songRowEstimateHeight()
+    val songHeightWithInfo = songRowEstimateHeight(showInfo = true)
+    val songHeightWithAll = songRowEstimateHeight(showInfo = true, showAlbum = true)
+
+    val itemsHeight = remember(items, songHeight, songHeightWithInfo, songHeightWithAll) {
         items.map { item ->
             when (item) {
                 is SongListItem.AlbumListItem -> when (item.songs.size) {
                     // Same as the item height
-                    in 0..3 -> 60.dp * item.songs.size
+                    in 0..3 -> songHeightWithInfo * item.songs.size
                     // Max of items, album
-                    else -> maxOf(240.dp, 40.dp * item.songs.size)
+                    else -> maxOf(240.dp, songHeight * item.songs.size)
                 } + DividerDefaults.Thickness
 
-                is SongListItem.ArtistListItem -> 64.dp * item.songs.size + DividerDefaults.Thickness
-                is SongListItem.QueuedSongListItem -> 64.dp
-                is SongListItem.SongListItem -> 64.dp
+                is SongListItem.ArtistListItem -> songHeightWithAll * item.songs.size + DividerDefaults.Thickness
+                is SongListItem.QueuedSongListItem -> songHeightWithAll
+                is SongListItem.SongListItem -> songHeightWithAll
             }
         }
     }
@@ -119,7 +125,11 @@ private fun rememberSongListScrollbarAdapter(
                 val base = itemsOffsets[index].toPx()
                 val diff = scrollState.layoutInfo.visibleItemsInfo.sumOf { item ->
                     if (item.index < index) {
-                        item.size.toDouble() - itemsHeight[item.index].toPx()
+                        val diff = item.size.toDouble() - itemsHeight[item.index].toPx()
+                        if (diff.absoluteValue > 1) {
+                            logger.trace { "Element at index ${item.index} has unexpected height! Expecting ${itemsHeight[item.index]}, found ${item.size.toDp()}" }
+                        }
+                        diff
                     } else 0.0
                 }
                 return base + diff

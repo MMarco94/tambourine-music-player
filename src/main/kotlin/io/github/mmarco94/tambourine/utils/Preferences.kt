@@ -21,8 +21,10 @@ object Preferences {
     }
     private const val KEY_LIBRARY = "library_folder"
     private const val KEY_SYSTEM_DECORATIONS = "system_decorations"
+    private const val KEY_FONT_SCALE = "font_scale"
     private val librarySignal = MutableStateFlow(Any())
     private val useSystemDecorationsSignal = MutableStateFlow(Any())
+    private val fontScaleSignal = MutableStateFlow(Any())
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val libraryFolder: Flow<Path> = librarySignal
@@ -38,6 +40,15 @@ object Preferences {
             }.collectAsState(initial = useSystemDecorations())
         }
 
+    val fontScale: State<Float>
+        @OptIn(ExperimentalCoroutinesApi::class)
+        @Composable
+        get() {
+            return remember {
+                fontScaleSignal.mapLatest { getFontScale() }
+            }.collectAsState(initial = getFontScale())
+        }
+
     fun reloadLibrary() {
         librarySignal.value = Any()
     }
@@ -51,12 +62,22 @@ object Preferences {
     }
 
     fun useSystemDecorations(): Boolean {
-        return prefs.get(KEY_SYSTEM_DECORATIONS, "false") == "true"
+        return prefs.getBoolean(KEY_SYSTEM_DECORATIONS, false)
     }
 
     fun setUseSystemDecorations(useSystemDecorations: Boolean) {
-        prefs.put(KEY_SYSTEM_DECORATIONS, useSystemDecorations.toString())
+        prefs.putBoolean(KEY_SYSTEM_DECORATIONS, useSystemDecorations)
         prefs.flush()
         useSystemDecorationsSignal.value = Any()
+    }
+
+    fun getFontScale(): Float {
+        return prefs.getFloat(KEY_FONT_SCALE, 1f)
+    }
+
+    fun setFontScale(fontScale: Float) {
+        prefs.putFloat(KEY_FONT_SCALE, fontScale)
+        prefs.flush()
+        fontScaleSignal.value = Any()
     }
 }

@@ -1,12 +1,12 @@
 package io.github.mmarco94.tambourine
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
@@ -15,9 +15,7 @@ import io.github.mmarco94.tambourine.data.Library
 import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongQueue
 import io.github.mmarco94.tambourine.data.toLibrary
-import io.github.mmarco94.tambourine.ui.App
-import io.github.mmarco94.tambourine.ui.LibraryHeaderTab
-import io.github.mmarco94.tambourine.ui.Panel
+import io.github.mmarco94.tambourine.ui.*
 import io.github.mmarco94.tambourine.utils.Preferences
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -70,41 +68,46 @@ fun main(args: Array<String>) {
                     raise = { bringToTop = true }
                 )
             }
-            CompositionLocalProvider(playerController provides player) {
-                var selectedPanel by remember { mutableStateOf(Panel.LIBRARY) }
-                var libraryTab: LibraryHeaderTab? by remember { mutableStateOf(null) }
-                val useSystemDecorations by Preferences.useSystemDecorations
-                val library by remember {
-                    val ms = mutableStateOf<Library?>(null)
-                    var done = false
-                    cs.launch(start = CoroutineStart.UNDISPATCHED) {
-                        musicLibrary
-                            .onEach {
-                                if (it != null && !done && filesFromArgs.isNotEmpty()) {
-                                    done = true
-                                    cs.launch {
-                                        val queue = createQueue(it, filesFromArgs)
-                                        if (queue != null) {
-                                            player.changeQueue(queue)
-                                            player.play()
+            MaterialTheme(MusicPlayerTheme.defaultScheme) {
+                CompositionLocalProvider(playerController provides player) {
+                    var selectedPanel by remember { mutableStateOf(Panel.LIBRARY) }
+                    var libraryTab: LibraryHeaderTab? by remember { mutableStateOf(null) }
+                    val library by remember {
+                        val ms = mutableStateOf<Library?>(null)
+                        var done = false
+                        cs.launch(start = CoroutineStart.UNDISPATCHED) {
+                            musicLibrary
+                                .onEach {
+                                    if (it != null && !done && filesFromArgs.isNotEmpty()) {
+                                        done = true
+                                        cs.launch {
+                                            val queue = createQueue(it, filesFromArgs)
+                                            if (queue != null) {
+                                                player.changeQueue(queue)
+                                                player.play()
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            .collect { ms.value = it }
+                                .collect { ms.value = it }
+                        }
+                        ms
                     }
-                    ms
-                }
-                key(useSystemDecorations) {
-                    Window(
+                    var openSettings by remember { mutableStateOf(false) }
+                    MainWindow(
                         title = "Tambourine",
                         onCloseRequest = ::exitApplication,
                         state = rememberWindowState(size = DpSize(1440.dp, 960.dp)),
                         onPreviewKeyEvent = { event ->
-                            handleKeypress(cs, event, player, libraryTab, { selectedPanel = it }, { libraryTab = it })
+                            handleKeypress(
+                                cs,
+                                event,
+                                player,
+                                libraryTab,
+                                { selectedPanel = it },
+                                { libraryTab = it })
                         },
                         alwaysOnTop = bringToTop.also { bringToTop = false },
-                        undecorated = !useSystemDecorations,
                     ) {
                         CompositionLocalProvider(mainWindowScope provides this) {
                             var firstDraw by remember { mutableStateOf(true) }
@@ -118,11 +121,15 @@ fun main(args: Array<String>) {
                                 library = library,
                                 selectedPanel = selectedPanel,
                                 selectPanel = { selectedPanel = it },
+                                openSettings = { openSettings = true },
                                 closeApp = ::exitApplication,
                                 libraryTab = libraryTab,
                                 selectLibraryTab = { libraryTab = it },
                             )
                         }
+                    }
+                    if (openSettings) {
+                        AppSettingsWindow { openSettings = false }
                     }
                 }
             }
