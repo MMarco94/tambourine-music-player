@@ -5,11 +5,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberWindowState
 import io.github.mmarco94.klibportal.portals.Settings
 import io.github.mmarco94.tambourine.audio.PlayerController
 import io.github.mmarco94.tambourine.data.Library
@@ -103,8 +100,6 @@ fun main(args: Array<String>) {
                     MainWindow(
                         title = "Tambourine",
                         onCloseRequest = ::exitApplication,
-                        // 980x680 for screenshot
-                        state = rememberWindowState(size = DpSize(1440.dp, 960.dp)),
                         onPreviewKeyEvent = { event ->
                             handleKeypress(
                                 cs,
@@ -116,7 +111,7 @@ fun main(args: Array<String>) {
                         },
                         alwaysOnTop = bringToTop.also { bringToTop = false },
                     ) {
-                        CompositionLocalProvider(mainWindowScope provides this) {
+                        CompositionLocalProvider(mainWindowScope provides this@MainWindow) {
                             var firstDraw by remember { mutableStateOf(true) }
                             Canvas(Modifier) {
                                 if (firstDraw) {

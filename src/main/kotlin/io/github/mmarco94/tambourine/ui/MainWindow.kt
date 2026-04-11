@@ -1,23 +1,20 @@
 package io.github.mmarco94.tambourine.ui
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
+import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowState
-import androidx.compose.ui.window.rememberWindowState
 import io.github.mmarco94.tambourine.utils.Preferences
+import io.github.mmarco94.tambourine.utils.Preferences.save
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun MainWindow(
     onCloseRequest: () -> Unit,
-    state: WindowState = rememberWindowState(),
     visible: Boolean = true,
     title: String = "Untitled",
     icon: Painter? = null,
@@ -32,6 +29,7 @@ fun MainWindow(
 
 ) {
     val useSystemDecorations by Preferences.useSystemDecorations.state
+    val state = Preferences.mainWindowState()
     key(useSystemDecorations) {
         Window(
             onCloseRequest = onCloseRequest,
@@ -48,6 +46,11 @@ fun MainWindow(
             onPreviewKeyEvent = onPreviewKeyEvent,
             onKeyEvent = onKeyEvent,
         ) {
+            val density = LocalDensity.current
+            LaunchedEffect(state.size, state.position, state.placement, density) {
+                delay(100.milliseconds)
+                save(state, window.insets, density)
+            }
             Scaled {
                 content()
             }
