@@ -7,7 +7,6 @@ import androidx.compose.foundation.LocalContextMenuRepresentation
 import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.defaultScrollbarStyle
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
@@ -21,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.LocalAppearanceSettings
 import io.github.mmarco94.tambourine.data.*
@@ -90,20 +90,25 @@ fun App(
                             listOf(selectedPanel)
                         }
                         Column {
-                            MainContent(
+                            BoxWithConstraints(
                                 modifier = Modifier.fillMaxWidth().weight(1f),
-                                large = large,
-                                selectedPanel = selectedPanel,
-                                visiblePanels = visiblePanels,
-                                selectPanel = selectPanel,
-                                library = lib,
-                                listOptions = listOptions,
-                                setListOptions = { rawListOptions = it },
-                                openSettings = openSettings,
-                                closeApp = closeApp,
-                                libraryTab = libraryTab,
-                                selectLibraryTab = selectLibraryTab,
-                            )
+                            ) {
+                                MainContent(
+                                    modifier = Modifier.fillMaxSize(),
+                                    large = large,
+                                    height = maxHeight,
+                                    selectedPanel = selectedPanel,
+                                    visiblePanels = visiblePanels,
+                                    selectPanel = selectPanel,
+                                    library = lib,
+                                    listOptions = listOptions,
+                                    setListOptions = { rawListOptions = it },
+                                    openSettings = openSettings,
+                                    closeApp = closeApp,
+                                    libraryTab = libraryTab,
+                                    selectLibraryTab = selectLibraryTab,
+                                )
+                            }
                             if (!large) {
                                 HorizontalDivider()
                                 BottomBar(selectedPanel, selectPanel)
@@ -137,6 +142,7 @@ private fun Library.findCoverByColor(color: Triple<Double, Double, Double>?): Al
 private fun MainContent(
     modifier: Modifier,
     large: Boolean,
+    height: Dp,
     selectedPanel: Panel,
     visiblePanels: List<Panel>,
     selectPanel: (Panel) -> Unit,
@@ -150,7 +156,16 @@ private fun MainContent(
 ) {
     val cs = rememberCoroutineScope()
     val player = playerController.current
-    val libraryScrollState = rememberLazyListState()
+    val sortedLib = remember(library, listOptions) {
+        library?.sort(listOptions)
+    }
+    val filteredLib = remember(sortedLib, listOptions) {
+        sortedLib?.filter(listOptions)
+    }
+    val listItems = remember(filteredLib, listOptions) {
+        filteredLib?.toListItems(listOptions)
+    }
+    val libraryScrollState = rememberLazySongListState(height, listItems.orEmpty(), tryNotToScroll = true)
     var showLyrics by remember { mutableStateOf(true) }
     PanelContainer(modifier, Panel.entries.toSet(), visiblePanels) { panel ->
         val showToolbar = !large || panel == PLAYER
@@ -160,16 +175,10 @@ private fun MainContent(
                 openSettings = openSettings,
                 closeApp = closeApp,
             ) { library ->
-                val sortedLib = remember(library, listOptions) {
-                    library.sort(listOptions)
-                }
-                val lib = remember(sortedLib, listOptions) {
-                    sortedLib.filter(listOptions)
-                }
-                val items = remember(lib, listOptions) {
-                    lib.toListItems(listOptions)
-                }
-                val controller = SongQueueController(cs, sortedLib, lib.songs.map { it.uniqueKey }, player) {
+                checkNotNull(sortedLib)
+                checkNotNull(filteredLib)
+                checkNotNull(listItems)
+                val controller = SongQueueController(cs, sortedLib, filteredLib.songs.map { it.uniqueKey }, player) {
                     selectLibraryTab(null)
                 }
                 LibraryHeader(
@@ -183,11 +192,11 @@ private fun MainContent(
                     openSettings = openSettings,
                     closeApp = closeApp,
                 ) {
-                    Crossfade(listOptions.queryFilter.isNotEmpty() && lib.songs.isEmpty()) {
+                    Crossfade(listOptions.queryFilter.isNotEmpty() && filteredLib.songs.isEmpty()) {
                         if (it) {
                             LibraryNoSearchResultsComposable { setListOptions(listOptions.removeSearch()) }
                         } else {
-                            SongListUI(lib.stats.maxTrackNumber, items, libraryScrollState, controller)
+                            SongListUI(filteredLib.stats.maxTrackNumber, listItems, libraryScrollState, controller)
                         }
                     }
                 }

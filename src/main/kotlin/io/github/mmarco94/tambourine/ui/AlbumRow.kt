@@ -18,6 +18,11 @@ import io.github.mmarco94.tambourine.data.Album
 import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongQueueController
 
+/**
+ * When there are more than these songs, will show the info under the album
+ */
+const val ALBUM_ROW_SHOW_ALBUM_INFO_THRESHOLD = 3
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AlbumRow(
@@ -27,7 +32,7 @@ fun AlbumRow(
     controller: SongQueueController,
 ) {
     // Note: please update rememberSongListScrollbarAdapter when the height of this item changes
-    val showAlbumInfo = songs.size > 3
+    val showAlbumInfo = songs.size > ALBUM_ROW_SHOW_ALBUM_INFO_THRESHOLD
     val showAlbumStats = songs.size > 6
     val estimatedHeightWithInfo = songRowEstimateHeight(showInfo = true) * songs.size
     val albumSize = when (songs.size) {

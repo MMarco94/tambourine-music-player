@@ -1,13 +1,11 @@
 package io.github.mmarco94.tambourine.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,7 +19,6 @@ import io.github.mmarco94.tambourine.utils.format
 import io.github.mmarco94.tambourine.utils.sumOfDuration
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-import kotlin.math.roundToInt
 
 @Composable
 fun SongQueueUI(
@@ -91,19 +88,13 @@ fun SongQueueUI(
             }
             HorizontalDivider()
             BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
-                val approxRowHeight = 64.dp
-                val pos = queue.position
-                val offset = ((approxRowHeight.toPxApprox() - constraints.maxHeight) / 2).roundToInt()
-                val listState = rememberLazyListState(pos, offset)
-                LaunchedEffect(pos) {
-                    listState.animateScrollToItem(pos, offset)
+                val items = queue.songs.mapIndexed { index, it ->
+                    SongListItem.QueuedSongListItem(index, queue.songsByKey.getValue(it))
                 }
                 SongListUI(
                     0,
-                    queue.songs.mapIndexed { index, it ->
-                        SongListItem.QueuedSongListItem(index, queue.songsByKey.getValue(it))
-                    },
-                    listState,
+                    items,
+                    rememberLazySongListState(maxHeight, items, tryNotToScroll = false),
                     controller,
                 )
             }
