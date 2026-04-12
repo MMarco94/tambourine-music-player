@@ -52,8 +52,11 @@ modules:
     build-commands:
       - install -D io.github.mmarco94.tambourine.desktop /app/share/applications/io.github.mmarco94.tambourine.desktop
       - install -D icon.svg /app/share/icons/hicolor/scalable/apps/io.github.mmarco94.tambourine.svg
+      - install -D icon-symbolic.svg /app/share/icons/hicolor/scalable/apps/io.github.mmarco94.tambourine-symbolic.svg
     sources:
       - type: file
         path: io.github.mmarco94.tambourine.desktop
       - type: file
         path: icon.svg
+      - type: file
+        path: icon-symbolic.svg
