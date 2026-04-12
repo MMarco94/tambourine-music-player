@@ -13,3 +13,6 @@ fun pathSimilarity(first: Path, second: Path): Int {
     }
     return ret
 }
+
+val Path.withoutExtension: String
+    get() = toString().substringBeforeLast(".")

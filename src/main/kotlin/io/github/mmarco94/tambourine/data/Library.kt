@@ -3,6 +3,7 @@ package io.github.mmarco94.tambourine.data
 import io.github.mmarco94.tambourine.utils.mostCommonOrNull
 import io.github.mmarco94.tambourine.utils.orNoop
 import io.github.mmarco94.tambourine.utils.pathSimilarity
+import io.github.mmarco94.tambourine.utils.withoutExtension
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Deferred
 import net.bjoernpetersen.m3u.model.M3uEntry
@@ -39,14 +40,9 @@ data class Playlist(
     val songs: List<Song>,
 ) {
     val songSet = songs.toSet()
-
-    override fun hashCode() = file.hashCode()
-    override fun equals(other: Any?): Boolean {
-        return other is Playlist && other.file == file
-    }
 }
 
-class Song(
+data class Song(
     val file: Path,
     override val disk: Int?,
     override val track: Int?,
@@ -60,12 +56,9 @@ class Song(
 
     val artist get() = album.artist
 
-    private val hashCode = file.hashCode()
+    private val hashCode = super.hashCode()
     override fun hashCode() = hashCode
-
-    override fun equals(other: Any?): Boolean {
-        return other is Song && other.file == file
-    }
+    override fun equals(other: Any?) = super.equals(other)
 
     private fun matches(queryFilter: String): Boolean {
         return title.contains(queryFilter, ignoreCase = true) ||
@@ -177,22 +170,28 @@ data class Library(
         }
 
         suspend fun from(
-            metadata: Collection<RawMetadataSong>,
-            rawPlaylists: Set<Map.Entry<Path, List<M3uEntry>>>,
-            images: Set<Map.Entry<Path, Deferred<AlbumCover?>>>,
+            metadata: Map<Path, RawMetadataSong>,
+            rawPlaylists: Map<Path, List<M3uEntry>>,
+            images: Map<Path, Deferred<AlbumCover?>>,
+            lyrics: Map<Path, Lyrics>,
         ): Library {
-            val imagesByPath = images.groupBy { it.key.parent }
-            val coverForSong = metadata.associate {
-                it.file to findCover(it, imagesByPath)
+            val songSet = metadata.values
+            val imagesByPath = images.entries.groupBy { it.key.parent }
+            val coverForSong = metadata.mapValues { (_, song) ->
+                findCover(song, imagesByPath)
             }
 
-            val artists = buildArtists(metadata)
-            val albums = buildAlbums(metadata, artists, coverForSong)
+            val lyricsByPath = lyrics.entries.groupBy { it.key.withoutExtension.lowercase() }
+
+            val artists = buildArtists(songSet)
+            val albums = buildAlbums(songSet, artists, coverForSong)
 
 
-            val songs = metadata.map { song ->
+            val songs = songSet.map { song ->
                 val albumArtist = artists.getValue(song.nnAlbumArtist)
                 val album = albums.getValue(albumArtist to song.nnAlbum)
+                val lyrics = song.lyrics
+                    ?: lyricsByPath[song.file.withoutExtension.lowercase()]?.firstOrNull()?.value
                 Song(
                     file = song.file,
                     disk = song.disk,
@@ -202,7 +201,7 @@ data class Library(
                     cover = coverForSong.getValue(song.file),
                     length = song.length,
                     year = song.year,
-                    lyrics = song.lyrics,
+                    lyrics = lyrics,
                 )
             }
             val playlists = if (rawPlaylists.isNotEmpty()) {

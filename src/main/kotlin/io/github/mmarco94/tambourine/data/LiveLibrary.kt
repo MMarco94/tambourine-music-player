@@ -12,16 +12,14 @@ import net.bjoernpetersen.m3u.M3uParser
 import net.bjoernpetersen.m3u.model.M3uEntry
 import java.nio.file.*
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.io.path.exists
-import kotlin.io.path.extension
-import kotlin.io.path.isDirectory
-import kotlin.io.path.readBytes
+import kotlin.io.path.*
 import kotlin.time.TimeSource
 
 private val logger = KotlinLogging.logger {}
 
 private val PLAYLIST_EXTENSIONS = setOf("m3u")
 private val IMAGES_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp", "bmp", "gif", "tiff")
+private val LYRICS_EXTENSIONS = setOf("lrc")
 
 class LiveLibrary(
     private val scope: CoroutineScope,
@@ -34,6 +32,20 @@ class LiveLibrary(
     private val pendingEvents = AtomicInteger(0)
 
     private var eventChannel = Channel<InternalEvent>()
+
+    private class MetadataCollection<T> {
+        val data = mutableMapOf<Path, T>()
+        val size get() = data.size
+        fun add(path: Path, item: T) {
+            data[path] = item
+        }
+
+        fun onFileDeleted(deletedPath: Path) {
+            data.keys.removeIf { path ->
+                path.startsWith(deletedPath)
+            }
+        }
+    }
 
     suspend fun start(flowCollector: FlowCollector<Library>) {
         suspendCancellableCoroutine<Unit> { cont ->
@@ -57,24 +69,21 @@ class LiveLibrary(
                 }
             }
             scope.launch {
-                val rawMetadatas = mutableMapOf<Path, RawMetadataSong>()
-                val rawPlaylists = mutableMapOf<Path, List<M3uEntry>>()
-                val rawImages = mutableMapOf<Path, Deferred<AlbumCover?>>()
+                val rawMetadatas = MetadataCollection<RawMetadataSong>()
+                val rawPlaylists = MetadataCollection<List<M3uEntry>>()
+                val rawImages = MetadataCollection<Deferred<AlbumCover?>>()
+                val rawLyrics = MetadataCollection<Lyrics>()
                 while (true) {
                     when (val event = eventChannel.receive()) {
-                        is InternalEvent.NewSong -> rawMetadatas[event.file] = event.metadata
-                        is InternalEvent.NewPlaylist -> rawPlaylists[event.file] = event.playlist
-                        is InternalEvent.NewImage -> rawImages[event.file] = event.image
+                        is InternalEvent.NewSong -> rawMetadatas.add(event.file, event.metadata)
+                        is InternalEvent.NewPlaylist -> rawPlaylists.add(event.file, event.playlist)
+                        is InternalEvent.NewImage -> rawImages.add(event.file, event.image)
+                        is InternalEvent.NewLyric -> rawLyrics.add(event.file, event.lyrics)
                         is InternalEvent.FileDeleted -> {
-                            rawMetadatas.keys.removeIf { song ->
-                                song.startsWith(event.fileOrFolder)
-                            }
-                            rawPlaylists.keys.removeIf { playlist ->
-                                playlist.startsWith(event.fileOrFolder)
-                            }
-                            rawImages.keys.removeIf { image ->
-                                image.startsWith(event.fileOrFolder)
-                            }
+                            rawMetadatas.onFileDeleted(event.fileOrFolder)
+                            rawPlaylists.onFileDeleted(event.fileOrFolder)
+                            rawImages.onFileDeleted(event.fileOrFolder)
+                            rawLyrics.onFileDeleted(event.fileOrFolder)
                         }
 
                         is InternalEvent.FolderProcessed -> {}
@@ -82,11 +91,11 @@ class LiveLibrary(
                     }
                     val remaining = pendingEvents.decrementAndGet()
                     if (remaining == 0) {
-                        val library = Library.from(rawMetadatas.values, rawPlaylists.entries, rawImages.entries)
+                        val library = Library.from(rawMetadatas.data, rawPlaylists.data, rawImages.data, rawLyrics.data)
                         System.gc()
                         logger.info {
                             val diff = creationTime.elapsedNow()
-                            "Processed ${rawMetadatas.size} songs, ${rawPlaylists.size} playlists, ${rawImages.size} images ($diff since beginning)"
+                            "Processed ${rawMetadatas.size} songs, ${rawPlaylists.size} playlists, ${rawImages.size} images, ${rawLyrics.size} lyrics ($diff since beginning)"
                         }
                         flowCollector.emit(library)
                     }
@@ -154,6 +163,7 @@ class LiveLibrary(
         when (extension) {
             in PLAYLIST_EXTENSIONS -> onNewPlaylist(file)
             in IMAGES_EXTENSIONS -> onNewImage(file, decoder)
+            in LYRICS_EXTENSIONS -> onNewLyric(file)
             else -> onNewSong(file, decoder)
         }
     }
@@ -161,23 +171,17 @@ class LiveLibrary(
     private suspend fun onNewSong(file: Path, decoder: CoversDecoder) {
         try {
             val songInfo = RawMetadataSong.fromMusicFile(file, decoder)
-            eventChannel.send(
-                InternalEvent.NewSong(file, songInfo)
-            )
+            eventChannel.send(InternalEvent.NewSong(file, songInfo))
         } catch (e: Exception) {
             eventChannel.send(InternalEvent.FileIgnored)
-            logger.error {
-                "Error while parsing music file $file: ${e.message}"
-            }
+            logger.error { "Error while parsing music file $file: ${e.message}" }
         }
     }
 
     private suspend fun onNewPlaylist(file: Path) {
         try {
             val playlistInfo = M3uParser.parse(file)
-            eventChannel.send(
-                InternalEvent.NewPlaylist(file, playlistInfo)
-            )
+            eventChannel.send(InternalEvent.NewPlaylist(file, playlistInfo))
         } catch (e: Exception) {
             eventChannel.send(InternalEvent.FileIgnored)
             logger.error {
@@ -189,14 +193,25 @@ class LiveLibrary(
     private suspend fun onNewImage(file: Path, decoder: CoversDecoder) {
         try {
             val decoded = decoder.decode(file.readBytes())
-            eventChannel.send(
-                InternalEvent.NewImage(file, decoded)
-            )
+            eventChannel.send(InternalEvent.NewImage(file, decoded))
         } catch (e: Exception) {
             eventChannel.send(InternalEvent.FileIgnored)
-            logger.error {
-                "Error while parsing image file $file: ${e.message}"
+            logger.error { "Error while parsing image file $file: ${e.message}" }
+        }
+    }
+
+    private suspend fun onNewLyric(file: Path) {
+        try {
+            val lyrics = Lyrics.of(file.readText())
+            if (lyrics == null) {
+                logger.debug { "Empty lyrics file $file" }
+                eventChannel.send(InternalEvent.FileIgnored)
+            } else {
+                eventChannel.send(InternalEvent.NewLyric(file, lyrics))
             }
+        } catch (e: Exception) {
+            eventChannel.send(InternalEvent.FileIgnored)
+            logger.error { "Error while parsing lyrics file $file: ${e.message}" }
         }
     }
 
@@ -228,6 +243,11 @@ class LiveLibrary(
         data class NewImage(
             val file: Path,
             val image: Deferred<AlbumCover?>,
+        ) : InternalEvent
+
+        data class NewLyric(
+            val file: Path,
+            val lyrics: Lyrics,
         ) : InternalEvent
 
         data class FileDeleted(
