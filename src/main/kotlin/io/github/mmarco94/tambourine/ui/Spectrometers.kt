@@ -34,7 +34,7 @@ enum class SpectrometerStyle {
 @Composable
 fun Spectrometer(
     modifier: Modifier,
-    frequencies: DoubleArray,
+    frequencies: () -> DoubleArray,
     chunks: Density.(Size) -> Int,
     boost: Float = 1f,
     style: SpectrometerStyle = AREA,
@@ -43,6 +43,7 @@ fun Spectrometer(
     brush: Density.(Size) -> Brush,
 ) {
     Canvas(modifier) {
+        val frequencies = frequencies()
         when (style) {
             BOXES -> {
                 spectrometerDrawer(chunks(size), frequencies, boost, linear) { s, e, a ->
@@ -102,7 +103,7 @@ fun SmallFakeSpectrometers(
 ) {
     val position by player.Position()
     val songLength = player.queue?.currentSong?.length
-    val decodedSongData = player.DecodedSongData()
+    val decodedSongData by player.DecodedSongData()
     val playPauseAmplitude by animateFloatAsState(
         if (player.pause) {
             0f
@@ -112,6 +113,7 @@ fun SmallFakeSpectrometers(
     )
     val padding = 2.dp
     Canvas(modifier.padding(padding)) {
+        val decodedSongData = decodedSongData
         val songAmplitude = if (songLength != null && decodedSongData != null) {
             val percent = position / songLength
             val realAmpl = decodedSongData.waveformsPerChannelHiRes.maxOf {

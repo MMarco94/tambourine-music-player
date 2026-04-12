@@ -108,7 +108,7 @@ fun PlayerUI(
                 Spacer(Modifier.height(24.dp))
 
                 Column(Modifier.widthIn(max = 480.dp)) {
-                    Seeker(Modifier, player, song, queue)
+                    Seeker(Modifier, player, song)
                     SeekerTime(Modifier, player, song)
                 }
                 Spacer(Modifier.height(24.dp))
@@ -300,8 +300,7 @@ fun RepeatIcon(
 private fun Seeker(
     modifier: Modifier,
     player: PlayerController,
-    song: Song,
-    queue: SongQueue?
+    song: Song
 ) {
     val cs = rememberCoroutineScope()
     var seeking by remember { mutableStateOf(false) }
@@ -345,7 +344,6 @@ private fun Seeker(
         state = sliderState,
         track = { pos ->
             var mousePositionX by remember { mutableStateOf<Float?>(null) }
-            val decodedSongData = player.DecodedSongData()
             WaveformUI(
                 modifier = Modifier.fillMaxWidth().pointerInput(Unit) {
                     awaitPointerEventScope {
@@ -359,7 +357,7 @@ private fun Seeker(
                         }
                     }
                 },
-                wf = decodedSongData,
+                player = player,
                 activePercent = { pos.value / pos.valueRange.endInclusive },
                 mousePercent = mousePositionX?.let { p ->
                     { size -> p / size.width }
@@ -398,59 +396,86 @@ val fakeHeight = run {
 @Composable
 private fun WaveformUI(
     modifier: Modifier,
-    wf: SongDecoder.DecodedSongData?,
     activePercent: Density.(Size) -> Float,
     mousePercent: (Density.(Size) -> Float)?,
+    player: PlayerController,
 ) {
-    val left: DoubleArray? = wf?.waveformsPerChannel?.first()
-    val right: DoubleArray? = wf?.waveformsPerChannel?.getOrNull(1) ?: left
-    val scale = wf?.maxAmplitude ?: 1.0
     Column(modifier) {
-        val computed = wf?.analyzedFrames ?: 0L
-        SingleWaveformUI(computed, left, scale, false, activePercent, mousePercent)
-        SingleWaveformUI(computed, right, scale, true, activePercent, mousePercent)
+        SingleWaveformUI({
+            val wf by player.DecodedSongData()
+            Triple(
+                wf?.analyzedFrames ?: 0L,
+                wf?.waveformsPerChannel?.first(),
+                wf?.maxAmplitude ?: 1.0
+            )
+        }, false, activePercent, mousePercent)
+        SingleWaveformUI({
+            val wf by player.DecodedSongData()
+            Triple(
+                wf?.analyzedFrames ?: 0L,
+                wf?.waveformsPerChannel?.getOrNull(1) ?: wf?.waveformsPerChannel?.first(),
+                wf?.maxAmplitude ?: 1.0
+            )
+        }, true, activePercent, mousePercent)
     }
 }
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun SingleWaveformUI(
-    computed: Long,
-    wf: DoubleArray?,
-    scale: Double,
+    wfData: @Composable () -> Triple<Long, DoubleArray?, Double>,
     invert: Boolean,
     activePercent: Density.(Size) -> Float,
     mousePercent: (Density.(Size) -> Float)?,
 ) {
     // This is the most efficient way to do this. 10/10 would do again
-    val transition = updateTransition(computed to wf, label = "Waveform")
-    val spring = spring<Float>(stiffness = Spring.StiffnessVeryLow)
-    val animations = (0 until SongDecoder.WAVEFORM_LOW_RES_SIZE).map { index ->
-        transition.animateFloat({ spring }) { (_, state) ->
-            val h = state?.getOrZero(index)?.div(scale) ?: fakeHeight
-            val baseHeight = fakeHeight / 2
-            (baseHeight + h * (1 - baseHeight)).toFloat()
+    val animations = remember { mutableStateOf(emptyList<Float>()) }
+    waveformAnimations(wfData, animations)
+    val animatedWaveform by derivedStateOf {
+        val value = animations.value
+        DoubleArray(SongDecoder.WAVEFORM_LOW_RES_SIZE) { index ->
+            value[index].toDouble()
         }
-    }
-    val animatedWaveform = DoubleArray(SongDecoder.WAVEFORM_LOW_RES_SIZE) { index ->
-        animations[index].value.toDouble()
     }
     val modifier = Modifier.fillMaxWidth().height(waveformHeight)
     Box {
-        ActualWaveform(modifier, animatedWaveform, invert, activePercent, INACTIVE_ALPHA, .8f, INACTIVE_ALPHA)
+        ActualWaveform(modifier, { animatedWaveform }, invert, activePercent, INACTIVE_ALPHA, .8f, INACTIVE_ALPHA)
         val t = updateTransition(mousePercent)
         t.Crossfade(contentKey = { it == null }, animationSpec = spring(stiffness = Spring.StiffnessLow)) { mp ->
             if (mp != null) {
-                ActualWaveform(modifier, animatedWaveform, invert, mp, 0.6f, .8f, 0f)
+                ActualWaveform(modifier, { animatedWaveform }, invert, mp, 0.6f, .8f, 0f)
             }
         }
     }
 }
 
 @Composable
+private fun waveformAnimations(
+    /**
+     * A triple of:
+     *  - "update counter", a number that should change every time the waveform changes
+     *  - the waveform, as a double array. THIS IS mutable (that's why "update counter" is necessary)
+     *  - the scale
+     */
+    wfData: @Composable () -> Triple<Long, DoubleArray?, Double>,
+    animationStates: MutableState<List<Float>>,
+) {
+    val spring = remember { spring<Float>(stiffness = Spring.StiffnessVeryLow) }
+    val transition = updateTransition(wfData(), label = "Waveform")
+    val animations = (0 until SongDecoder.WAVEFORM_LOW_RES_SIZE).map { index ->
+        transition.animateFloat({ spring }) { (_, wf, scale) ->
+            val h = wf?.getOrZero(index)?.div(scale) ?: fakeHeight
+            val baseHeight = fakeHeight / 2
+            (baseHeight + h * (1 - baseHeight)).toFloat()
+        }
+    }
+    animationStates.value = animations.map { it.value }
+}
+
+@Composable
 private fun ActualWaveform(
     modifier: Modifier,
-    animatedWaveform: DoubleArray,
+    animatedWaveform: () -> DoubleArray,
     invert: Boolean,
     mousePercent: Density.(Size) -> Float,
     startAlpha: Float,

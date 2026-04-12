@@ -83,7 +83,9 @@ data class Song(
 
     private val hashCode = super.hashCode()
     override fun hashCode() = hashCode
-    override fun equals(other: Any?) = super.equals(other)
+    override fun equals(other: Any?): Boolean {
+        return other is Song && hashCode == other.hashCode && super.equals(other)
+    }
 
     private fun matches(queryFilter: String): Boolean {
         return title.contains(queryFilter, ignoreCase = true) ||

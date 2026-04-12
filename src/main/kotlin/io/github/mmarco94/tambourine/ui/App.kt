@@ -7,6 +7,7 @@ import androidx.compose.foundation.LocalContextMenuRepresentation
 import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.defaultScrollbarStyle
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
@@ -55,8 +56,10 @@ fun App(
     var rawListOptions by remember { mutableStateOf(SongListOptions()) }
     val listOptions = rawListOptions.adjust(library)
     val player = playerController.current
-    val mainImage = player.queue?.currentSong?.cover
-        ?: library?.findCoverByColor(LocalAppearanceSettings.current.accentColor)
+    val accentColor = LocalAppearanceSettings.current.accentColor
+    val mainImage by derivedStateOf {
+        player.queue?.currentSong?.cover ?: library?.findCoverByColor(accentColor)
+    }
 
     MaterialTheme(
         typography = TambourineTheme.typography,
@@ -74,7 +77,9 @@ fun App(
         ) {
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 BlurredFadeAlbumCover(mainImage, Modifier.fillMaxSize().paperNoise())
-                val libUIState = if (player.queue != null) NORMAL else library.toUIState()
+                val libUIState by derivedStateOf {
+                    if (player.queue != null) NORMAL else library.toUIState()
+                }
                 LibraryContainer(
                     state = libUIState,
                     library = library,
@@ -165,7 +170,11 @@ private fun MainContent(
     val listItems = remember(filteredLib, listOptions) {
         filteredLib?.toListItems(listOptions)
     }
-    val libraryScrollState = rememberLazySongListState(height, listItems.orEmpty(), tryNotToScroll = true)
+
+    // This is done like this to avoid recompositions when the song changes
+    val libraryScrollState = remember { mutableStateOf<LazyListState?>(null) }
+    rememberInjectedLazySongListState(height, listItems.orEmpty(), tryNotToScroll = true, libraryScrollState)
+
     var showLyrics by remember { mutableStateOf(true) }
     PanelContainer(modifier, Panel.entries.toSet(), visiblePanels) { panel ->
         val showToolbar = !large || panel == PLAYER
@@ -196,7 +205,12 @@ private fun MainContent(
                         if (it) {
                             LibraryNoSearchResultsComposable { setListOptions(listOptions.removeSearch()) }
                         } else {
-                            SongListUI(filteredLib.stats.maxTrackNumber, listItems, libraryScrollState, controller)
+                            SongListUI(
+                                filteredLib.stats.maxTrackNumber,
+                                listItems,
+                                { checkNotNull(libraryScrollState.value) },
+                                controller
+                            )
                         }
                     }
                 }

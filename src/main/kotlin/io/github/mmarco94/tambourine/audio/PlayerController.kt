@@ -275,13 +275,12 @@ class PlayerController(
     }
 
     @Composable
-    fun DecodedSongData(): SongDecoder.DecodedSongData? {
+    fun DecodedSongData(): androidx.compose.runtime.State<SongDecoder.DecodedSongData?> {
         val cp = derivedStateOf { observableState.currentlyPlaying }.value
         return if (cp != null) {
-            val data by cp.decodedSongData.collectAsState(null)
-            data
+            cp.decodedSongData.collectAsState(null)
         } else {
-            null
+            rememberUpdatedState(null)
         }
     }
 

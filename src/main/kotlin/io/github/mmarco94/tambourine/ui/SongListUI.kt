@@ -35,10 +35,11 @@ private const val TARGET_POSITION_ON_SCREEN = 0.2f
 fun SongListUI(
     maxTrackNumber: Int?,
     items: List<SongListItem>,
-    state: LazyListState,
+    state: () -> LazyListState,
     controller: SongQueueController,
     contentPadding: PaddingValues = PaddingValues(bottom = 128.dp),
 ) {
+    val state = state()
     Box {
         LazyColumn(
             state = state,
@@ -202,16 +203,34 @@ private fun rememberSongListScrollbarAdapter(
     }
 }
 
-/**
- * A very complicated machine to keep the currently playing item on the screen.
- * @param tryNotToScroll if true, will scroll only if focused item is near the edges of the screen
- */
 @Composable
 fun rememberLazySongListState(
     height: Dp,
     items: List<SongListItem>,
     tryNotToScroll: Boolean,
 ): LazyListState {
+    val ret = remember { mutableStateOf<LazyListState?>(null) }
+    rememberInjectedLazySongListState(
+        height = height,
+        items = items,
+        tryNotToScroll = tryNotToScroll,
+        state = ret
+    )
+    return checkNotNull(ret.value)
+}
+
+/**
+ * A very complicated machine to keep the currently playing item on the screen.
+ * @param tryNotToScroll if true, will scroll only if focused item is near the edges of the screen
+ * @return this weird interface is because of performances
+ */
+@Composable
+fun rememberInjectedLazySongListState(
+    height: Dp,
+    items: List<SongListItem>,
+    tryNotToScroll: Boolean,
+    state: MutableState<in LazyListState>,
+) {
     val density = LocalDensity.current
     val songHeight = songRowEstimateHeight()
     val songHeightWithInfo = songRowEstimateHeight(showInfo = true)
@@ -252,6 +271,7 @@ fun rememberLazySongListState(
 
     val offset = (positionInItem - height * TARGET_POSITION_ON_SCREEN).toPxApprox().roundToInt()
     val listState = rememberLazyListState(pos, offset)
+    state.value = listState
     var shouldBeFast by remember { mutableStateOf(false) }
 
     LaunchedEffect(pos, positionInItem, height) {
@@ -282,5 +302,4 @@ fun rememberLazySongListState(
             throw e
         }
     }
-    return listState
 }

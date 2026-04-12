@@ -91,10 +91,11 @@ fun SongQueueUI(
                 val items = queue.songs.mapIndexed { index, it ->
                     SongListItem.QueuedSongListItem(index, queue.songsByKey.getValue(it))
                 }
+                val state = rememberLazySongListState(maxHeight, items, tryNotToScroll = false)
                 SongListUI(
                     0,
                     items,
-                    rememberLazySongListState(maxHeight, items, tryNotToScroll = false),
+                    { state },
                     controller,
                 )
             }

@@ -58,7 +58,9 @@ fun <T> PanelContainer(
                     Row(Modifier.matchParentSize().alpha(alpha)) {
                         if (sw.value > 0) Spacer(Modifier.weight(sw.value))
                         Box(Modifier.weight(1f).fillMaxHeight().background(Color.Black.copy(alpha = bgAlpha))) {
-                            render(panel)
+                            key(panel) {
+                                render(panel)
+                            }
                         }
                         if (ew.value > 0) Spacer(Modifier.weight(ew.value))
                     }
