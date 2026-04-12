@@ -2,6 +2,7 @@ package io.github.mmarco94.tambourine.utils
 
 import androidx.compose.runtime.Composable
 import io.github.mmarco94.tambourine.generated.resources.*
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import java.text.NumberFormat
 import kotlin.math.absoluteValue
@@ -28,6 +29,10 @@ fun Duration.format(): String {
     return formatDuration(decimalsRounded())
 }
 
+suspend fun Duration.formatSuspend(): String {
+    return formatDurationSuspend(decimalsRounded())
+}
+
 @Composable
 fun formatDuration(decimals: Long): String {
     if (decimals < 0) return stringResource(Res.string.duration_negative, formatDuration(-decimals))
@@ -46,6 +51,26 @@ fun formatDuration(decimals: Long): String {
         stringResource(Res.string.duration_hours, min / 60) + " " +
                 stringResource(Res.string.duration_minutes, min.mod(60)) + " " +
                 stringResource(Res.string.duration_seconds, sec)
+    }
+}
+
+suspend fun formatDurationSuspend(decimals: Long): String {
+    if (decimals < 0) return getString(Res.string.duration_negative, formatDurationSuspend(-decimals))
+    else if (decimals == Long.MAX_VALUE) return getString(Res.string.duration_infinite)
+
+    val min = decimals / 600
+    val sec = decimals.mod(600) / 10
+
+    return if (min == 0L && sec.absoluteValue < 60) {
+        val secondsStr = secondsWithDecimalsFormatter.format(decimals / 10f)
+        getString(Res.string.duration_seconds, secondsStr)
+    } else if (min < 60) {
+        getString(Res.string.duration_minutes, min) + " " +
+                getString(Res.string.duration_seconds, sec)
+    } else {
+        getString(Res.string.duration_hours, min / 60) + " " +
+                getString(Res.string.duration_minutes, min.mod(60)) + " " +
+                getString(Res.string.duration_seconds, sec)
     }
 }
 

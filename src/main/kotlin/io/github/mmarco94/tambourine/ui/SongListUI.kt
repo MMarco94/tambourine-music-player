@@ -239,14 +239,33 @@ fun rememberInjectedLazySongListState(
     val currentlyPlayingPosition = queue?.position
     val currentlyPlaying = queue?.currentSongKey
 
-    val playingItem = items.withIndex().firstOrNull { (_, item) ->
-        when (item) {
-            is SongListItem.AlbumListItem -> item.songs.any { it.uniqueKey == currentlyPlaying }
-            is SongListItem.ArtistListItem -> item.songs.any { it.uniqueKey == currentlyPlaying }
-            is SongListItem.QueuedSongListItem -> item.indexInQueue == currentlyPlayingPosition
-            is SongListItem.SongListItem -> item.song.uniqueKey == currentlyPlaying
+    val itemsBySongKey = remember(items) {
+        buildMap {
+            items.withIndex().forEach { indexedValue ->
+                val songs = when (val item = indexedValue.value) {
+                    is SongListItem.AlbumListItem -> item.songs
+                    is SongListItem.ArtistListItem -> item.songs
+                    is SongListItem.QueuedSongListItem -> emptyList()
+                    is SongListItem.SongListItem -> listOf(item.song)
+                }
+                for (song in songs) {
+                    this[song.uniqueKey] = indexedValue
+                }
+            }
         }
     }
+    val itemsByPosition = remember(items) {
+        buildMap {
+            items.withIndex().forEach { indexedValue ->
+                val item = indexedValue.value
+                if (item is SongListItem.QueuedSongListItem) {
+                    this[item.indexInQueue] = indexedValue
+                }
+            }
+        }
+    }
+
+    val playingItem = itemsBySongKey[currentlyPlaying] ?: itemsByPosition[currentlyPlayingPosition]
 
     val pos = playingItem?.index ?: 0
     val positionInItem = when (val item = playingItem?.value) {

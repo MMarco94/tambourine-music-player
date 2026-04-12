@@ -30,7 +30,6 @@ import io.github.mmarco94.tambourine.data.SongQueueController
 import io.github.mmarco94.tambourine.generated.resources.*
 import io.github.mmarco94.tambourine.playerController
 import io.github.mmarco94.tambourine.utils.digits
-import io.github.mmarco94.tambourine.utils.format
 
 @Composable
 fun SongRow(
@@ -212,7 +211,7 @@ private fun BaseSongRow(
                     }
                 }
                 SingleLineText(
-                    song.length.format(),
+                    song.formattedLength,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     style = MaterialTheme.typography.labelMedium,
                 )

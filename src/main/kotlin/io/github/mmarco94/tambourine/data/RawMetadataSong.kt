@@ -1,5 +1,6 @@
 package io.github.mmarco94.tambourine.data
 
+import io.github.mmarco94.tambourine.utils.formatSuspend
 import io.github.mmarco94.tambourine.utils.trimToNull
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
@@ -16,6 +17,7 @@ data class RawMetadataSong(
     override val disk: Int?,
     override val track: Int?,
     override val length: Duration,
+    val formattedLength: String,
     val title: String?,
     val album: String?,
     val artist: String?,
@@ -45,11 +47,13 @@ data class RawMetadataSong(
                 }?.year
             } else null
 
+            val length = header.preciseTrackLength.seconds
             return RawMetadataSong(
                 file = file,
                 disk = tag.getFirst(FieldKey.DISC_NO)?.toIntOrNull(),
                 track = tag.getFirst(FieldKey.TRACK)?.toIntOrNull(),
-                length = header.preciseTrackLength.seconds,
+                length = length,
+                formattedLength = length.formatSuspend(),
                 title = tag.getFirst(FieldKey.TITLE)?.trimToNull(),
                 album = tag.getFirst(FieldKey.ALBUM)?.trimToNull(),
                 artist = tag.getFirst(FieldKey.ARTIST)?.trimToNull(),
