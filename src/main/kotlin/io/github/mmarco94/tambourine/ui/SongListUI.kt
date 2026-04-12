@@ -21,7 +21,6 @@ import io.github.mmarco94.tambourine.data.SongListItem
 import io.github.mmarco94.tambourine.data.SongQueueController
 import io.github.mmarco94.tambourine.playerController
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CancellationException
 import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
@@ -272,7 +271,8 @@ fun rememberInjectedLazySongListState(
     val offset = (positionInItem - height * TARGET_POSITION_ON_SCREEN).toPxApprox().roundToInt()
     val listState = rememberLazyListState(pos, offset)
     state.value = listState
-    var shouldBeFast by remember { mutableStateOf(false) }
+    var pendingScroll by remember { mutableStateOf(false) }
+    var pendingAnimation by remember { mutableStateOf(false) }
 
     LaunchedEffect(pos, positionInItem, height) {
         val nearPositionRange = pos - 1..pos + 1
@@ -286,20 +286,18 @@ fun rememberInjectedLazySongListState(
             val pos = with(density) { itemInfo.offset.toDp() } + positionInItem
             pos in (height * TARGET_POSITION_ON_SCREEN..height * (1 - TARGET_POSITION_ON_SCREEN))
         } ?: false
-        try {
-            if (shouldBeFast) {
-                shouldBeFast = false
+        val shouldTriggerScroll =
+            !(insideTheScreen && tryNotToScroll) && (isVisible || isMovingToFirst || isMovingToLast)
+        if (pendingScroll || shouldTriggerScroll) {
+            pendingScroll = true
+            if (isVisible || pendingAnimation) {
+                pendingAnimation = true
+                listState.animateScrollToItem(pos, offset)
+            } else {
                 listState.scrollToItem(pos, offset)
-            } else if (!(insideTheScreen && tryNotToScroll) && (isVisible || isMovingToFirst || isMovingToLast)) {
-                if (isVisible) {
-                    listState.animateScrollToItem(pos, offset)
-                } else {
-                    listState.scrollToItem(pos, offset)
-                }
             }
-        } catch (e: CancellationException) {
-            shouldBeFast = true
-            throw e
+            pendingScroll = false
+            pendingAnimation = false
         }
     }
 }
