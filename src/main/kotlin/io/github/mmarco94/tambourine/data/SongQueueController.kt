@@ -7,76 +7,102 @@ import kotlinx.coroutines.launch
 
 data class SongQueueController(
     val cs: CoroutineScope,
-    val defaultQueue: List<Song>,
     val sortedLibrary: Library,
     val player: PlayerController,
     val onAction: () -> Unit = {},
 ) {
     fun play(song: Song, shuffle: Boolean? = null) {
-        val newQueue = SongQueue.of(player.queue, defaultQueue, song).maybeShuffled(shuffle)
         onAction()
         cs.launch {
-            player.changeQueue(newQueue, Position.Beginning)
+            player.transformQueue { queue ->
+                val withSong = if (queue == null || song.uniqueKey !in queue.originalSongsKeys) {
+                    val songs = sortedLibrary.songs
+                    val songKeys = songs.map { it.uniqueKey }
+                    SongQueue(
+                        originalSongsKeys = songKeys,
+                        songs = songKeys,
+                        songsByKey = sortedLibrary.songsByKey,
+                        position = songs.indexOf(song),
+                    )
+                } else {
+                    queue
+                }
+                if (withSong.currentSongKey == song.uniqueKey) {
+                    withSong
+                } else {
+                    withSong.copy(position = withSong.songs.indexOf(song.uniqueKey))
+                }.maybeShuffled(shuffle) to Position.Beginning
+            }
             player.play()
         }
     }
 
-    fun playAlbum(song: Song, shuffle: Boolean? = null) {
-        play(sortedLibrary.songsByAlbum[song.album], song, shuffle)
+    fun playAlbum(song: Song) {
+        playSongs(sortedLibrary.songsByAlbum.getValue(song.album), song)
     }
 
-    fun playArtist(song: Song, shuffle: Boolean? = null) {
-        play(sortedLibrary.songsByArtist[song.artist], song, shuffle)
+    fun playArtist(song: Song) {
+        playSongs(sortedLibrary.songsByArtist.getValue(song.artist), song)
     }
 
-    private fun play(songs: List<Song>?, song: Song, shuffle: Boolean? = null) {
-        val newQueue = SongQueue.of(player.queue, songs ?: listOf(song), song).maybeShuffled(shuffle)
+    fun playSongs(songs: List<Song>, song: Song?, shuffle: Boolean = false) {
+        require(song == null || song in songs)
+        require(songs.isNotEmpty())
         onAction()
         cs.launch {
-            player.changeQueue(newQueue, Position.Beginning)
+            player.transformQueue { queue ->
+                val songKeys = songs.map { it.uniqueKey }
+                val queue = SongQueue(
+                    originalSongsKeys = songs.map { it.uniqueKey },
+                    songs = songKeys,
+                    songsByKey = songs.associateBy { it.uniqueKey },
+                    position = if (song == null) if (shuffle) songs.indices.random() else 0 else songs.indexOf(song),
+                    repeatMode = queue?.repeatMode ?: RepeatMode.DEFAULT,
+                ).maybeShuffled(shuffle)
+                queue to Position.Beginning
+            }
             player.play()
         }
     }
 
-    fun playQueued(indexInQueue: Int, shuffle: Boolean? = null) {
-        val newQueue = player.queue!!.copy(position = indexInQueue).maybeShuffled(shuffle)
+    fun playQueued(song: Song, tentativeIndex: Int, shuffle: Boolean? = null) {
         onAction()
         cs.launch {
-            player.changeQueue(newQueue, Position.Beginning)
+            player.transformQueue { queue ->
+                val withSong = queue.addIfMissing(song)
+                if (withSong.songs.elementAtOrNull(tentativeIndex) == song.uniqueKey) {
+                    withSong.copy(position = tentativeIndex)
+                } else {
+                    withSong.copy(position = withSong.songs.indexOf(song.uniqueKey))
+                }.maybeShuffled(shuffle) to Position.Beginning
+            }
             player.play()
         }
     }
 
     fun playNext(song: Song) {
-        var newQueue = player.queue
-        newQueue = if (newQueue != null) {
-            val possible = newQueue.songs.withIndex().indexOfLast { (index, s) ->
-                index != newQueue.position && s == song
-            }
-            if (possible >= 0) {
-                newQueue.move(possible, newQueue.position + 1)
-            } else {
-                newQueue.add(newQueue.position + 1, song)
-            }
-        } else {
-            SongQueue.of(null, defaultQueue, song)
-        }
         onAction()
         cs.launch {
-            player.changeQueue(newQueue)
+            player.transformQueue { queue ->
+                val withSong = queue.addIfMissing(song)
+                val possible = withSong.songs.withIndex().indexOfLast { (index, s) ->
+                    index != withSong.position && s == song.uniqueKey
+                }
+                if (possible >= 0) {
+                    withSong.move(possible, withSong.position + 1)
+                } else {
+                    withSong.add(withSong.position + 1, song)
+                } to Position.Current
+            }
         }
     }
 
     fun addToQueue(song: Song) {
-        var newQueue = player.queue
-        newQueue = if (newQueue != null) {
-            newQueue.add(newQueue.songs.size, song)
-        } else {
-            SongQueue.of(null, defaultQueue, song)
-        }
         onAction()
         cs.launch {
-            player.changeQueue(newQueue)
+            player.transformQueue { queue ->
+                queue.append(song) to Position.Current
+            }
         }
     }
 }

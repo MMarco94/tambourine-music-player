@@ -2,15 +2,14 @@ package io.github.mmarco94.tambourine.audio
 
 import androidx.compose.runtime.*
 import io.github.mmarco94.tambourine.audio.PlayerCommand.*
+import io.github.mmarco94.tambourine.data.Library
 import io.github.mmarco94.tambourine.data.SongQueue
 import io.github.mmarco94.tambourine.mpris.MPRISPlayerController
 import io.github.mmarco94.tambourine.utils.debugElapsed
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.swing.Swing
 import kotlin.concurrent.thread
 import kotlin.time.Clock
@@ -34,9 +33,8 @@ sealed interface Position {
 }
 
 private sealed interface PlayerCommand {
-    class ChangeQueue(
-        val queue: SongQueue?,
-        val position: Position,
+    class TransformQueue(
+        val transformation: (SongQueue?) -> Pair<SongQueue?, Position>,
     ) : PlayerCommand
 
     data object Play : PlayerCommand
@@ -52,6 +50,7 @@ class PlayerController(
     private val coroutineScope: CoroutineScope,
     quit: () -> Unit,
     raise: () -> Unit,
+    musicLibrary: Flow<Library?>,
 ) {
 
     private val commandChannel: Channel<PlayerCommand> = Channel(Channel.UNLIMITED)
@@ -189,7 +188,7 @@ class PlayerController(
 
             val new = queue.currentSong
 
-            val newCp = if (currentlyPlaying?.queue?.currentSong != new) {
+            val newCp = if (currentlyPlaying?.queue?.currentSongKey != new.uniqueKey) {
                 val stream = logger.debugElapsed("Opening song ${new.title}") {
                     new.audioStream()
                 }
@@ -333,20 +332,15 @@ class PlayerController(
         sendCommand(Pause)
     }
 
-    suspend fun changeQueue(
-        queue: SongQueue?,
-        position: Position = Position.Current,
+    suspend fun transformQueue(
+        transformation: (SongQueue?) -> Pair<SongQueue?, Position>,
     ) {
-        sendCommand(ChangeQueue(queue, position))
+        sendCommand(TransformQueue(transformation))
     }
 
     suspend fun startSeek() {
         sendCommand(EnterLowLatencyMode)
         sendCommand(SeekingStart)
-    }
-
-    suspend fun seek(queue: SongQueue?, position: Duration) {
-        sendCommand(ChangeQueue(queue, Position.Specific(position)))
     }
 
     suspend fun endSeek() {
@@ -380,6 +374,15 @@ class PlayerController(
         thread(name = "PlayerControllerLoop", priority = Thread.MAX_PRIORITY) {
             runBlocking {
                 launch {
+                    musicLibrary
+                        .filterNotNull()
+                        .collectLatest { library ->
+                            transformQueue { queue ->
+                                queue?.updateLibrary(library) to Position.Current
+                            }
+                        }
+                }
+                launch {
                     var state = State.initial
                     var desiredPause = ZERO
                     while (true) {
@@ -391,12 +394,15 @@ class PlayerController(
                             commandChannel.tryReceive().getOrNull()
                         }
                         val (newState, maxAllowedPause) = when (command) {
-                            is ChangeQueue -> state.change {
-                                changeQueue(
-                                    command.queue,
-                                    command.position,
-                                    keepBufferedContent = false,
-                                )
+                            is TransformQueue -> {
+                                state.change {
+                                    val (newQueue, newPosition) = command.transformation(currentlyPlaying?.queue)
+                                    changeQueue(
+                                        newQueue,
+                                        newPosition,
+                                        keepBufferedContent = false,
+                                    )
+                                }
                             }
 
                             is Pause -> state.change {

@@ -1,6 +1,7 @@
 package io.github.mmarco94.tambourine.mpris
 
 import io.github.mmarco94.tambourine.data.Song
+import io.github.mmarco94.tambourine.data.SongKey
 import io.github.mmarco94.tambourine.utils.variant
 import org.freedesktop.dbus.types.Variant
 import org.mpris.MediaPlayer2.TrackId
@@ -46,10 +47,10 @@ data class MPRISMetadata(
 }
 
 
-fun Song.mprisTrackId() = "/io/github/MMarco94/music-player/" + hashCode().toString()
+fun SongKey.mprisTrackId() = "/io/github/MMarco94/music-player/" + this.file.hashCode().toString()
 fun Song.mprisMetadata(): MPRISMetadata {
     return MPRISMetadata(
-        trackId = mprisTrackId(),
+        trackId = uniqueKey.mprisTrackId(),
         length = length,
         artist = listOf(artist.name),
         albumArtist = listOf(artist.name),

@@ -63,7 +63,7 @@ fun AlbumRow(
                         contentAlignment = Alignment.BottomCenter
                     ) {
                         val alpha by animateFloatAsState(if (mouseOver) 1f else .5f)
-                        PlayShuffleButtons(Modifier.alpha(alpha), songs)
+                        PlayShuffleButtons(Modifier.alpha(alpha), controller, songs)
                     }
                 }
             }

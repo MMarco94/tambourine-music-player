@@ -22,24 +22,40 @@ private val logger = KotlinLogging.logger {}
 private val IMAGES_HIGH_PRIORITY = listOf("cover", "folder", "album", "front")
 private val IMAGES_LOW_PRIORITY = listOf("back", "disc", "artist")
 
+interface Unique {
+    /**
+     * A key that is guaranteed to be unique within the library.
+     * The key might (and likely will) be the same across different libraries.
+     */
+    val uniqueKey: Any
+}
+
+@JvmInline
+value class SongKey(val file: Path)
+
 data class Artist(
     val name: String,
     val stats: SongCollectionStats,
-)
+) : Unique {
+    override val uniqueKey: Any get() = name
+}
 
 data class Album(
     val title: String,
     val artist: Artist,
     val cover: AlbumCover?,
     val stats: SongCollectionStats,
-)
+) : Unique {
+    override val uniqueKey: Any = artist.uniqueKey to title
+}
 
 data class Playlist(
     val name: String,
     val file: Path,
     val songs: List<Song>,
-) {
+) : Unique {
     val songSet = songs.toSet()
+    override val uniqueKey: Any get() = file
 }
 
 data class Song(
@@ -52,9 +68,10 @@ data class Song(
     val lyrics: Lyrics?,
     override val length: Duration,
     override val year: Int?,
-) : BaseSong {
+) : BaseSong, Unique {
 
     val artist get() = album.artist
+    override val uniqueKey: SongKey = SongKey(file)
 
     private val hashCode = super.hashCode()
     override fun hashCode() = hashCode
@@ -98,6 +115,7 @@ data class Library(
     val songsByArtist: Map<Artist, List<Song>> = songs.groupBy { it.artist },
 ) {
     val stats = SongCollectionStats.of(songs)
+    val songsByKey: Map<SongKey, Song> = songs.associateBy { it.uniqueKey }
 
     fun filter(artist: Artist?, album: Album?, playlist: Path?, query: String): Library {
         val playlist = playlists.singleOrNull { it.file == playlist }

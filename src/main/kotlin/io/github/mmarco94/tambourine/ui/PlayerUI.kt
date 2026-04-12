@@ -122,7 +122,9 @@ fun PlayerUI(
                     PlayerIcon(
                         cs, Icons.Default.SkipPrevious, stringResource(Res.string.action_go_to_previous_song)
                     ) {
-                        player.changeQueue(queue.previous(), Position.Beginning)
+                        player.transformQueue { queue ->
+                            queue?.previous() to Position.Beginning
+                        }
                         player.play()
                     }
                     Spacer(Modifier.width(8.dp))
@@ -143,7 +145,9 @@ fun PlayerUI(
                     PlayerIcon(
                         cs, Icons.Default.SkipNext, stringResource(Res.string.action_go_to_next_song)
                     ) {
-                        player.changeQueue(queue.next(), Position.Beginning)
+                        player.transformQueue { queue ->
+                            queue?.next() to Position.Beginning
+                        }
                         player.play()
                     }
                     Spacer(Modifier.width(16.dp))
@@ -208,7 +212,7 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
                             getPosition = { transform ->
                                 var pos by remember { mutableStateOf(transform(ZERO)) }
                                 player.ObservePosition {
-                                    if (player.queue?.currentSong == s) {
+                                    if (player.queue?.currentSongKey == s.uniqueKey) {
                                         pos = transform(it)
                                     }
                                 }
@@ -216,7 +220,12 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
                             },
                             setPosition = { position ->
                                 cs.launch {
-                                    player.seek(player.queue, position)
+                                    player.transformQueue { queue ->
+                                        if (queue?.currentSongKey == s.uniqueKey) {
+                                            queue to Position.Specific(position)
+                                        } else
+                                            queue to Position.Current
+                                    }
                                 }
                             }
                         )
@@ -255,7 +264,9 @@ fun ShuffleIcon(
         label = stringResource(if (queue.isShuffled) Res.string.action_disable_shuffle else Res.string.action_enable_shuffle),
         active = queue.isShuffled
     ) {
-        player.changeQueue(queue.toggleShuffle())
+        player.transformQueue { queue ->
+            queue?.toggleShuffle() to Position.Current
+        }
     }
 }
 
@@ -278,9 +289,9 @@ fun RepeatIcon(
         ),
         active = queue.repeatMode != RepeatMode.DO_NOT_REPEAT
     ) {
-        player.changeQueue(
-            queue.setRepeatMode(next),
-        )
+        player.transformQueue { queue ->
+            queue?.setRepeatMode(next) to Position.Current
+        }
     }
 }
 
@@ -319,7 +330,13 @@ private fun Seeker(
             if (startSeek) {
                 player.startSeek()
             }
-            player.seek(queue, newPosition)
+            player.transformQueue { queue ->
+                if (queue?.currentSongKey == song.uniqueKey) {
+                    queue to Position.Specific(newPosition)
+                } else {
+                    queue to Position.Current
+                }
+            }
         }
 
     }

@@ -3,7 +3,7 @@ package io.github.mmarco94.tambourine.mpris
 import io.github.mmarco94.tambourine.audio.PlayerController
 import io.github.mmarco94.tambourine.audio.Position
 import io.github.mmarco94.tambourine.data.RepeatMode.*
-import io.github.mmarco94.tambourine.data.Song
+import io.github.mmarco94.tambourine.data.SongKey
 import io.github.mmarco94.tambourine.utils.GLOBAL_CONNECTION
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -60,26 +60,26 @@ class MPRISPlayerController(
         ),
         setLoopStatus = { repeat ->
             cs.launch {
-                playerController.changeQueue(
-                    playerController.queue?.copy(
+                playerController.transformQueue { queue ->
+                    queue?.copy(
                         repeatMode = when (repeat) {
                             None -> DO_NOT_REPEAT
                             LoopStatus.Track -> REPEAT_SONG
                             Playlist -> REPEAT_QUEUE
                         }
-                    ),
-                )
+                    ) to Position.Current
+                }
             }
         },
         setShuffle = { shuffled ->
             cs.launch {
-                playerController.changeQueue(
+                playerController.transformQueue { queue ->
                     if (shuffled) {
-                        playerController.queue?.shuffled()
+                        queue?.shuffled()
                     } else {
-                        playerController.queue?.unshuffled()
-                    },
-                )
+                        queue?.unshuffled()
+                    } to Position.Current
+                }
             }
         },
         setFullscreen = { },
@@ -92,7 +92,7 @@ class MPRISPlayerController(
     )
 ) : MediaPlayer2, MediaPlayer2Player, Properties by properties {
 
-    private data class LastSentPositionData(val song: Song, val position: Duration, val eventTime: Instant)
+    private data class LastSentPositionData(val songKey: SongKey, val position: Duration, val eventTime: Instant)
 
     private var latestState = Channel<PlayerController.State>(Channel.CONFLATED)
 
@@ -156,7 +156,7 @@ class MPRISPlayerController(
         // "Position" changes constantly. I need to be smart to know when to actually send the event
         val now = Clock.System.now()
         val skipPosition =
-            if (lastPositionData != null && lastPositionData.song == state.currentlyPlaying?.queue?.currentSong) {
+            if (lastPositionData != null && lastPositionData.songKey == state.currentlyPlaying?.queue?.currentSongKey) {
                 val elapsed = now - lastPositionData.eventTime
                 val expectedPosition = lastPositionData.position + elapsed
                 val diff = (position - expectedPosition).absoluteValue
@@ -176,7 +176,7 @@ class MPRISPlayerController(
             lastPositionData
         } else {
             if (state.currentlyPlaying != null) {
-                LastSentPositionData(state.currentlyPlaying.queue.currentSong, position, now)
+                LastSentPositionData(state.currentlyPlaying.queue.currentSongKey, position, now)
             } else {
                 null
             }
@@ -185,15 +185,17 @@ class MPRISPlayerController(
 
     override fun Next() {
         cs.launch {
-            val q = playerController.queue
-            playerController.changeQueue(q?.next(), Position.Beginning)
+            playerController.transformQueue { queue ->
+                queue?.next() to Position.Beginning
+            }
         }
     }
 
     override fun Previous() {
         cs.launch {
-            val q = playerController.queue
-            playerController.changeQueue(q?.previous(), Position.Beginning)
+            playerController.transformQueue { queue ->
+                queue?.previous() to Position.Beginning
+            }
         }
     }
 
@@ -221,20 +223,23 @@ class MPRISPlayerController(
 
     override fun Stop() {
         cs.launch {
-            playerController.changeQueue(null)
+            playerController.transformQueue { null to Position.Current }
         }
     }
 
     override fun Seek(x: Long) {
         cs.launch {
-            val current = playerController.queue
-            if (current != null) {
-                val position = playerController.position(Clock.System.now())
-                val pos = (position + x.microseconds).coerceAtLeast(ZERO)
-                if (pos > current.currentSong.length) {
-                    playerController.changeQueue(current.next(), Position.Beginning)
+            playerController.transformQueue { queue ->
+                if (queue != null) {
+                    val position = playerController.position(Clock.System.now())
+                    val pos = (position + x.microseconds).coerceAtLeast(ZERO)
+                    if (pos > queue.currentSong.length) {
+                        queue.next() to Position.Beginning
+                    } else {
+                        queue to Position.Specific(pos)
+                    }
                 } else {
-                    playerController.seek(current, pos)
+                    null to Position.Current
                 }
             }
         }
@@ -242,8 +247,12 @@ class MPRISPlayerController(
 
     override fun SetPosition(trackId: TrackId, x: Long) {
         cs.launch {
-            if (playerController.queue?.currentSong?.mprisTrackId() == trackId) {
-                playerController.seek(playerController.queue, x.microseconds)
+            playerController.transformQueue { queue ->
+                if (queue?.currentSongKey?.mprisTrackId() == trackId) {
+                    queue to Position.Specific(x.microseconds)
+                } else {
+                    queue to Position.Current
+                }
             }
         }
     }

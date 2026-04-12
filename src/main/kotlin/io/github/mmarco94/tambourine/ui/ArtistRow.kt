@@ -29,7 +29,7 @@ fun ArtistRow(
     ) {
         Text(artist.name, textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium)
         if (showArtistStats) {
-            PlayShuffleButtons(Modifier, songs)
+            PlayShuffleButtons(Modifier, controller, songs)
             SongCollectionStatsComposable(artist.stats)
         }
     }

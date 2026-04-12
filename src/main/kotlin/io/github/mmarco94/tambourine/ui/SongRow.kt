@@ -47,7 +47,7 @@ fun SongRow(
         modifier = modifier,
         maxTrackNumber = maxTrackNumber,
         song = item.song,
-        isCurrentSong = playerController.current.queue?.currentSong == item.song,
+        isCurrentSong = playerController.current.queue?.currentSongKey == item.song.uniqueKey,
         showTrackNumber = showTrackNumber,
         showAlbumInfo = showAlbumInfo,
         showArtistInfo = showArtistInfo,
@@ -81,7 +81,7 @@ fun SongRow(
         showAlbumCover = showAlbumCover,
         controller = controller,
         play = { shuffle ->
-            controller.playQueued(item.indexInQueue, shuffle)
+            controller.playQueued(item.song, item.indexInQueue, shuffle)
         },
     )
 }

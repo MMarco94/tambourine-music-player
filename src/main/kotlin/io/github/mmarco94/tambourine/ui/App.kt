@@ -168,9 +168,9 @@ private fun MainContent(
                 val items = remember(lib, listOptions) {
                     lib.toListItems(listOptions)
                 }
-                val controller = SongQueueController(cs, lib.songs, sortedLib, player, onAction = {
+                val controller = SongQueueController(cs, sortedLib, player) {
                     selectLibraryTab(null)
-                })
+                }
                 LibraryHeader(
                     modifier = Modifier.fillMaxSize(),
                     library = library,

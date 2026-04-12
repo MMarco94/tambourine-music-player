@@ -9,6 +9,7 @@ import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.application
 import io.github.mmarco94.klibportal.portals.Settings
 import io.github.mmarco94.tambourine.audio.PlayerController
+import io.github.mmarco94.tambourine.audio.Position
 import io.github.mmarco94.tambourine.data.Library
 import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongQueue
@@ -18,10 +19,7 @@ import io.github.mmarco94.tambourine.utils.Preferences
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.slf4j.bridge.SLF4JBridgeHandler
@@ -39,7 +37,7 @@ fun main(args: Array<String>) {
     val filesFromArgs = args.map { Path.of(it) }
     runBlocking {
         // Start loading ASAP
-        val musicLibrary = Preferences.libraryFolder.flow
+        val musicLibrary: StateFlow<Library?> = Preferences.libraryFolder.flow
             .map { lib -> setOf(lib) + filesFromArgs }
             .toLibrary()
             .stateIn(this, started = SharingStarted.Eagerly, null)
@@ -64,7 +62,8 @@ fun main(args: Array<String>) {
                 PlayerController(
                     cs,
                     quit = { exitApplication() },
-                    raise = { bringToTop = true }
+                    raise = { bringToTop = true },
+                    musicLibrary = musicLibrary,
                 )
             }
             val systemAppearance by systemAppearanceSettings()
@@ -86,7 +85,7 @@ fun main(args: Array<String>) {
                                         cs.launch {
                                             val queue = createQueue(it, filesFromArgs)
                                             if (queue != null) {
-                                                player.changeQueue(queue)
+                                                player.transformQueue { queue to Position.Current }
                                                 player.play()
                                             }
                                         }
@@ -146,8 +145,17 @@ private fun createQueue(library: Library, filesFromArgs: List<Path>): SongQueue?
                 .filter { s -> s.file.startsWith(arg) }
                 .sortedWith(compareBy<Song> { it.disk }.thenBy { it.track }.thenBy { it.file })
         }
-    return if (songs.isEmpty()) null
-    else SongQueue.of(null, songs, songs.first())
+    return if (songs.isEmpty()) {
+        null
+    } else {
+        val songsKeys = songs.map { it.uniqueKey }
+        SongQueue(
+            originalSongsKeys = songsKeys,
+            songs = songsKeys,
+            songsByKey = songs.associateBy { it.uniqueKey },
+            position = 0,
+        )
+    }
 }
 
 private fun handleKeypress(
@@ -163,28 +171,36 @@ private fun handleKeypress(
             when (event.key) {
                 Key.S -> {
                     cs.launch {
-                        player.changeQueue(player.queue?.toggleShuffle())
+                        player.transformQueue { queue ->
+                            queue?.toggleShuffle() to Position.Current
+                        }
                     }
                     return true
                 }
 
                 Key.R -> {
                     cs.launch {
-                        player.changeQueue(player.queue?.toggleRepeat())
+                        player.transformQueue { queue ->
+                            queue?.toggleRepeat() to Position.Current
+                        }
                     }
                     return true
                 }
 
                 Key.DirectionLeft -> {
                     cs.launch {
-                        player.changeQueue(player.queue?.previous())
+                        player.transformQueue { queue ->
+                            queue?.previous() to Position.Current
+                        }
                     }
                     return true
                 }
 
                 Key.DirectionRight -> {
                     cs.launch {
-                        player.changeQueue(player.queue?.next())
+                        player.transformQueue { queue ->
+                            queue?.next() to Position.Current
+                        }
                     }
                     return true
                 }

@@ -48,7 +48,7 @@ fun SongQueueUI(
             }
         }
     } else {
-        val controller = SongQueueController(cs, queue.originalSongs, sortedLibrary, player)
+        val controller = SongQueueController(cs, sortedLibrary, player)
         Column(Modifier.fillMaxSize()) {
             WindowDraggableArea {
                 Row(
@@ -65,13 +65,13 @@ fun SongQueueUI(
                     Column(Modifier.weight(1f)) {
                         val songsInQueueStr =
                             pluralStringResource(Res.plurals.n_songs_in_queue, queue.songs.size, queue.songs.size)
-                        val totalLength = queue.songs.sumOfDuration { it.length }.format()
+                        val totalLength = queue.songs.sumOfDuration { queue.songsByKey.getValue(it).length }.format()
                         SingleLineText("$songsInQueueStr • $totalLength", style = MaterialTheme.typography.bodyMedium)
 
                         val remaining = queue.remainingSongs
                         val songsRemainingStr =
                             pluralStringResource(Res.plurals.n_songs_remaining, remaining.size, remaining.size)
-                        val remainingLength = remaining.sumOfDuration { it.length }.format()
+                        val remainingLength = remaining.sumOfDuration { queue.songsByKey.getValue(it).length }.format()
                         SingleLineText(
                             "$songsRemainingStr • $remainingLength", style = MaterialTheme.typography.bodyMedium
                         )
@@ -100,7 +100,9 @@ fun SongQueueUI(
                 }
                 SongListUI(
                     0,
-                    queue.songs.mapIndexed { index, it -> SongListItem.QueuedSongListItem(index, it) },
+                    queue.songs.mapIndexed { index, it ->
+                        SongListItem.QueuedSongListItem(index, queue.songsByKey.getValue(it))
+                    },
                     listState,
                     controller,
                 )

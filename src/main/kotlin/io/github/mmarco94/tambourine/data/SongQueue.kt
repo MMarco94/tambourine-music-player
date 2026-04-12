@@ -14,20 +14,27 @@ enum class RepeatMode {
             REPEAT_QUEUE -> REPEAT_SONG
             REPEAT_SONG -> DO_NOT_REPEAT
         }
+
+    companion object {
+        val DEFAULT = REPEAT_QUEUE
+    }
 }
 
 data class SongQueue(
-    val originalSongs: List<Song>,
-    val songs: List<Song>,
+    val originalSongsKeys: List<SongKey>,
+    val songs: List<SongKey>,
     val position: Int,
+    val songsByKey: Map<SongKey, Song>,
     val isShuffled: Boolean = false,
-    val repeatMode: RepeatMode = REPEAT_QUEUE,
+    val repeatMode: RepeatMode = RepeatMode.DEFAULT,
 ) {
-    val currentSong get() = songs[position]
+    val currentSong get() = songsByKey.getValue(songs[position])
+    val currentSongKey get() = songs[position]
 
     init {
         require(position in songs.indices)
         require(songs.isNotEmpty())
+        require(songs.size == originalSongsKeys.size)
     }
 
     val remainingSongs = songs.subList(position, songs.size)
@@ -61,6 +68,7 @@ data class SongQueue(
     fun add(index: Int, song: Song): SongQueue {
         return copy(
             position = if (index <= position) position + 1 else position,
+            originalSongsKeys = originalSongsKeys + song.uniqueKey,
             songs = songs.toMutableList().apply {
                 add(index, song)
             },
@@ -100,42 +108,48 @@ data class SongQueue(
 
     fun shuffled(): SongQueue {
         return copy(
-            songs = listOf(currentSong) + (
+            songs = listOf(currentSongKey) + (
                     songs.subList(0, position) +
                             songs.subList(position + 1, songs.size)
                     ).shuffled(),
+            songsByKey = songsByKey,
             position = 0,
             isShuffled = true,
         )
     }
 
     fun unshuffled(): SongQueue {
+        if (!this.isShuffled) return this
         return copy(
-            songs = originalSongs,
-            position = originalSongs.indexOf(currentSong),
+            songs = originalSongsKeys,
+            position = originalSongsKeys.indexOf(currentSongKey),
             isShuffled = false,
         )
     }
 
-    companion object {
-
-        fun of(currentQueue: SongQueue?, songs: List<Song>, song: Song): SongQueue {
-            return if (currentQueue != null && currentQueue.originalSongs.toSet() == songs.toSet()) {
-                currentQueue.copy(
-                    originalSongs = songs,
-                    position = if (song == currentQueue.currentSong) {
-                        currentQueue.position
-                    } else {
-                        currentQueue.songs.indexOf(song)
-                    },
-                )
-            } else {
-                SongQueue(
-                    songs,
-                    songs,
-                    songs.indexOf(song)
-                )
-            }
+    fun updateLibrary(library: Library): SongQueue {
+        // Note: by design, this doesn't remove songs that are no longer in the library
+        val newMap = songsByKey.mapValues {
+            library.songsByKey[it.key] ?: it.value
         }
+        return copy(songsByKey = newMap)
     }
+}
+
+fun SongQueue?.addIfMissing(song: Song): SongQueue {
+    return when {
+        this == null -> SongQueue(
+            originalSongsKeys = listOf(song.uniqueKey),
+            songs = listOf(song.uniqueKey),
+            songsByKey = mapOf(song.uniqueKey to song),
+            position = 0,
+        )
+
+        song.uniqueKey in originalSongsKeys -> this
+        else -> add(originalSongsKeys.size, song)
+    }
+}
+
+fun SongQueue?.append(song: Song): SongQueue {
+    return this?.add(originalSongsKeys.size, song) ?: addIfMissing(song)
 }

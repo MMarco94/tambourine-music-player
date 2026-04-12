@@ -39,14 +39,20 @@ fun SongListUI(
             modifier = Modifier.fillMaxSize(),
             contentPadding = contentPadding,
         ) {
-            itemsIndexed(items, key = { _, item ->
-                when (item) {
-                    is SongListItem.AlbumListItem -> item.album
-                    is SongListItem.ArtistListItem -> item.artist
-                    is SongListItem.QueuedSongListItem -> item.song
-                    is SongListItem.SongListItem -> item.song
+            val counter = mutableMapOf<Any, Int>()
+            val itemsKeyed = items.associateWith { item ->
+                val key = when (item) {
+                    is SongListItem.AlbumListItem -> item.album.uniqueKey
+                    is SongListItem.ArtistListItem -> item.artist.uniqueKey
+                    is SongListItem.QueuedSongListItem -> item.song.uniqueKey
+                    is SongListItem.SongListItem -> item.song.uniqueKey
                 }
-            }) { index, item ->
+                val count = counter.compute(key) { _, oldV ->
+                    (oldV ?: 0) + 1
+                }
+                key to count
+            }
+            itemsIndexed(items, key = { _, item -> itemsKeyed.getValue(item) }) { index, item ->
                 val offset = if (index == state.firstVisibleItemIndex) state.firstVisibleItemScrollOffset else 0
                 when (item) {
                     is SongListItem.ArtistListItem -> {
