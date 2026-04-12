@@ -17,12 +17,13 @@ data class SongQueueController(
         onAction()
         cs.launch {
             player.transformQueue { queue ->
-                val withSong = if (queue == null || song.uniqueKey !in queue.originalSongs) {
+                val withSong = if (queue == null || defaultSongQueue != queue.originalSongs) {
                     SongQueue(
                         originalSongs = defaultSongQueue,
                         songs = defaultSongQueue,
                         songsByKey = sortedLibrary.songsByKey,
                         position = defaultSongQueue.indexOf(song.uniqueKey),
+                        repeatMode = queue?.repeatMode ?: RepeatMode.DEFAULT,
                     )
                 } else {
                     queue

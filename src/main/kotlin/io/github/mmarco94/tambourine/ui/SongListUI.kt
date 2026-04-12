@@ -254,7 +254,7 @@ fun rememberLazySongListState(
     val listState = rememberLazyListState(pos, offset)
     var shouldBeFast by remember { mutableStateOf(false) }
 
-    LaunchedEffect(pos, positionInItem) {
+    LaunchedEffect(pos, positionInItem, height) {
         val nearPositionRange = pos - 1..pos + 1
         val isVisible = listState.layoutInfo.visibleItemsInfo.any { it.index in nearPositionRange }
         val isMovingToFirst =
