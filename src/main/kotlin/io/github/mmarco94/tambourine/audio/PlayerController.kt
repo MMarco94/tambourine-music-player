@@ -373,6 +373,32 @@ class PlayerController(
         commandChannel.send(command)
     }
 
+    private fun batch(commands: List<PlayerCommand?>): List<PlayerCommand> {
+        return buildList {
+            for (command in commands) {
+                if (command != null) {
+                    val last = lastOrNull()
+                    // Transform commands are folded together
+                    if (last is TransformQueue && command is TransformQueue) {
+                        logger.debug { "Transformation events have been batched!" }
+                        removeLast()
+                        add(TransformQueue { initialQueue ->
+                            val (queue, position) = last.transformation(initialQueue)
+                            val (queue2, position2) = last.transformation(queue)
+                            queue2 to when (position2) {
+                                Position.Current -> position
+                                else -> position2
+                            }
+                        })
+                    } else {
+                        add(command)
+                    }
+                }
+
+            }
+        }
+    }
+
     init {
         coroutineScope.launch(Dispatchers.Swing) {
             for (state in stateChannel) {
@@ -395,41 +421,50 @@ class PlayerController(
                     var state = State.initial
                     var desiredPause = ZERO
                     while (true) {
-                        val command: PlayerCommand? = if (desiredPause.isPositive()) {
+                        var initialCommand: PlayerCommand? = if (desiredPause.isPositive()) {
                             withTimeoutOrNull(desiredPause) {
                                 commandChannel.receive()
                             }
                         } else {
                             commandChannel.tryReceive().getOrNull()
                         }
-                        val (newState, maxAllowedPause) = when (command) {
-                            is TransformQueue -> {
-                                state.change {
-                                    val (newQueue, newPosition) = command.transformation(currentlyPlaying?.queue)
-                                    changeQueue(
-                                        newQueue,
-                                        newPosition,
-                                        keepBufferedContent = false,
-                                    )
+                        val commands = batch(
+                            buildList {
+                                add(initialCommand)
+                                while (last() != null) {
+                                    add(commandChannel.tryReceive().getOrNull())
                                 }
                             }
+                        )
+                        val (newState, maxAllowedPause) = commands.fold(state) { state, command ->
+                            state.run {
+                                when (command) {
+                                    is TransformQueue -> {
+                                        val (newQueue, newPosition) = command.transformation(currentlyPlaying?.queue)
+                                        changeQueue(
+                                            newQueue,
+                                            newPosition,
+                                            keepBufferedContent = false,
+                                        )
+                                    }
 
-                            is Pause -> state.change {
-                                currentlyPlaying?.player?.stop()
-                                copy(
-                                    position = PositionState(currentlyPlaying?.player?.position ?: ZERO),
-                                    pause = true,
-                                )
+                                    is Pause -> {
+                                        currentlyPlaying?.player?.stop()
+                                        copy(
+                                            position = PositionState(currentlyPlaying?.player?.position ?: ZERO),
+                                            pause = true,
+                                        )
+                                    }
+
+                                    is Play -> copy(pause = false)
+                                    is SeekingStart -> copy(seeking = true)
+                                    is SeekDone -> copy(seeking = false)
+                                    is EnterLowLatencyMode -> copy(lowLatencyMode = true)
+                                    is ExitLowLatencyMode -> copy(lowLatencyMode = false)
+                                    is SetLevel -> state.setLevel(command.level)
+                                }
                             }
-
-                            is Play -> state.change { copy(pause = false) }
-                            is SeekingStart -> state.change { copy(seeking = true) }
-                            is SeekDone -> state.change { copy(seeking = false) }
-                            is EnterLowLatencyMode -> state.change { copy(lowLatencyMode = true) }
-                            is ExitLowLatencyMode -> state.change { copy(lowLatencyMode = false) }
-                            is SetLevel -> state.change { state.setLevel(command.level) }
-                            null -> state.play()
-                        }
+                        }.play()
                         if (newState != state) {
                             state = newState
                             stateChannel.send(state)
