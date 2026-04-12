@@ -130,9 +130,11 @@ private fun rememberSongListScrollbarAdapter(
     return object : ScrollbarAdapter {
         private fun offsetOf(index: Int): Double {
             with(density) {
-                val base = itemsOffsets[index].toPx()
+                val base = itemsOffsets.getOrNull(index)?.toPx() ?: 0f
                 val diff = scrollState.layoutInfo.visibleItemsInfo.sumOf { item ->
-                    if (item.index < index) {
+                    if (item.index !in itemsHeight.indices) {
+                        item.size.toDouble()
+                    } else if (item.index < index) {
                         val diff = item.size.toDouble() - itemsHeight[item.index].toPx()
                         if (diff.absoluteValue > 1) {
                             logger.trace { "Element at index ${item.index} has unexpected height! Expecting ${itemsHeight[item.index]}, found ${item.size.toDp()}" }

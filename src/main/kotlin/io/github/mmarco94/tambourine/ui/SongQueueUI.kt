@@ -48,7 +48,7 @@ fun SongQueueUI(
             }
         }
     } else {
-        val controller = SongQueueController(cs, sortedLibrary, player)
+        val controller = SongQueueController(cs, sortedLibrary, queue.originalSongsKeys, player)
         Column(Modifier.fillMaxSize()) {
             WindowDraggableArea {
                 Row(

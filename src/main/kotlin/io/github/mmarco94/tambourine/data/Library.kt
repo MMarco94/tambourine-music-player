@@ -33,11 +33,19 @@ interface Unique {
 @JvmInline
 value class SongKey(val file: Path)
 
+@JvmInline
+value class ArtistKey(private val name: String)
+
+data class AlbumKey(val artist: ArtistKey, val title: String)
+
+@JvmInline
+value class PlaylistKey(private val file: Path)
+
 data class Artist(
     val name: String,
     val stats: SongCollectionStats,
 ) : Unique {
-    override val uniqueKey: Any get() = name
+    override val uniqueKey = ArtistKey(name)
 }
 
 data class Album(
@@ -46,16 +54,16 @@ data class Album(
     val cover: AlbumCover?,
     val stats: SongCollectionStats,
 ) : Unique {
-    override val uniqueKey: Any = artist.uniqueKey to title
+    override val uniqueKey = AlbumKey(artist.uniqueKey, title)
 }
 
 data class Playlist(
     val name: String,
     val file: Path,
-    val songs: List<Song>,
+    val songs: List<SongKey>,
 ) : Unique {
     val songSet = songs.toSet()
-    override val uniqueKey: Any get() = file
+    override val uniqueKey = PlaylistKey(file)
 }
 
 data class Song(
@@ -83,10 +91,10 @@ data class Song(
                 this.artist.name.contains(queryFilter, ignoreCase = true)
     }
 
-    fun matches(artist: Artist?, album: Album?, playlist: Playlist?, queryFilter: List<String>): Boolean {
-        return (artist == null || this.artist == artist) &&
-                (album == null || this.album == album) &&
-                (playlist == null || this in playlist.songSet) &&
+    fun matches(artist: ArtistKey?, album: AlbumKey?, playlist: Playlist?, queryFilter: List<String>): Boolean {
+        return (artist == null || this.artist.uniqueKey == artist) &&
+                (album == null || this.album.uniqueKey == album) &&
+                (playlist == null || this.uniqueKey in playlist.songSet) &&
                 (queryFilter.all { matches(it) })
     }
 
@@ -117,8 +125,8 @@ data class Library(
     val stats = SongCollectionStats.of(songs)
     val songsByKey: Map<SongKey, Song> = songs.associateBy { it.uniqueKey }
 
-    fun filter(artist: Artist?, album: Album?, playlist: Path?, query: String): Library {
-        val playlist = playlists.singleOrNull { it.file == playlist }
+    fun filter(artist: ArtistKey?, album: AlbumKey?, playlist: PlaylistKey?, query: String): Library {
+        val playlist = playlists.singleOrNull { it.uniqueKey == playlist }
         val queryFilter = query.split(queryStringDelimiters)
         val songs = songs.filter { it.matches(artist, album, playlist, queryFilter) }
         val songsByAlbum = songs.groupBy { it.album }
@@ -229,7 +237,7 @@ data class Library(
                         name = file.nameWithoutExtension,
                         file = file,
                         songs = entries.mapNotNull { entry ->
-                            findBestMatch(entry, songsByName)
+                            findBestMatch(entry, songsByName)?.uniqueKey
                         },
                     )
                 }.sortedBy { it.name }

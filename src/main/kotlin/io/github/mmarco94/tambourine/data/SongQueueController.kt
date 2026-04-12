@@ -8,21 +8,21 @@ import kotlinx.coroutines.launch
 data class SongQueueController(
     val cs: CoroutineScope,
     val sortedLibrary: Library,
+    val defaultSongQueue: List<SongKey>,
     val player: PlayerController,
     val onAction: () -> Unit = {},
 ) {
     fun play(song: Song, shuffle: Boolean? = null) {
+        require(song.uniqueKey in defaultSongQueue)
         onAction()
         cs.launch {
             player.transformQueue { queue ->
                 val withSong = if (queue == null || song.uniqueKey !in queue.originalSongsKeys) {
-                    val songs = sortedLibrary.songs
-                    val songKeys = songs.map { it.uniqueKey }
                     SongQueue(
-                        originalSongsKeys = songKeys,
-                        songs = songKeys,
+                        originalSongsKeys = defaultSongQueue,
+                        songs = defaultSongQueue,
                         songsByKey = sortedLibrary.songsByKey,
-                        position = songs.indexOf(song),
+                        position = defaultSongQueue.indexOf(song.uniqueKey),
                     )
                 } else {
                     queue

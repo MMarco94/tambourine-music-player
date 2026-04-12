@@ -52,7 +52,8 @@ fun App(
     libraryTab: LibraryHeaderTab?,
     selectLibraryTab: (LibraryHeaderTab?) -> Unit,
 ) {
-    var listOptions by remember(library) { mutableStateOf(SongListOptions()) }
+    var rawListOptions by remember { mutableStateOf(SongListOptions()) }
+    val listOptions = rawListOptions.adjust(library)
     val player = playerController.current
     val mainImage = player.queue?.currentSong?.cover
         ?: library?.findCoverByColor(LocalAppearanceSettings.current.accentColor)
@@ -97,7 +98,7 @@ fun App(
                                 selectPanel = selectPanel,
                                 library = lib,
                                 listOptions = listOptions,
-                                setListOptions = { listOptions = it },
+                                setListOptions = { rawListOptions = it },
                                 openSettings = openSettings,
                                 closeApp = closeApp,
                                 libraryTab = libraryTab,
@@ -168,7 +169,7 @@ private fun MainContent(
                 val items = remember(lib, listOptions) {
                     lib.toListItems(listOptions)
                 }
-                val controller = SongQueueController(cs, sortedLib, player) {
+                val controller = SongQueueController(cs, sortedLib, lib.songs.map { it.uniqueKey }, player) {
                     selectLibraryTab(null)
                 }
                 LibraryHeader(

@@ -1,16 +1,14 @@
 package io.github.mmarco94.tambourine.data
 
-import java.nio.file.Path
-
 data class SongListOptions(
     val artistSorter: ArtistSorter = ArtistSorter.ALPHABETICAL,
     val albumSorter: AlbumSorter = AlbumSorter.YEAR,
     val songSorter: SongSorter = SongSorter.ALPHABETICAL,
     val songSorterInAlbum: SongSorter = SongSorter.TRACK,
     val queryFilter: String = "",
-    val artistFilter: Artist? = null,
-    val albumFilter: Album? = null,
-    val playlistFilter: Path? = null,
+    val artistFilter: ArtistKey? = null,
+    val albumFilter: AlbumKey? = null,
+    val playlistFilter: PlaylistKey? = null,
 ) {
     val isInAlbumMode: Boolean
         get() {
@@ -23,7 +21,7 @@ data class SongListOptions(
 
     fun removeSearch() = copy(queryFilter = "")
 
-    fun withArtistFilter(artistFilter: Artist?): SongListOptions {
+    fun withArtistFilter(artistFilter: ArtistKey?): SongListOptions {
         return if (artistFilter == null) {
             copy(artistFilter = null, albumFilter = null)
         } else copy(
@@ -33,7 +31,7 @@ data class SongListOptions(
         )
     }
 
-    fun withAlbumFilter(albumFilter: Album?): SongListOptions {
+    fun withAlbumFilter(albumFilter: AlbumKey?): SongListOptions {
         return if (albumFilter == null) {
             copy(albumFilter = null)
         } else copy(
@@ -49,9 +47,17 @@ data class SongListOptions(
         )
     }
 
-    fun withPlaylistFilter(playlist: Path?): SongListOptions {
+    fun withPlaylistFilter(playlist: PlaylistKey?): SongListOptions {
         return copy(
             playlistFilter = playlist,
+        )
+    }
+
+    fun adjust(library: Library?): SongListOptions {
+        return copy(
+            artistFilter = library?.artists?.singleOrNull { it.uniqueKey == artistFilter }?.uniqueKey,
+            albumFilter = library?.albums?.singleOrNull { it.uniqueKey == albumFilter }?.uniqueKey,
+            playlistFilter = library?.playlists?.singleOrNull { it.uniqueKey == playlistFilter }?.uniqueKey,
         )
     }
 }

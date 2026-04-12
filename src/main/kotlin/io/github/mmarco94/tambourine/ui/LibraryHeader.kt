@@ -465,9 +465,9 @@ private class ArtistOptionsRenderer(
             it.withArtistFilter(null).copy(artistSorter = sorter)
         }
     }
-    private val artistsFilters = libForArtists.artists.associateWith { artist ->
-        SortFilterOption.Filter(artist.name, artist) {
-            it.withArtistFilter(artist)
+    private val artistsFilters = libForArtists.artists.associate { artist ->
+        artist.uniqueKey to SortFilterOption.Filter(artist.name, artist.uniqueKey) {
+            it.withArtistFilter(artist.uniqueKey)
         }
     }
     override val selectedOption = if (options.artistFilter == null) {
@@ -510,11 +510,9 @@ private class AlbumOptionsRenderer(
             it.withAlbumFilter(null).copy(albumSorter = sorter)
         }
     }
-    private val albumsFilters = libForAlbums.albums.associateWith { album ->
-        SortFilterOption.Filter(
-            album.title, album
-        ) {
-            it.withAlbumFilter(album)
+    private val albumsFilters = libForAlbums.albums.associate { album ->
+        album.uniqueKey to SortFilterOption.Filter(album.title, album.uniqueKey) {
+            it.withAlbumFilter(album.uniqueKey)
         }
     }
     override val selectedOption = if (options.albumFilter == null) {
@@ -541,7 +539,7 @@ private class AlbumOptionsRenderer(
                 }
                 item(span = fullSpan, content = { CategorySeparatorFilter() })
                 items(albumsFilters.values.toList()) { item ->
-                    AlbumGridItem(item)
+                    AlbumGridItem(item, libForAlbums.albums.single { it.uniqueKey == item.element })
                 }
             }
             ScrollBar(state)
@@ -592,10 +590,10 @@ private class PlaylistOptionsRenderer(
     override val setOptions: (SongListOptions) -> Unit,
 ) : OptionsRenderer {
     private val playlistFilters = library.playlists.associate { playlist ->
-        playlist.file to SortFilterOption.Filter(
+        playlist.uniqueKey to SortFilterOption.Filter(
             name = playlist.name,
             element = playlist.file,
-            transform = { it.withPlaylistFilter(playlist.file) }
+            transform = { it.withPlaylistFilter(playlist.uniqueKey) }
         )
     }
 
@@ -652,7 +650,10 @@ private fun FilterSortPopupRenderer.SimpleListItem(
 }
 
 @Composable
-private fun FilterSortPopupRenderer.AlbumGridItem(item: SortFilterOption.Filter<Album>) {
+private fun FilterSortPopupRenderer.AlbumGridItem(
+    item: SortFilterOption.Filter<AlbumKey>,
+    album: Album,
+) {
     val bg: Color by background(item)
     val content: Color by contentColor(item)
     Box(Modifier.padding(horizontal = 8.dp)) {
@@ -668,17 +669,17 @@ private fun FilterSortPopupRenderer.AlbumGridItem(item: SortFilterOption.Filter<
             ) {
                 Box(Modifier.padding(8.dp)) {
                     AlbumCover(
-                        item.element.cover,
+                        album.cover,
                         Modifier.fillMaxSize(),
                         MaterialTheme.shapes.medium,
                         elevation = 8.dp
                     )
                 }
                 SingleLineText(
-                    item.element.title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center
+                    album.title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center
                 )
                 SingleLineText(
-                    item.element.artist.name, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center
+                    album.artist.name, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center
                 )
             }
         }
