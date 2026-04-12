@@ -150,7 +150,7 @@ private fun createQueue(library: Library, filesFromArgs: List<Path>): SongQueue?
     } else {
         val songsKeys = songs.map { it.uniqueKey }
         SongQueue(
-            originalSongsKeys = songsKeys,
+            originalSongs = songsKeys,
             songs = songsKeys,
             songsByKey = songs.associateBy { it.uniqueKey },
             position = 0,

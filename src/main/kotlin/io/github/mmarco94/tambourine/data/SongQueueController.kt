@@ -17,9 +17,9 @@ data class SongQueueController(
         onAction()
         cs.launch {
             player.transformQueue { queue ->
-                val withSong = if (queue == null || song.uniqueKey !in queue.originalSongsKeys) {
+                val withSong = if (queue == null || song.uniqueKey !in queue.originalSongs) {
                     SongQueue(
-                        originalSongsKeys = defaultSongQueue,
+                        originalSongs = defaultSongQueue,
                         songs = defaultSongQueue,
                         songsByKey = sortedLibrary.songsByKey,
                         position = defaultSongQueue.indexOf(song.uniqueKey),
@@ -53,7 +53,7 @@ data class SongQueueController(
             player.transformQueue { queue ->
                 val songKeys = songs.map { it.uniqueKey }
                 val queue = SongQueue(
-                    originalSongsKeys = songs.map { it.uniqueKey },
+                    originalSongs = songs.map { it.uniqueKey },
                     songs = songKeys,
                     songsByKey = songs.associateBy { it.uniqueKey },
                     position = if (song == null) if (shuffle) songs.indices.random() else 0 else songs.indexOf(song),

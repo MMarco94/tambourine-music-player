@@ -21,7 +21,7 @@ enum class RepeatMode {
 }
 
 data class SongQueue(
-    val originalSongsKeys: List<SongKey>,
+    val originalSongs: List<SongKey>,
     val songs: List<SongKey>,
     val position: Int,
     val songsByKey: Map<SongKey, Song>,
@@ -34,7 +34,7 @@ data class SongQueue(
     init {
         require(position in songs.indices)
         require(songs.isNotEmpty())
-        require(songs.size == originalSongsKeys.size)
+        require(songs.size == originalSongs.size)
     }
 
     val remainingSongs = songs.subList(position, songs.size)
@@ -50,7 +50,7 @@ data class SongQueue(
     fun move(oldIndex: Int, newIndex: Int): SongQueue {
         val newSongs = songs.toMutableList().apply {
             val s = removeAt(oldIndex)
-            add(if (newIndex <= oldIndex) newIndex else newIndex - 1, s)
+            this.add(if (newIndex <= oldIndex) newIndex else newIndex - 1, s)
         }
         val newPos = when {
             position == oldIndex -> newIndex
@@ -68,9 +68,9 @@ data class SongQueue(
     fun add(index: Int, song: Song): SongQueue {
         return copy(
             position = if (index <= position) position + 1 else position,
-            originalSongsKeys = originalSongsKeys + song.uniqueKey,
+            originalSongs = originalSongs + song.uniqueKey,
             songs = songs.toMutableList().apply {
-                add(index, song)
+                this.add(index, song.uniqueKey)
             },
         )
     }
@@ -121,35 +121,55 @@ data class SongQueue(
     fun unshuffled(): SongQueue {
         if (!this.isShuffled) return this
         return copy(
-            songs = originalSongsKeys,
-            position = originalSongsKeys.indexOf(currentSongKey),
+            songs = originalSongs,
+            position = originalSongs.indexOf(currentSongKey),
             isShuffled = false,
         )
     }
 
     fun updateLibrary(library: Library): SongQueue {
-        // Note: by design, this doesn't remove songs that are no longer in the library
-        val newMap = songsByKey.mapValues {
-            library.songsByKey[it.key] ?: it.value
+        // Note: by design, this doesn't remove the song that is currently playing
+        val newMap: Map<SongKey, Song> = mapOf(currentSongKey to currentSong) + library.songsByKey
+
+        // This is complicated because I need to maintain the position
+        var newPosition = position
+        val newOriginalSongs = originalSongs.toMutableList()
+        val newSongs = buildList {
+            for ((index, song) in songs.withIndex()) {
+                if (position == index || song in library.songsByKey) {
+                    this.add(song)
+                } else {
+                    check(newOriginalSongs.remove(song))
+                    if (index < position) {
+                        newPosition -= 1
+                    }
+                }
+            }
         }
-        return copy(songsByKey = newMap)
+
+        return copy(
+            songs = newSongs,
+            originalSongs = newOriginalSongs,
+            position = newPosition,
+            songsByKey = newMap,
+        )
     }
 }
 
 fun SongQueue?.addIfMissing(song: Song): SongQueue {
     return when {
         this == null -> SongQueue(
-            originalSongsKeys = listOf(song.uniqueKey),
+            originalSongs = listOf(song.uniqueKey),
             songs = listOf(song.uniqueKey),
             songsByKey = mapOf(song.uniqueKey to song),
             position = 0,
         )
 
-        song.uniqueKey in originalSongsKeys -> this
-        else -> add(originalSongsKeys.size, song)
+        song.uniqueKey in originalSongs -> this
+        else -> add(originalSongs.size, song)
     }
 }
 
 fun SongQueue?.append(song: Song): SongQueue {
-    return this?.add(originalSongsKeys.size, song) ?: addIfMissing(song)
+    return this?.add(originalSongs.size, song) ?: addIfMissing(song)
 }
