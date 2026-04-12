@@ -15,9 +15,13 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.io.path.exists
 import kotlin.io.path.extension
 import kotlin.io.path.isDirectory
+import kotlin.io.path.readBytes
 import kotlin.time.TimeSource
 
 private val logger = KotlinLogging.logger {}
+
+private val PLAYLIST_EXTENSIONS = setOf("m3u")
+private val IMAGES_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp", "bmp", "gif", "tiff")
 
 class LiveLibrary(
     private val scope: CoroutineScope,
@@ -55,16 +59,21 @@ class LiveLibrary(
             scope.launch {
                 val rawMetadatas = mutableMapOf<Path, RawMetadataSong>()
                 val rawPlaylists = mutableMapOf<Path, List<M3uEntry>>()
+                val rawImages = mutableMapOf<Path, Deferred<AlbumCover?>>()
                 while (true) {
                     when (val event = eventChannel.receive()) {
                         is InternalEvent.NewSong -> rawMetadatas[event.file] = event.metadata
                         is InternalEvent.NewPlaylist -> rawPlaylists[event.file] = event.playlist
+                        is InternalEvent.NewImage -> rawImages[event.file] = event.image
                         is InternalEvent.FileDeleted -> {
                             rawMetadatas.keys.removeIf { song ->
                                 song.startsWith(event.fileOrFolder)
                             }
-                            rawPlaylists.keys.removeIf { song ->
-                                song.startsWith(event.fileOrFolder)
+                            rawPlaylists.keys.removeIf { playlist ->
+                                playlist.startsWith(event.fileOrFolder)
+                            }
+                            rawImages.keys.removeIf { image ->
+                                image.startsWith(event.fileOrFolder)
                             }
                         }
 
@@ -73,11 +82,11 @@ class LiveLibrary(
                     }
                     val remaining = pendingEvents.decrementAndGet()
                     if (remaining == 0) {
-                        val library = Library.from(rawMetadatas.values, rawPlaylists.entries)
+                        val library = Library.from(rawMetadatas.values, rawPlaylists.entries, rawImages.entries)
                         System.gc()
                         logger.info {
                             val diff = creationTime.elapsedNow()
-                            "Processed ${rawMetadatas.size} songs, ${rawPlaylists.size} playlists ($diff since beginning)"
+                            "Processed ${rawMetadatas.size} songs, ${rawPlaylists.size} playlists, ${rawImages.size} images ($diff since beginning)"
                         }
                         flowCollector.emit(library)
                     }
@@ -141,10 +150,11 @@ class LiveLibrary(
 
     /** Warning: increment pendingEvents before calling this! */
     private suspend fun onNewFile(file: Path, decoder: CoversDecoder) {
-        if (file.extension == "m3u") {
-            onNewPlaylist(file)
-        } else {
-            onNewSong(file, decoder)
+        val extension = file.extension.lowercase()
+        when (extension) {
+            in PLAYLIST_EXTENSIONS -> onNewPlaylist(file)
+            in IMAGES_EXTENSIONS -> onNewImage(file, decoder)
+            else -> onNewSong(file, decoder)
         }
     }
 
@@ -176,6 +186,20 @@ class LiveLibrary(
         }
     }
 
+    private suspend fun onNewImage(file: Path, decoder: CoversDecoder) {
+        try {
+            val decoded = decoder.decode(file.readBytes())
+            eventChannel.send(
+                InternalEvent.NewImage(file, decoded)
+            )
+        } catch (e: Exception) {
+            eventChannel.send(InternalEvent.FileIgnored)
+            logger.error {
+                "Error while parsing image file $file: ${e.message}"
+            }
+        }
+    }
+
     private fun onDeleted(fileOrFolder: Path) {
         pendingEvents.incrementAndGet()
         scope.launch {
@@ -199,6 +223,11 @@ class LiveLibrary(
         data class NewPlaylist(
             val file: Path,
             val playlist: List<M3uEntry>,
+        ) : InternalEvent
+
+        data class NewImage(
+            val file: Path,
+            val image: Deferred<AlbumCover?>,
         ) : InternalEvent
 
         data class FileDeleted(

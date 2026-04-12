@@ -87,7 +87,7 @@ object Preferences {
         val size = state.size
         val position = state.position
         val placement = state.placement
-        logger.debug { "Saving window state: size = ${size}; position = $position; placement = $placement; insets = $insets" }
+        logger.trace { "Saving window state: size = ${size}; position = $position; placement = $placement; insets = $insets" }
         withContext(Dispatchers.IO) {
             if (size.isSpecified && placement == WindowPlacement.Floating) {
                 prefs.putFloat("main_window_width", size.width.value - (insets.left + insets.right) / density.density)

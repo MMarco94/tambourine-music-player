@@ -4,7 +4,7 @@ import io.github.mmarco94.tambourine.utils.mostCommonOrNull
 import io.github.mmarco94.tambourine.utils.orNoop
 import io.github.mmarco94.tambourine.utils.pathSimilarity
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.Deferred
 import net.bjoernpetersen.m3u.model.M3uEntry
 import net.bjoernpetersen.m3u.model.MediaPath
 import net.bjoernpetersen.m3u.model.MediaUrl
@@ -17,6 +17,9 @@ import kotlin.io.path.nameWithoutExtension
 import kotlin.time.Duration
 
 private val logger = KotlinLogging.logger {}
+
+private val IMAGES_HIGH_PRIORITY = listOf("cover", "folder", "album", "front")
+private val IMAGES_LOW_PRIORITY = listOf("back", "disc", "artist")
 
 data class Artist(
     val name: String,
@@ -160,14 +163,15 @@ data class Library(
                 }
         }
 
-        private suspend fun buildAlbums(
+        private fun buildAlbums(
             metadata: Collection<RawMetadataSong>,
             artists: Map<String, Artist>,
+            coverForSong: Map<Path, AlbumCover?>,
         ): Map<Pair<Artist, String>, Album> {
             return metadata
                 .groupBy { artists.getValue(it.nnAlbumArtist) to it.nnAlbum }
                 .mapValues { (album, songs) ->
-                    val cover = songs.map { it.cover }.awaitAll().filterNotNull().mostCommonOrNull()
+                    val cover = songs.mapNotNull { coverForSong.getValue(it.file) }.mostCommonOrNull()
                     Album(album.second, album.first, cover, SongCollectionStats.of(songs))
                 }
         }
@@ -175,9 +179,16 @@ data class Library(
         suspend fun from(
             metadata: Collection<RawMetadataSong>,
             rawPlaylists: Set<Map.Entry<Path, List<M3uEntry>>>,
+            images: Set<Map.Entry<Path, Deferred<AlbumCover?>>>,
         ): Library {
+            val imagesByPath = images.groupBy { it.key.parent }
+            val coverForSong = metadata.associate {
+                it.file to findCover(it, imagesByPath)
+            }
+
             val artists = buildArtists(metadata)
-            val albums = buildAlbums(metadata, artists)
+            val albums = buildAlbums(metadata, artists, coverForSong)
+
 
             val songs = metadata.map { song ->
                 val albumArtist = artists.getValue(song.nnAlbumArtist)
@@ -188,7 +199,7 @@ data class Library(
                     track = song.track,
                     title = song.nnTitle,
                     album = album,
-                    cover = song.cover.await(),
+                    cover = coverForSong.getValue(song.file),
                     length = song.length,
                     year = song.year,
                     lyrics = song.lyrics,
@@ -237,6 +248,30 @@ data class Library(
                     pathSimilarity(location, song.file)
                 }
             }
+        }
+
+        suspend fun findCover(
+            song: RawMetadataSong,
+            imagesByPath: Map<Path, List<Map.Entry<Path, Deferred<AlbumCover?>>>>
+        ): AlbumCover? {
+            val songCover = song.cover.await()
+            if (songCover != null) return songCover
+
+            val candidateImages = imagesByPath[song.file.parent] ?: return null
+            val awaited = candidateImages.mapNotNull { (path, cover) ->
+                cover.await()?.let { path to it }
+            }
+            return awaited.maxByOrNull { (path, _) ->
+                val highPriorityIdx = IMAGES_HIGH_PRIORITY.indexOf(path.nameWithoutExtension.lowercase())
+                if (highPriorityIdx >= 0) {
+                    return@maxByOrNull IMAGES_HIGH_PRIORITY.size - highPriorityIdx
+                }
+                val lowPriorityIdx = IMAGES_LOW_PRIORITY.indexOf(path.nameWithoutExtension.lowercase())
+                if (lowPriorityIdx >= 0) {
+                    return@maxByOrNull -lowPriorityIdx
+                }
+                0
+            }?.second
         }
     }
 }
