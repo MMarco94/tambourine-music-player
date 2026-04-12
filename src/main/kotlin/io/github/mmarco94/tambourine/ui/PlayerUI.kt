@@ -429,21 +429,15 @@ private fun SingleWaveformUI(
     mousePercent: (Density.(Size) -> Float)?,
 ) {
     // This is the most efficient way to do this. 10/10 would do again
-    val animations = remember { mutableStateOf(emptyList<Float>()) }
+    val animations = remember { mutableStateOf(DoubleArray(SongDecoder.WAVEFORM_LOW_RES_SIZE)) }
     waveformAnimations(wfData, animations)
-    val animatedWaveform by derivedStateOf {
-        val value = animations.value
-        DoubleArray(SongDecoder.WAVEFORM_LOW_RES_SIZE) { index ->
-            value[index].toDouble()
-        }
-    }
     val modifier = Modifier.fillMaxWidth().height(waveformHeight)
     Box {
-        ActualWaveform(modifier, { animatedWaveform }, invert, activePercent, INACTIVE_ALPHA, .8f, INACTIVE_ALPHA)
+        ActualWaveform(modifier, { animations.value }, invert, activePercent, INACTIVE_ALPHA, .8f, INACTIVE_ALPHA)
         val t = updateTransition(mousePercent)
         t.Crossfade(contentKey = { it == null }, animationSpec = spring(stiffness = Spring.StiffnessLow)) { mp ->
             if (mp != null) {
-                ActualWaveform(modifier, { animatedWaveform }, invert, mp, 0.6f, .8f, 0f)
+                ActualWaveform(modifier, { animations.value }, invert, mp, 0.6f, .8f, 0f)
             }
         }
     }
@@ -458,18 +452,36 @@ private fun waveformAnimations(
      *  - the scale
      */
     wfData: @Composable () -> Triple<Long, DoubleArray?, Double>,
-    animationStates: MutableState<List<Float>>,
+    animationStates: MutableState<DoubleArray>,
 ) {
+    val anims = remember {
+        List(SongDecoder.WAVEFORM_LOW_RES_SIZE) { Animatable(0f) }
+    }
     val spring = remember { spring<Float>(stiffness = Spring.StiffnessVeryLow) }
-    val transition = updateTransition(wfData(), label = "Waveform")
-    val animations = (0 until SongDecoder.WAVEFORM_LOW_RES_SIZE).map { index ->
-        transition.animateFloat({ spring }) { (_, wf, scale) ->
+    val wfdata = wfData()
+    val cs = rememberCoroutineScope()
+    LaunchedEffect(wfdata) {
+        val (_, wf, scale) = wfdata
+        val targetState = DoubleArray(SongDecoder.WAVEFORM_LOW_RES_SIZE) { index ->
             val h = wf?.getOrZero(index)?.div(scale) ?: fakeHeight
             val baseHeight = fakeHeight / 2
-            (baseHeight + h * (1 - baseHeight)).toFloat()
+            baseHeight + h * (1 - baseHeight)
+        }
+        anims.forEachIndexed { i, anim ->
+            val targetValue = targetState[i].toFloat()
+            if (anim.targetValue != targetValue) {
+                cs.launch {
+                    anim.animateTo(
+                        targetValue = targetValue,
+                        animationSpec = spring,
+                    )
+                }
+            }
         }
     }
-    animationStates.value = animations.map { it.value }
+    animationStates.value = DoubleArray(SongDecoder.WAVEFORM_LOW_RES_SIZE) {
+        anims[it].value.toDouble()
+    }
 }
 
 @Composable
