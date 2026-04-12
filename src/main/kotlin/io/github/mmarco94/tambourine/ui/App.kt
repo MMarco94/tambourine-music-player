@@ -30,9 +30,11 @@ import io.github.mmarco94.tambourine.playerController
 import io.github.mmarco94.tambourine.ui.LibraryUIState.*
 import io.github.mmarco94.tambourine.ui.Panel.*
 import io.github.mmarco94.tambourine.utils.hsb
+import io.github.mmarco94.tambourine.utils.throttle
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.absoluteValue
+import kotlin.time.Duration.Companion.milliseconds
 
 enum class Panel(
     val icon: ImageVector,
@@ -57,13 +59,15 @@ fun App(
     val listOptions = rawListOptions.adjust(library)
     val player = playerController.current
     val accentColor = LocalAppearanceSettings.current.accentColor
-    val mainImage by derivedStateOf {
-        player.queue?.currentSong?.cover ?: library?.findCoverByColor(accentColor)
-    }
+    val mainImage by remember(library, accentColor) {
+        snapshotFlow {
+            player.queue?.currentSong?.cover ?: library?.findCoverByColor(accentColor)
+        }.throttle(100.milliseconds)
+    }.collectAsState(initial = null)
 
     MaterialTheme(
         typography = TambourineTheme.typography,
-        colorScheme = mainImage?.colorScheme?.auto() ?: TambourineTheme.defaultScheme.auto(),
+        colorScheme = mainImage?.colorScheme?.auto() ?: MaterialTheme.colorScheme,
         shapes = TambourineTheme.shapes,
     ) {
         CompositionLocalProvider(
@@ -75,8 +79,8 @@ fun App(
             ),
             LocalContextMenuRepresentation provides MenuContextRepresentation,
         ) {
-            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                BlurredFadeAlbumCover(mainImage, Modifier.fillMaxSize().paperNoise())
+            Surface(color = MaterialTheme.colorScheme.background) {
+                AlbumCoverBackground(mainImage, Modifier.fillMaxSize())
                 val libUIState by derivedStateOf {
                     if (player.queue != null) NORMAL else library.toUIState()
                 }

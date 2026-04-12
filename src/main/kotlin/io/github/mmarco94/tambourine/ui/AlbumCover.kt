@@ -2,8 +2,11 @@ package io.github.mmarco94.tambourine.ui
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -75,22 +78,20 @@ fun AlbumCover(
 }
 
 @Composable
-fun BlurredAlbumCover(cover: AlbumCover?, modifier: Modifier) {
-    if (cover != null) {
-        Image(
-            cover.previewImage,
-            null,
-            alpha = .3f,
-            modifier = modifier.blur(64.dp),
-            contentScale = ContentScale.Crop,
-            filterQuality = FilterQuality.High,
-        )
-    }
-}
-
-@Composable
-fun BlurredFadeAlbumCover(cover: AlbumCover?, modifier: Modifier) {
-    Crossfade(cover) { c ->
-        BlurredAlbumCover(c, modifier)
+fun AlbumCoverBackground(cover: AlbumCover?, modifier: Modifier) {
+    Crossfade(cover) { cover ->
+        val bgColor = cover?.colorScheme?.auto()?.background ?: MaterialTheme.colorScheme.background
+        Box(modifier.background(bgColor).paperNoise().blur(64.dp)) {
+            if (cover != null) {
+                Image(
+                    cover.previewImage,
+                    null,
+                    alpha = .3f,
+                    modifier = Modifier.matchParentSize(),
+                    contentScale = ContentScale.Crop,
+                    filterQuality = FilterQuality.High,
+                )
+            }
+        }
     }
 }
