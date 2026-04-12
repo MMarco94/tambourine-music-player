@@ -2,9 +2,13 @@ package io.github.mmarco94.tambourine.audio
 
 import io.github.mmarco94.tambourine.utils.AppendOnlyList
 import io.github.mmarco94.tambourine.utils.toIntOrMax
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.yield
+import java.io.IOException
 import javax.sound.sampled.AudioInputStream
+
+private val logger = KotlinLogging.logger {}
 
 class Chunk(
     val readData: ByteArray,
@@ -28,20 +32,24 @@ class AsyncAudioInputStream(
 
     suspend fun bufferAll() {
         val chunks = AppendOnlyList<Chunk>()
-        do {
-            val buffer = ByteArray(if (chunks.isEmpty()) firstBufferSize else bufferSize)
-            val read = input.read(buffer)
-            if (read > 0) {
-                chunks.add(Chunk(buffer, 0, read))
-                val state = BufferState(chunks.subList(0, chunks.size), false)
-                readers.forEach {
-                    // Conflated channels should never block nor fail
-                    require(it.channel.trySend(state).isSuccess)
+        try {
+            do {
+                val buffer = ByteArray(if (chunks.isEmpty()) firstBufferSize else bufferSize)
+                val read = input.read(buffer)
+                if (read > 0) {
+                    chunks.add(Chunk(buffer, 0, read))
+                    val state = BufferState(chunks.subList(0, chunks.size), false)
+                    readers.forEach {
+                        // Conflated channels should never block nor fail
+                        require(it.channel.trySend(state).isSuccess)
+                    }
                 }
-            }
-            // Giving opportunities for this coroutine to be cancelled
-            yield()
-        } while (read >= 0)
+                // Giving opportunities for this coroutine to be cancelled
+                yield()
+            } while (read >= 0)
+        } catch (e: IOException) {
+            logger.error(e) { "Couldn't read the whole song" }
+        }
         val state = BufferState(chunks, true)
         readers.forEach {
             it.channel.send(state)

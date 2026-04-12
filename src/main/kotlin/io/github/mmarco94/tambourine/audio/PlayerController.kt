@@ -11,6 +11,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.swing.Swing
+import java.io.IOException
 import kotlin.concurrent.thread
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -166,31 +167,40 @@ class PlayerController(
             }
         }
 
+        fun clearQueue(): State {
+            currentlyPlaying?.apply {
+                player.stop()
+                jobsScope.cancel()
+            }
+            return State(
+                currentlyPlaying = null,
+                position = PositionState(ZERO),
+                pause = true,
+                seeking = seeking,
+                lowLatencyMode = lowLatencyMode,
+                level = level
+            )
+        }
+
         suspend fun changeQueue(
             queue: SongQueue?,
             position: Position,
             keepBufferedContent: Boolean,
         ): State {
             if (queue == null) {
-                currentlyPlaying?.apply {
-                    player.stop()
-                    jobsScope.cancel()
-                }
-                return State(
-                    currentlyPlaying = null,
-                    position = PositionState(ZERO),
-                    pause = true,
-                    seeking = seeking,
-                    lowLatencyMode = lowLatencyMode,
-                    level = level
-                )
+                return clearQueue()
             }
 
             val new = queue.currentSong
 
             val newCp = if (currentlyPlaying?.queue?.currentSongKey != new.uniqueKey) {
                 val stream = logger.debugElapsed("Opening song ${new.title}") {
-                    new.audioStream()
+                    try {
+                        new.audioStream()
+                    } catch (e: IOException) {
+                        logger.error(e) { "Cannot open audio stream for ${new.title}" }
+                        return clearQueue()
+                    }
                 }
                 currentlyPlaying?.jobsScope?.cancel()
                 val scope = CoroutineScope(Dispatchers.Default)
