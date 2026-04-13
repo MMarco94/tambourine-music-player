@@ -101,6 +101,7 @@ tasks.configureEach {
 compose.desktop {
     application {
         mainClass = "io.github.mmarco94.tambourine.MainKt"
+        jvmArgs += listOf("--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED")
         jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
         // These options are set to optimize the memory usage
         jvmArgs += listOf("-XX:+UseZGC") // Use Z Garbage Collector, for low latency, see https://docs.oracle.com/en/java/javase/25/gctuning/z-garbage-collector.html

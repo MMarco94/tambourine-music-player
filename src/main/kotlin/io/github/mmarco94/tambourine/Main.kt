@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.slf4j.bridge.SLF4JBridgeHandler
+import java.awt.Toolkit
+import java.lang.reflect.Field
 import java.nio.file.Path
 import kotlin.time.Clock
 
@@ -52,8 +54,23 @@ fun main(args: Array<String>) {
         // Since this app includes no Swing component, we can avoid overriding its look and feel.
         // This saves ~200ms of time of application setup, see `configureSwingGlobalsForCompose`
         System.setProperty("skiko.rendering.laf.global", "false")
-
         application {
+
+            remember {
+                // Changing the WM class so the icon for the window is properly set.
+                // Source - https://stackoverflow.com/a/29218320
+                try {
+                    val xToolkit = Toolkit.getDefaultToolkit()
+                    val awtAppClassNameField: Field = xToolkit.javaClass.getDeclaredField("awtAppClassName")
+                    awtAppClassNameField.setAccessible(true)
+                    awtAppClassNameField.set(xToolkit, "io.github.mmarco94.tambourine")
+                } catch (e: Exception) {
+                    logger.warn(e) { "Cannot change default WMClass" }
+                }
+            }
+
+
+
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             val cs = rememberCoroutineScope()
             // Using `alwaysOnTop` is the most reliable method. awt.Window.toFront() doesn't work :(
