@@ -169,66 +169,70 @@ fun PlayerUI(
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
     val cs = rememberCoroutineScope()
-    val actualSong = if (showLyrics) song else null
-    val hasLyrics = actualSong?.lyrics != null
     Box(
         modifier.padding(horizontal = 64.dp),
         contentAlignment = Alignment.Center
     ) {
         AlbumContainer(Modifier.fillMaxHeight(), MaterialTheme.shapes.large, elevation = 16.dp) {
-            val lyricToNormal by animateFloatAsState(if (hasLyrics) 1f else 0f)
-            val blur = 16.dp * lyricToNormal
-            val paper = 0.075f * lyricToNormal
-            val saturation by animateFloatAsState(if (hasLyrics) 0.6f else 1f)
-            val baseColor = song.cover?.colorPalette?.first() ?: TambourineTheme.defaultScheme.auto().primary
-            val bgColor = remember(baseColor) {
-                baseColor.hsb().makeContrasty().color
-            }
-            val bgColorAnimated by animateColorAsState(
-                bgColor.copy(if (hasLyrics) 0.75f else 0f)
-            )
-            val contentColor by animateColorAsState(
-                bgColor.hsb().contrast().color
-            )
-            Crossfade(song.cover, Modifier.paperNoise(baseBgColor = bgColorAnimated, strength = paper).blur(blur)) {
-                AlbumCoverContent(
-                    it,
-                    colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(saturation) }),
-                    fullResolution = lyricToNormal < 0.5f,
+            val state = updateTransition(song.cover to song)
+            state.Crossfade(
+                contentKey = { (cover, _) -> cover }
+            ) { (cover, song) ->
+                val lyricsSong = (if (showLyrics) song else null)
+                val hasLyrics = lyricsSong?.lyrics != null
+                val lyricToNormal by animateFloatAsState(if (hasLyrics) 1f else 0f)
+                val blur = 16.dp * lyricToNormal
+                val paper = 0.075f * lyricToNormal
+                val saturation by animateFloatAsState(if (hasLyrics) 0.6f else 1f)
+                val baseColor = song.cover?.colorPalette?.first() ?: TambourineTheme.defaultScheme.auto().primary
+                val bgColor = remember(baseColor) {
+                    baseColor.hsb().makeContrasty().color
+                }
+                val bgColorAnimated by animateColorAsState(
+                    bgColor.copy(if (hasLyrics) 0.75f else 0f)
                 )
-            }
-            Crossfade(
-                actualSong,
-                modifier = Modifier.fillMaxSize()
-            ) { s ->
-                if (s?.lyrics != null) {
-                    val player = playerController.current
-                    CompositionLocalProvider(LocalContentColor provides contentColor) {
-                        LyricsComposable(
-                            s.lyrics,
-                            getPosition = { transform ->
-                                var pos by remember { mutableStateOf(transform(ZERO)) }
-                                player.ObservePosition {
-                                    if (player.queue?.currentSongKey == s.uniqueKey) {
-                                        pos = transform(it)
+                val contentColor by animateColorAsState(
+                    bgColor.hsb().contrast().color
+                )
+                Box {
+                    AlbumCoverContent(
+                        cover,
+                        colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(saturation) }),
+                        fullResolution = lyricToNormal < 0.5f,
+                        modifier = Modifier.paperNoise(baseBgColor = bgColorAnimated, strength = paper).blur(blur),
+                    )
+                    Crossfade(lyricsSong) { lyricsSong ->
+                        if (lyricsSong?.lyrics != null) {
+                            val player = playerController.current
+                            CompositionLocalProvider(LocalContentColor provides contentColor) {
+                                LyricsComposable(
+                                    lyricsSong.lyrics,
+                                    getPosition = { transform ->
+                                        var pos by remember { mutableStateOf(transform(ZERO)) }
+                                        player.ObservePosition {
+                                            if (player.queue?.currentSongKey == lyricsSong.uniqueKey) {
+                                                pos = transform(it)
+                                            }
+                                        }
+                                        pos
+                                    },
+                                    setPosition = { position ->
+                                        cs.launch {
+                                            player.transformQueue { queue ->
+                                                if (queue?.currentSongKey == lyricsSong.uniqueKey) {
+                                                    queue to Position.Specific(position)
+                                                } else
+                                                    queue to Position.Current
+                                            }
+                                        }
                                     }
-                                }
-                                pos
-                            },
-                            setPosition = { position ->
-                                cs.launch {
-                                    player.transformQueue { queue ->
-                                        if (queue?.currentSongKey == s.uniqueKey) {
-                                            queue to Position.Specific(position)
-                                        } else
-                                            queue to Position.Current
-                                    }
-                                }
+                                )
                             }
-                        )
+                        }
                     }
                 }
             }

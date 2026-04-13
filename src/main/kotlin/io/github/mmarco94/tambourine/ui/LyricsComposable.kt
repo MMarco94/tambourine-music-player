@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,16 +55,21 @@ fun SynchronizedLyricsComposable(
     setPosition: (Duration) -> Unit
 ) {
     BoxWithConstraints {
+        val lyricsStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
         val height = maxHeight.toPxApprox()
-        val offset = (verticalPadding + 32.dp).toPxApprox()
+        val offset = (verticalPadding + with(LocalDensity.current) { lyricsStyle.lineHeight.toDp() }).toPxApprox()
+        val targetOffset = (offset - height / 2).roundToInt().coerceAtMost(0)
 
-        val ss = rememberLazyListState()
         val activeIndex = getPosition { position ->
             lyrics.lines.indexOfLast { it.start < position }
         }
+        val ss = rememberLazyListState(
+            initialFirstVisibleItemIndex = activeIndex.coerceAtLeast(0),
+            initialFirstVisibleItemScrollOffset = targetOffset,
+        )
         if (activeIndex >= 0) {
-            LaunchedEffect(activeIndex) {
-                ss.animateScrollToItem(activeIndex, (offset - height / 2).roundToInt().coerceAtMost(0))
+            LaunchedEffect(activeIndex, targetOffset) {
+                ss.animateScrollToItem(activeIndex, targetOffset)
             }
         }
         LyricsContainer(ss) {
@@ -73,7 +79,7 @@ fun SynchronizedLyricsComposable(
                 Surface(shape = MaterialTheme.shapes.small, color = Color.Transparent) {
                     Text(
                         line.content,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                        style = lyricsStyle,
                         modifier = Modifier.alpha(alpha).clickable { setPosition(line.start) }.padding(8.dp),
                         textAlign = TextAlign.Center,
                     )

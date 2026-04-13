@@ -41,6 +41,7 @@ fun AlbumCoverContent(
     cover: AlbumCover?,
     colorFilter: ColorFilter? = null,
     fullResolution: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     if (cover != null) {
         key(cover) {
@@ -54,7 +55,7 @@ fun AlbumCoverContent(
             Image(
                 image,
                 null,
-                modifier = Modifier.fillMaxSize(),
+                modifier = modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
                 filterQuality = FilterQuality.High,
                 colorFilter = colorFilter,
