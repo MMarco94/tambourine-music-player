@@ -1,5 +1,5 @@
 [Desktop Entry]
-Categories=AudioVideo;Audio;Music;
+Categories=AudioVideo;Audio;Player;Music;
 Exec=run.sh %U
 Icon=io.github.mmarco94.tambourine
 Name=Tambourine Music Player
