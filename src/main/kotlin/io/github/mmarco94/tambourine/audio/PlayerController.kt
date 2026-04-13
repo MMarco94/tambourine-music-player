@@ -436,7 +436,7 @@ class PlayerController(
                                 }
                             }
                         )
-                        val (newState, maxAllowedPause) = commands.fold(state) { state, command ->
+                        val newState1 = commands.fold(state) { state, command ->
                             state.run {
                                 when (command) {
                                     is TransformQueue -> {
@@ -464,11 +464,15 @@ class PlayerController(
                                     is SetLevel -> state.setLevel(command.level)
                                 }
                             }
-                        }.play()
-                        if (newState != state) {
-                            state = newState
-                            stateChannel.send(state)
                         }
+                        if (newState1 != state) {
+                            stateChannel.send(newState1)
+                        }
+                        val (newState2, maxAllowedPause) = newState1.play()
+                        if (newState2 != newState1) {
+                            stateChannel.send(newState2)
+                        }
+                        state = newState2
                         desiredPause = maxAllowedPause
                     }
                 }
