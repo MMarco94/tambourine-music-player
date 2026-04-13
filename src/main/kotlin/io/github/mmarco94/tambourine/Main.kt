@@ -71,7 +71,7 @@ fun main(args: Array<String>) {
                 playerController provides player,
                 LocalAppearanceSettings provides systemAppearance,
             ) {
-                MaterialTheme(TambourineTheme.defaultScheme.auto()) {
+                MaterialTheme(TambourineTheme.getDefaultScheme()) {
                     var selectedPanel by remember { mutableStateOf(Panel.LIBRARY) }
                     var libraryTab: LibraryHeaderTab? by remember { mutableStateOf(null) }
                     val library by remember {

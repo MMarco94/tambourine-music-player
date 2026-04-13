@@ -29,6 +29,7 @@ import io.github.mmarco94.tambourine.generated.resources.*
 import io.github.mmarco94.tambourine.playerController
 import io.github.mmarco94.tambourine.ui.LibraryUIState.*
 import io.github.mmarco94.tambourine.ui.Panel.*
+import io.github.mmarco94.tambourine.utils.HSLColor
 import io.github.mmarco94.tambourine.utils.hsb
 import io.github.mmarco94.tambourine.utils.throttle
 import org.jetbrains.compose.resources.StringResource
@@ -134,7 +135,7 @@ private fun Library.findCoverByColor(color: Triple<Double, Double, Double>?): Al
     return if (color == null) {
         songs.firstOrNull()?.cover
     } else {
-        val accentColor = Color(color.first.toFloat(), color.second.toFloat(), color.third.toFloat()).hsb()
+        val accentColor = HSLColor.fromRgb(color)
         songs
             .mapNotNullTo(mutableSetOf()) { it.cover }
             .minByOrNull {

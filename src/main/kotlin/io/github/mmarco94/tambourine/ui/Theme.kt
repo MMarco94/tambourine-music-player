@@ -77,7 +77,13 @@ object TambourineTheme {
         }
     }
 
-    val defaultScheme = colorScheme(defaultPalette)
+    @Composable
+    fun getDefaultScheme(): ColorScheme {
+        val palette = LocalAppearanceSettings.current.accentColor?.let {
+            listOf(HSLColor.fromRgb(it))
+        } ?: defaultPalette
+        return colorScheme(palette).auto()
+    }
 
     fun colorScheme(palette: List<HSLColor>): ColorSchemeContainer {
         fun penalty(color: HSLColor): Float {

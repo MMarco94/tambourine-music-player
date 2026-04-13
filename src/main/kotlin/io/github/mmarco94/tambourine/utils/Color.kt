@@ -66,6 +66,12 @@ data class HSLColor(
     fun pastel(): HSLColor {
         return interpolate(copy(saturation = 0.35f, lightness = 1f))
     }
+
+    companion object {
+        fun fromRgb(color: Triple<Double, Double, Double>): HSLColor {
+            return Color(color.first.toFloat(), color.second.toFloat(), color.third.toFloat()).hsb()
+        }
+    }
 }
 
 fun Color.hsb(): HSLColor {

@@ -188,7 +188,7 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
                 val blur = 16.dp * lyricToNormal
                 val paper = 0.075f * lyricToNormal
                 val saturation by animateFloatAsState(if (hasLyrics) 0.6f else 1f)
-                val baseColor = song.cover?.colorPalette?.first() ?: TambourineTheme.defaultScheme.auto().primary
+                val baseColor = song.cover?.colorPalette?.first() ?: TambourineTheme.getDefaultScheme().primary
                 val bgColor = remember(baseColor) {
                     baseColor.hsb().makeContrasty().color
                 }
