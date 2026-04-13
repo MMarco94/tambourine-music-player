@@ -16,7 +16,7 @@ internal fun Image.toBitmap(width: Int): Bitmap {
         this,
         Rect.makeWH(this.width.toFloat(), this.height.toFloat()),
         Rect.makeWH(width.toFloat(), height.toFloat()),
-        SamplingMode.MITCHELL,
+        SamplingMode.DEFAULT,
         null,
         true,
     )
