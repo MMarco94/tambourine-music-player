@@ -1,13 +1,14 @@
 package io.github.mmarco94.tambourine.ui
 
+import androidx.compose.animation.core.AnimationState
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.animateTo
+import androidx.compose.animation.core.copy
 import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.v2.ScrollbarAdapter
 import androidx.compose.foundation.v2.maxScrollOffset
 import androidx.compose.material3.DividerDefaults
@@ -15,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.mmarco94.tambourine.data.SongListItem
@@ -290,8 +292,8 @@ fun rememberInjectedLazySongListState(
     val offset = (positionInItem - height * TARGET_POSITION_ON_SCREEN).toPxApprox().roundToInt()
     val listState = rememberLazyListState(pos, offset)
     state.value = listState
+    val animationState = remember { mutableStateOf(AnimationState(0f)) }
     var pendingScroll by remember { mutableStateOf(false) }
-    var pendingAnimation by remember { mutableStateOf(false) }
 
     LaunchedEffect(pos, positionInItem, height) {
         val nearPositionRange = pos - 1..pos + 1
@@ -309,14 +311,37 @@ fun rememberInjectedLazySongListState(
             !(insideTheScreen && tryNotToScroll) && (isVisible || isMovingToFirst || isMovingToLast)
         if (pendingScroll || shouldTriggerScroll) {
             pendingScroll = true
-            if (isVisible || pendingAnimation) {
-                pendingAnimation = true
-                listState.animateScrollToItem(pos, offset)
-            } else {
-                listState.scrollToItem(pos, offset)
-            }
+            resumableScroll(listState, pos, offset, animationState, density)
             pendingScroll = false
-            pendingAnimation = false
         }
+    }
+}
+
+private val maxDistance = 2500.dp
+
+private suspend fun resumableScroll(
+    state: LazyListState,
+    targetIndex: Int,
+    targetOffset: Int,
+    animationState: MutableState<AnimationState<Float, AnimationVector1D>>,
+    density: Density,
+) {
+    var animationState by animationState
+    val maxDistancePx = with(density) { maxDistance.toPx().toInt() }
+    state.scroll {
+        val scrollScope = LazyLayoutScrollScope(state, this)
+        do {
+            val distance = scrollScope.calculateDistanceTo(targetIndex, targetOffset)
+            var prevValue = 0f
+            animationState = animationState.copy(value = 0f)
+            animationState.animateTo(distance.toFloat(), sequentialAnimation = animationState.velocity != 0f) {
+                val delta = value - prevValue
+                prevValue = value
+                scrollBy(delta)
+            }
+        } while (distance.absoluteValue in 2..maxDistancePx)
+        // Done!
+        animationState = AnimationState(0f)
+        scrollScope.snapToItem(targetIndex, targetOffset)
     }
 }
