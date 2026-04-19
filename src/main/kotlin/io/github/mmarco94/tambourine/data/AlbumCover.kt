@@ -51,6 +51,8 @@ sealed interface AlbumCover {
         currentDecodedImage: ImageBitmap? = null
     ): ImageBitmap?
 
+    @Stable
+    @Immutable
     data class File(
         override val fullWidth: Int,
         override val fullHeight: Int,
@@ -114,16 +116,25 @@ sealed interface AlbumCover {
             }
         }
 
+        private var mprisFileCache: Wrapper<Path?>? = null
+
         override fun getMprisFile(song: Song): Path? {
-            return try {
-                val f = Files.createTempFile("album-cover-", ".png")
-                getRawBytes(song)?.let {
-                    f.writeBytes(it)
-                    f
+            val cache = mprisFileCache
+            if (cache != null) {
+                return cache.value
+            } else {
+                val path = try {
+                    val f = Files.createTempFile("album-cover-", ".png")
+                    getRawBytes(song)?.let {
+                        f.writeBytes(it)
+                        f
+                    }
+                } catch (e: Exception) {
+                    logger.error(e) { "Error saving image ${song.file}" }
+                    null
                 }
-            } catch (e: Exception) {
-                logger.error(e) { "Error saving image ${song.file}" }
-                null
+                mprisFileCache = Wrapper(path)
+                return path
             }
         }
     }
