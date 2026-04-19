@@ -148,6 +148,13 @@ private fun Library.findCoverByColor(color: Triple<Double, Double, Double>?): Al
     }
 }
 
+data class LibraryExtended(
+    val library: Library,
+    val sortedLib: Library,
+    val filteredLib: Library,
+    val listItems: List<SongListItem>,
+)
+
 @Composable
 private fun MainContent(
     modifier: Modifier,
@@ -166,38 +173,49 @@ private fun MainContent(
 ) {
     val cs = rememberCoroutineScope()
     val player = playerController.current
-    val sortedLib = remember(library, listOptions) {
-        library?.sort(listOptions)
-    }
-    val filteredLib = remember(sortedLib, listOptions) {
-        sortedLib?.filter(listOptions)
-    }
-    val listItems = remember(filteredLib, listOptions) {
-        filteredLib?.toListItems(listOptions)
+    val libraryExtended = remember(library, listOptions) {
+        library?.let {
+            val sortedLib = library.sort(listOptions)
+            val filteredLib = sortedLib.filter(listOptions)
+            LibraryExtended(
+                library = library,
+                sortedLib = sortedLib,
+                filteredLib = filteredLib,
+                listItems = filteredLib.toListItems(listOptions),
+            )
+        }
+
     }
 
     // This is done like this to avoid recompositions when the song changes
     val libraryScrollState = remember { mutableStateOf<LazyListState?>(null) }
-    rememberInjectedLazySongListState(height, listItems.orEmpty(), tryNotToScroll = true, libraryScrollState)
+    rememberInjectedLazySongListState(
+        height,
+        libraryExtended?.listItems.orEmpty(),
+        tryNotToScroll = true,
+        libraryScrollState
+    )
 
     var showLyrics by remember { mutableStateOf(true) }
     PanelContainer(modifier, Panel.entries.toSet(), visiblePanels) { panel ->
         val showToolbar = !large || panel == PLAYER
         when (panel) {
             LIBRARY -> LibraryContainer(
-                library = library,
+                library = libraryExtended,
                 openSettings = openSettings,
                 closeApp = closeApp,
-            ) { library ->
-                checkNotNull(sortedLib)
-                checkNotNull(filteredLib)
-                checkNotNull(listItems)
-                val controller = SongQueueController(cs, sortedLib, filteredLib.songs.map { it.uniqueKey }, player) {
+            ) { libraryExtended ->
+                val controller = SongQueueController(
+                    cs,
+                    libraryExtended.sortedLib,
+                    libraryExtended.filteredLib.songs.map { it.uniqueKey },
+                    player
+                ) {
                     selectLibraryTab(null)
                 }
                 LibraryHeader(
                     modifier = Modifier.fillMaxSize(),
-                    library = library,
+                    library = libraryExtended.library,
                     options = listOptions,
                     setOptions = setListOptions,
                     tab = libraryTab,
@@ -206,13 +224,13 @@ private fun MainContent(
                     openSettings = openSettings,
                     closeApp = closeApp,
                 ) {
-                    Crossfade(listOptions.queryFilter.isNotEmpty() && filteredLib.songs.isEmpty()) {
+                    Crossfade(listOptions.queryFilter.isNotEmpty() && libraryExtended.filteredLib.songs.isEmpty()) {
                         if (it) {
                             LibraryNoSearchResultsComposable { setListOptions(listOptions.removeSearch()) }
                         } else {
                             SongListUI(
-                                filteredLib.stats.maxTrackNumber,
-                                listItems,
+                                libraryExtended.filteredLib.stats.maxTrackNumber,
+                                libraryExtended.listItems,
                                 { checkNotNull(libraryScrollState.value) },
                                 controller
                             )
@@ -223,16 +241,14 @@ private fun MainContent(
 
             QUEUE ->
                 LibraryContainer(
-                    state = library.toUIState(false),
-                    library = library,
+                    state = libraryExtended?.library.toUIState(false),
+                    library = libraryExtended,
                     openSettings = openSettings,
                     closeApp = closeApp,
-                ) { library ->
-                    val sortedLib = remember(library, listOptions) {
-                        (library as Library).sort(listOptions)
-                    }
+                ) { libraryExtended ->
+                    libraryExtended as LibraryExtended
                     SongQueueUI(
-                        sortedLibrary = sortedLib,
+                        sortedLibrary = libraryExtended.sortedLib,
                         showToolbar = showToolbar,
                         openSettings = openSettings,
                         closeApp = closeApp,
@@ -316,12 +332,12 @@ private fun Library?.toUIState(handleEmpty: Boolean = true): LibraryUIState {
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-private fun LibraryContainer(
+private fun <T> LibraryContainer(
     state: LibraryUIState,
-    library: Library?,
+    library: T?,
     openSettings: () -> Unit,
     closeApp: () -> Unit,
-    f: @Composable (Library?) -> Unit
+    f: @Composable (T?) -> Unit
 ) {
     val transition = updateTransition(state to library)
     transition.Crossfade(contentKey = { it.first }) { (state, lib) ->
@@ -335,18 +351,18 @@ private fun LibraryContainer(
 
 @Composable
 private fun LibraryContainer(
-    library: Library?,
+    library: LibraryExtended?,
     openSettings: () -> Unit,
     closeApp: () -> Unit,
-    f: @Composable (Library) -> Unit
+    f: @Composable (LibraryExtended) -> Unit
 ) {
     LibraryContainer(
-        state = library.toUIState(),
+        state = library?.library.toUIState(),
         library = library,
         openSettings = openSettings,
         closeApp = closeApp,
     ) { lib ->
-        f(lib as Library)
+        f(lib as LibraryExtended)
     }
 }
 
