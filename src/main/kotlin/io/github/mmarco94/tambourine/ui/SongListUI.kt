@@ -330,16 +330,22 @@ private suspend fun resumableScroll(
     val maxDistancePx = with(density) { maxDistance.toPx().toInt() }
     state.scroll {
         val scrollScope = LazyLayoutScrollScope(state, this)
-        do {
-            val distance = scrollScope.calculateDistanceTo(targetIndex, targetOffset)
+        var distance = scrollScope.calculateDistanceTo(targetIndex, targetOffset)
+        while (distance.absoluteValue in 2..maxDistancePx) {
             var prevValue = 0f
             animationState = animationState.copy(value = 0f)
+            var totalScroll = 0f
             animationState.animateTo(distance.toFloat(), sequentialAnimation = animationState.velocity != 0f) {
                 val delta = value - prevValue
                 prevValue = value
-                scrollBy(delta)
+                totalScroll += scrollBy(delta)
             }
-        } while (distance.absoluteValue in 2..maxDistancePx)
+            if (totalScroll.absoluteValue <= 1) {
+                // Scroll isn't scrolling. Let's just zap and call it a day
+                break
+            }
+            distance = scrollScope.calculateDistanceTo(targetIndex, targetOffset)
+        }
         // Done!
         animationState = AnimationState(0f)
         scrollScope.snapToItem(targetIndex, targetOffset)
