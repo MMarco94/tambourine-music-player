@@ -194,7 +194,7 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
                     baseColor.hsb().makeContrasty().color
                 }
                 val bgColorAnimated by animateColorAsState(
-                    bgColor.copy(if (hasLyrics) 0.75f else 0f)
+                    bgColor.copy(if (cover == null) 1f else if (hasLyrics) 0.75f else 0f)
                 )
                 val contentColor by animateColorAsState(
                     bgColor.hsb().contrast().color
@@ -204,7 +204,8 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
                         cover,
                         colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(saturation) }),
                         fullResolutionSource = if (lyricToNormal < 1f) song else null,
-                        modifier = Modifier.paperNoise(baseBgColor = bgColorAnimated, strength = paper).blur(blur),
+                        modifier = Modifier.paperNoise(baseBgColor = bgColorAnimated, strength = paper).blur(blur)
+                            .fillMaxSize(),
                     )
                     Crossfade(lyricsSong) { lyricsSong ->
                         if (lyricsSong?.lyrics != null) {

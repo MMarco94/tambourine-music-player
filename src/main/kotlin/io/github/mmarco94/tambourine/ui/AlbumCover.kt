@@ -48,7 +48,7 @@ fun AlbumCoverContent(
     fullResolutionSource: Song? = null,
     modifier: Modifier = Modifier,
 ) {
-    BoxWithConstraints {
+    BoxWithConstraints(modifier) {
         // Rounded resolution targets
         val targetW = (constraints.maxWidth / 128f + 1).toInt() * 128
         val targetH = (constraints.maxHeight / 128f + 1).toInt() * 128
@@ -67,7 +67,6 @@ fun AlbumCoverContent(
                 FadeIn(
                     targetState = fullRes ?: cover.previewImage,
                     duration = DEFAULT_FULL_RESOLUTION_FADE_IN_DURATION,
-                    modifier = modifier,
                 ) { image ->
                     Image(
                         image,
