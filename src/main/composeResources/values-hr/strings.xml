@@ -1,0 +1,100 @@
+<resources>
+    <string name="main_menu_library">Biblioteka</string>
+    <string name="main_menu_queue">Red čekanja</string>
+    <string name="main_menu_player">Player</string>
+
+    <string name="action_play">Sviraj</string>
+    <string name="action_pause">Pauza</string>
+    <string name="action_shuffle_from_here">Nasumično odavdje</string>
+    <string name="action_enable_shuffle">Uključi nasumično</string>
+    <string name="action_disable_shuffle">Isključi nasumično</string>
+    <string name="action_repeat_song">Ponovi pjesmu</string>
+    <string name="action_repeat_queue">Ponovi red čekanja</string>
+    <string name="action_repeat_none">Ne ponavljaj</string>
+    <string name="action_mute_volume">Isključi zvuk</string>
+    <string name="action_max_volume">Maksimalna glasnoća</string>
+    <string name="action_play_next">Sviraj sljedeće</string>
+    <string name="action_add_to_queue">Dodaj u red čekanja</string>
+    <string name="action_play_album">Sviraj album</string>
+    <string name="action_play_artist">Sviraj izvođača</string>
+    <string name="action_go_to_previous_song">Sviraj sljedeću pjesmu</string>
+    <string name="action_go_to_next_song">Sviraj prethodnu pjesmu</string>
+    <string name="action_show_lyrics">Prikaži tekst</string>
+    <string name="action_hide_lyrics">Sakrij tekst</string>
+    <string name="action_search">Pretraži</string>
+    <string name="action_close">Zatvori</string>
+    <string name="action_reset">Resetiraj</string>
+    <string name="action_close_app">Zatvori aplikaciju</string>
+    <string name="action_open_menu">Otvori izbornik</string>
+    <string name="action_choose_library">Odaberi glazbenu biblioteku</string>
+    <string name="action_open_settings">Otvori postavke</string>
+    <string name="action_remove_filter">Ukloni filtar</string>
+
+    <string name="sort">Razvrstaj</string>
+    <string name="do_not_sort">Nemoj razvrstati</string>
+    <string name="choose">Odaberi</string>
+    <string name="artists">Izvođači</string>
+    <string name="albums">Albumi</string>
+    <string name="songs">Pjesme</string>
+    <plurals name="n_songs">
+        <item quantity="one">%1$d pjesma</item>
+        <item quantity="few">%1$d pjesme</item>
+        <item quantity="other">%1$d pjesmi</item>
+    </plurals>
+    <plurals name="n_songs_in_queue">
+        <item quantity="one">%1$d pjesma u redu čekanja</item>
+        <item quantity="few">%1$d pjesme u redu čekanja</item>
+        <item quantity="other">%1$d pjesmi u redu čekanja</item>
+    </plurals>
+    <plurals name="n_songs_remaining">
+        <item quantity="one">%1$d pjesma preostala</item>
+        <item quantity="few">%1$d pjesme preostale</item>
+        <item quantity="other">%1$d pjesmi preostalo</item>
+    </plurals>
+    <string name="playlists">Playliste</string>
+
+    <string name="artist_sorter_name">Ime</string>
+    <string name="artist_sorter_name_description">Po imenu</string>
+    <string name="artist_sorter_name_inverse_description">Po imenu (obrnuto)</string>
+    <string name="album_sorter_title">Naslov</string>
+    <string name="album_sorter_title_description">Po naslovu</string>
+    <string name="album_sorter_title_inverse_description">Po naslovu (obrnuto)</string>
+    <string name="album_sorter_year">Godina</string>
+    <string name="album_sorter_year_description">Po godini (najprije najnovije)</string>
+    <string name="album_sorter_year_inverse_description">Po godini (najstarije prvo)</string>
+    <string name="song_sorter_track">Pjesma</string>
+    <string name="song_sorter_track_description">Po mjestu u albumu</string>
+    <string name="song_sorter_track_inverse_description">Po mjestu u albumu (obrnuto)</string>
+    <string name="song_sorter_title">Naslov</string>
+    <string name="song_sorter_title_description">Po naslovu</string>
+    <string name="song_sorter_title_inverse_description">Po naslovu (obrnuto)</string>
+    <string name="song_sorter_year">Godina</string>
+    <string name="song_sorter_year_description">Po godini (najprije najnovije)</string>
+    <string name="song_sorter_year_inverse_description">Po godini (najprije najstarije)</string>
+
+    <string name="loading___">Učitava se …</string>
+    <string name="yes">Da</string>
+    <string name="no">Ne</string>
+    <string name="settings">Postavke</string>
+    <string name="reload_library">Ponovo učitaj biblioteku</string>
+    <string name="use_system_decorations">Koristi dizajn sustava</string>
+    <string name="music_library_folder">Mapa glazbene biblioteke</string>
+    <string name="font_size">Veličina fonta</string>
+    <string name="empty_queue">Prazan red čekanja</string>
+    <string name="empty_library">Prazna biblioteka</string>
+    <string name="no_search_results">Nema rezultata pretrage</string>
+
+    <string name="theme">Tema</string>
+    <string name="theme_auto">Automatski</string>
+    <string name="theme_dark">Tamna</string>
+    <string name="theme_light">Svijetla</string>
+
+    <string name="help_play_a_song_title">Sviraj pjesmu</string>
+    <string name="help_play_a_song_message">Za početak odaberi pjesmu iz svoje biblioteke</string>
+
+    <string name="duration_negative">-%1$ s</string>
+    <string name="duration_infinite">Beskonačno</string>
+    <string name="duration_hours">%1$d h</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_seconds">%1$s s</string>
+</resources>
