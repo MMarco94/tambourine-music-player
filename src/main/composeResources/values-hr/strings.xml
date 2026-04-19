@@ -92,7 +92,7 @@
     <string name="help_play_a_song_title">Sviraj pjesmu</string>
     <string name="help_play_a_song_message">Za početak odaberi pjesmu iz svoje biblioteke</string>
 
-    <string name="duration_negative">-%1$ s</string>
+    <string name="duration_negative">-%1$s</string>
     <string name="duration_infinite">Beskonačno</string>
     <string name="duration_hours">%1$d h</string>
     <string name="duration_minutes">%1$d min</string>
