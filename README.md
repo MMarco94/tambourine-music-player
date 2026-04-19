@@ -36,8 +36,9 @@ A simple and straight-to-the point music player for your local library.
 The app is translated in:
 
 - English
-- Italian
 - Brazilian
+- Croatian
+- Italian
 
 To add a translation, add a `string.xml` file in the appropriate folder
 inside [the app's resources](https://github.com/MMarco94/tambourine-music-player/tree/main/src/main/composeResources).
