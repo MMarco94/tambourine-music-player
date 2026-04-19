@@ -58,7 +58,7 @@ fun Song.mprisMetadata(): MPRISMetadata {
         title = title,
         trackNumber = track?.toLong(),
         discNumber = disk?.toLong(),
-        artUrl = cover?.file,
+        artUrl = cover?.getMprisFile(this),
         lyrics = lyrics?.rawString,
     )
 }

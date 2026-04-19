@@ -7,7 +7,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.system.measureTimeMillis
 import kotlin.time.Duration.Companion.milliseconds
 
-inline fun <T> KLogger.debugElapsed(tag: String, f: () -> T): T {
+inline fun <T> KLogger.debugElapsed(tag: Any, f: () -> T): T {
     val ret: T
     val took = measureTimeMillis {
         ret = f()

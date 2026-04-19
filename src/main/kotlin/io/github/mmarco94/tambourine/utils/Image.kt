@@ -7,8 +7,18 @@ import kotlin.math.roundToInt
 /**
  * See the implementation of Image.toBitmap() for inspiration
  */
-internal fun Image.toBitmap(width: Int): Bitmap {
-    val height = ((width * this.height).toFloat() / this.width).roundToInt().coerceAtLeast(1)
+internal fun Image.toBitmap(
+    minWidth: Int,
+    minHeight: Int,
+): Bitmap {
+    val height = maxOf(
+        ((minWidth * this.height).toFloat() / this.width).roundToInt(),
+        minHeight,
+    ).coerceAtMost(this.height)
+    val width = maxOf(
+        ((minHeight * this.width).toFloat() / this.height).roundToInt(),
+        minWidth,
+    ).coerceAtMost(this.width)
     val bitmap = Bitmap()
     bitmap.allocPixels(ImageInfo.makeN32(width, height, ColorAlphaType.PREMUL))
     val canvas = Canvas(bitmap)

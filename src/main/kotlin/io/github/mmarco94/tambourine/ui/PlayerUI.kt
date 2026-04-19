@@ -178,9 +178,10 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
         contentAlignment = Alignment.Center
     ) {
         AlbumContainer(Modifier.fillMaxHeight(), MaterialTheme.shapes.large, elevation = 16.dp) {
-            val state = updateTransition(song.cover to song)
-            state.Crossfade(
-                contentKey = { (cover, _) -> cover }
+            FadeIn(
+                targetState = song.cover to song,
+                contentKey = { (cover, _) -> cover },
+                duration = 300.milliseconds,
             ) { (cover, song) ->
                 val lyricsSong = (if (showLyrics) song else null)
                 val hasLyrics = lyricsSong?.lyrics != null
@@ -202,7 +203,7 @@ private fun CoverOrLyrics(modifier: Modifier, song: Song, showLyrics: Boolean) {
                     AlbumCoverContent(
                         cover,
                         colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(saturation) }),
-                        fullResolution = lyricToNormal < 0.5f,
+                        fullResolutionSource = if (lyricToNormal < 1f) song else null,
                         modifier = Modifier.paperNoise(baseBgColor = bgColorAnimated, strength = paper).blur(blur),
                     )
                     Crossfade(lyricsSong) { lyricsSong ->

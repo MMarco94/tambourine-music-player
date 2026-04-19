@@ -12,7 +12,10 @@ import net.bjoernpetersen.m3u.M3uParser
 import net.bjoernpetersen.m3u.model.M3uEntry
 import java.nio.file.*
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.io.path.*
+import kotlin.io.path.exists
+import kotlin.io.path.extension
+import kotlin.io.path.isDirectory
+import kotlin.io.path.readText
 import kotlin.time.TimeSource
 
 private val logger = KotlinLogging.logger {}
@@ -192,7 +195,7 @@ class LiveLibrary(
 
     private suspend fun onNewImage(file: Path, decoder: CoversDecoder) {
         try {
-            val decoded = decoder.decode(file.readBytes())
+            val decoded = decoder.decode(file)
             eventChannel.send(InternalEvent.NewImage(file, decoded))
         } catch (e: Exception) {
             eventChannel.send(InternalEvent.FileIgnored)

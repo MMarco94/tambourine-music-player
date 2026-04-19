@@ -1,9 +1,11 @@
 package io.github.mmarco94.tambourine.utils
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.*
 import androidx.compose.ui.platform.debugInspectorInfo
@@ -12,6 +14,10 @@ import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.nanoseconds
+
+private const val DEFAULT_FADE_IN_CHILDREN = 5
 
 
 @Composable
@@ -161,5 +167,83 @@ private class HeightAnimationModifier(
 
         animData = data
         return data.anim.value
+    }
+}
+
+@Composable
+fun <T> FadeIn(
+    targetState: T,
+    duration: Duration,
+    contentKey: (T) -> Any? = { it },
+    modifier: Modifier = Modifier,
+    childLimit: Int = DEFAULT_FADE_IN_CHILDREN,
+    content: @Composable (T) -> Unit,
+) {
+    data class StateWithKey<T>(val key: Any?, val state: T)
+
+    var visibilityMap by remember { mutableStateOf(listOf<Pair<StateWithKey<T>, Float>>()) }
+    val targetKey by rememberUpdatedState(contentKey(targetState))
+    val targetVisibility = visibilityMap.indexOfFirst { it.first.key == targetKey }
+    if (targetVisibility < 0) {
+        val targetVisibility = if (visibilityMap.isEmpty()) 1f else 0f
+        val content = StateWithKey(targetKey, targetState)
+        visibilityMap = visibilityMap.plus(content to targetVisibility)
+    } else if (visibilityMap[targetVisibility].first.state != targetState) {
+        visibilityMap = visibilityMap.toMutableList().apply {
+            val prev = this[targetVisibility]
+            this[targetVisibility] = prev.copy(first = prev.first.copy(state = targetState))
+        }
+    }
+    if (visibilityMap.size > childLimit) {
+        val toRemove = visibilityMap.indexOfFirst { it.first.key != targetState }
+        visibilityMap = visibilityMap.toMutableList().apply { removeAt(toRemove) }
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            var prevNano = 0L
+            withFrameNanos { nano ->
+                // Time delta, at most 16 ms
+                val timeDelta = (nano - prevNano).coerceAtMost(16_000_000)
+                val alphaDelta = (timeDelta.nanoseconds / duration).toFloat()
+                prevNano = nano
+
+                var afterTarget = false
+                visibilityMap = visibilityMap.map { (k, v) ->
+                    if (k.key == targetKey) {
+                        afterTarget = true
+                        k to (v + alphaDelta).coerceAtMost(1f)
+                    } else if (afterTarget) {
+                        k to (v - alphaDelta).coerceAtLeast(0f)
+                    } else {
+                        k to (v + alphaDelta).coerceAtMost(1f)
+                    }
+                }.removeInvisible()
+            }
+        }
+    }
+
+    Box(modifier) {
+        visibilityMap.forEach { (target, visibility) ->
+            key(target.key) {
+                Box(Modifier.alpha(visibility)) {
+                    content(target.state)
+                }
+            }
+        }
+    }
+}
+
+fun <T> List<Pair<T, Float>>.removeInvisible(): List<Pair<T, Float>> {
+    val orig = this
+    return buildList(size) {
+        for (item in orig) {
+            if (item.second >= 1f) {
+                clear()
+            }
+            if (item.second > 0) {
+                add(item)
+            }
+        }
     }
 }
