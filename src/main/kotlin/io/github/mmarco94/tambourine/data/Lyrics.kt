@@ -95,7 +95,7 @@ private data class LrcFile(
     companion object {
 
         private val ssXXRegex = "(\\d+)\\.(\\d+)".toRegex()
-        private val entryRegex = "[\\s\uFEFF]*\\[([^:]+):([^]]+)](.*)".toRegex()
+        private val entryRegex = "[\\s\uFEFF]*\\[([^:]*):([^]]*)](.*)".toRegex()
         private fun parseEntry(line: String): Entry {
             val match = entryRegex.matchEntire(line) ?: throw ParseException("Line '$line' doesn't match", 0)
             return Entry(
