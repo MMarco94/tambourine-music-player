@@ -435,7 +435,7 @@ private fun SingleWaveformUI(
     mousePercent: (Density.(Size) -> Float)?,
 ) {
     // This is the most efficient way to do this. 10/10 would do again
-    val animations = remember { mutableStateOf(DoubleArray(SongDecoder.WAVEFORM_LOW_RES_SIZE)) }
+    val animations = remember { mutableStateOf(DoubleArray(SongDecoder.WAVEFORM_SIZE)) }
     waveformAnimations(wfData, animations)
     val modifier = Modifier.fillMaxWidth().height(waveformHeight)
     Box {
@@ -461,14 +461,14 @@ private fun waveformAnimations(
     animationStates: MutableState<DoubleArray>,
 ) {
     val anims = remember {
-        List(SongDecoder.WAVEFORM_LOW_RES_SIZE) { Animatable(0f) }
+        List(SongDecoder.WAVEFORM_SIZE) { Animatable(0f) }
     }
     val spring = remember { spring<Float>(stiffness = Spring.StiffnessVeryLow) }
     val wfdata = wfData()
     val cs = rememberCoroutineScope()
     LaunchedEffect(wfdata) {
         val (_, wf, scale) = wfdata
-        val targetState = DoubleArray(SongDecoder.WAVEFORM_LOW_RES_SIZE) { index ->
+        val targetState = DoubleArray(SongDecoder.WAVEFORM_SIZE) { index ->
             val h = wf?.getOrZero(index)?.div(scale) ?: fakeHeight
             val baseHeight = fakeHeight / 2
             baseHeight + h * (1 - baseHeight)
@@ -485,7 +485,7 @@ private fun waveformAnimations(
             }
         }
     }
-    animationStates.value = DoubleArray(SongDecoder.WAVEFORM_LOW_RES_SIZE) {
+    animationStates.value = DoubleArray(SongDecoder.WAVEFORM_SIZE) {
         anims[it].value.toDouble()
     }
 }

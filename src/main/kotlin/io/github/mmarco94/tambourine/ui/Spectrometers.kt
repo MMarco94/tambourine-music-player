@@ -116,7 +116,7 @@ fun SmallFakeSpectrometers(
         val decodedSongData = decodedSongData
         val songAmplitude = if (songLength != null && decodedSongData != null) {
             val percent = position / songLength
-            val realAmpl = decodedSongData.waveformsPerChannelHiRes.maxOf {
+            val realAmpl = decodedSongData.waveformsPerChannel.maxOf {
                 val index = (it.size * percent).roundToInt().coerceIn(it.indices)
                 it[index]
             }

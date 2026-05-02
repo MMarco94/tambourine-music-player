@@ -54,7 +54,6 @@ class SongDecoder(
     data class DecodedSongData(
         val format: AudioFormat,
         val waveformsPerChannel: List<DoubleArray>,
-        val waveformsPerChannelHiRes: List<DoubleArray>,
         val maxAmplitude: Double,
         val analyzedFrames: Long,
         val silencePaddings: List<SilencePadding>,
@@ -77,10 +76,7 @@ class SongDecoder(
     }
 
     private val waveformsPerChannel: List<DoubleArray> = List(format.channels) {
-        DoubleArray(WAVEFORM_LOW_RES_SIZE)
-    }
-    private val waveformsPerChannelHiRes: List<DoubleArray> = List(format.channels) {
-        DoubleArray(RESOLUTION)
+        DoubleArray(WAVEFORM_SIZE)
     }
     private val decodedSongDataFlow: MutableStateFlow<DecodedSongData?> = MutableStateFlow(null)
     val decodedSongData: StateFlow<DecodedSongData?> = decodedSongDataFlow
@@ -108,40 +104,31 @@ class SongDecoder(
         scope.launch {
             logger.debugElapsed("Computing waveform for ${song.title}") {
                 val totalApproximateFrames = song.length.toDouble(DurationUnit.SECONDS) * format.sampleRate
-                val framesPerSample = totalApproximateFrames / RESOLUTION
-                val framesPerSampleLowRes = totalApproximateFrames / WAVEFORM_LOW_RES_SIZE
+                val framesPerSample = totalApproximateFrames / WAVEFORM_SIZE
                 var decodedFrames = 0L
-                var maxValue = 0.5
                 val thresholds = SILENCE_THRESHOLDS.map { (threshold, duration) ->
                     SilenceCalculator(threshold, format.durationToFrames(duration))
                 }
+                var maxValue = 0.5
                 while (true) {
                     val chunk = audio.read(Int.MAX_VALUE) ?: break
-                    waveformsPerChannelHiRes.forEachIndexed { channel, waveform ->
-                        val waveformLowRes = waveformsPerChannel[channel]
+                    waveformsPerChannel.forEachIndexed { channel, waveform ->
                         decode(chunk.readData, chunk.offset, chunk.length, format, channel) { frame, _, value ->
                             val frameIndex = decodedFrames + frame
-                            for (threshold in thresholds) {
-                                threshold.register(value, frameIndex)
+                            for (i in thresholds.indices) {
+                                thresholds[i].register(value, frameIndex)
                             }
-                            val idxHiRes =
-                                (frameIndex * RESOLUTION / totalApproximateFrames).roundToInt()
-                            val idxLowRes =
-                                (frameIndex * WAVEFORM_LOW_RES_SIZE / totalApproximateFrames).roundToInt()
-                            if (idxHiRes in waveform.indices) {
-                                waveform[idxHiRes] += value.absoluteValue / framesPerSample
-                                maxValue = maxOf(maxValue, waveform[idxHiRes])
-                            }
-                            if (idxLowRes in waveformLowRes.indices) {
-                                waveformLowRes[idxLowRes] += value.absoluteValue / framesPerSampleLowRes
+                            val idx = (frameIndex * WAVEFORM_SIZE / totalApproximateFrames).roundToInt()
+                            if (idx in waveform.indices) {
+                                waveform[idx] += value.absoluteValue / framesPerSample
                             }
                         }
                     }
+                    maxValue = waveformsPerChannel.maxOf { it.max() }.coerceAtLeast(maxValue)
                     decodedFrames += chunk.length / format.frameSize
                     val newData = DecodedSongData(
                         format = format,
                         waveformsPerChannel = waveformsPerChannel,
-                        waveformsPerChannelHiRes = waveformsPerChannelHiRes,
                         maxAmplitude = maxValue,
                         analyzedFrames = decodedFrames,
                         silencePaddings = thresholds.map { it.toPadding(decodedFrames, false) },
@@ -153,7 +140,6 @@ class SongDecoder(
                     format = format,
                     maxAmplitude = maxValue,
                     waveformsPerChannel = waveformsPerChannel,
-                    waveformsPerChannelHiRes = waveformsPerChannelHiRes,
                     analyzedFrames = decodedFrames,
                     silencePaddings = thresholds.map { it.toPadding(decodedFrames, true) },
                     done = true,
@@ -169,8 +155,6 @@ class SongDecoder(
     }
 
     companion object {
-        const val WAVEFORM_LOW_RES_SIZE = 240
-        private const val WAVEFORM_HIGH_RES_MULTIPLIER = 4
-        private const val RESOLUTION = WAVEFORM_LOW_RES_SIZE * WAVEFORM_HIGH_RES_MULTIPLIER
+        const val WAVEFORM_SIZE = 240
     }
 }
