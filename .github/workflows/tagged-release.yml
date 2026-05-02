@@ -6,26 +6,46 @@ on:
       - "v*"
 
 jobs:
-  tagged-release:
-    name: "Tagged Release"
-    runs-on: "ubuntu-latest"
+  build:
+    name: "Build (${{ matrix.arch }})"
+    strategy:
+      matrix:
+        include:
+          # see https://docs.github.com/en/actions/reference/runners/github-hosted-runners#supported-runners-and-hardware-resources
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
-      - uses: "actions/checkout@v6"
-      - uses: "actions/setup-java@v5"
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
         with:
           java-version: '25'
           distribution: 'corretto'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
-      - name: "Build & test"
+      - name: Build & test
+        run: ./gradlew createReleaseDistributable
+      - name: Package
         run: |
-          ./gradlew createReleaseDistributable
-      - name: "Package"
-        run: |
-          tar -czf build/tmp/tambourine.tar.gz -C build/compose/binaries/main-release/app tambourine
-      - uses: "marvinpinto/action-automatic-releases@latest"
+          tar -czf build/tmp/tambourine-${{ matrix.arch }}.tar.gz \
+            -C build/compose/binaries/main-release/app tambourine
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tambourine-${{ matrix.arch }}
+          path: build/tmp/tambourine-${{ matrix.arch }}.tar.gz
+
+  release:
+    name: "Release"
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
-          files: |
-            build/tmp/tambourine.tar.gz
+          files: artifacts/**/*
