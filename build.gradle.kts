@@ -19,7 +19,7 @@ enum class ClassSharingMode {
 }
 
 group = "io.github.mmarco94"
-version = "1.5.2"
+version = "1.5.3"
 val debugBuild = false
 val runMode = ClassSharingMode.None
 
