@@ -1,3 +1,4 @@
+import org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
@@ -33,6 +34,9 @@ kotlin {
     jvmToolchain(25)
 }
 
+val ffsampledsp by configurations.creating
+val ffsampledspVersion = "0.9.54"
+
 dependencies {
     implementation("org.jetbrains.compose.foundation:foundation:1.10.3")
     implementation(compose.desktop.currentOs)
@@ -55,14 +59,25 @@ dependencies {
     implementation("org.slf4j:jul-to-slf4j:2.0.17")
 
     // ffmpeg-based audio decoder
-    // Artifacts:
-    // - ffsampledsp-complete
-    // - ffsampledsp-x86_64-macos
-    // - ffsampledsp-aarch64-macos
-    // - ffsampledsp-x86_64-linux
-    // - ffsampledsp-i386-win
-    // - ffsampledsp-x86_64-win
-    implementation("com.tagtraum:ffsampledsp-complete:0.9.53")
+    val os = org.gradle.internal.os.OperatingSystem.current()
+    val arch = System.getProperty("os.arch")
+    val ffsampledspArtifact = when {
+        os.isMacOsX && arch == "aarch64" -> "ffsampledsp-aarch64-macos"
+        os.isMacOsX -> "ffsampledsp-x86_64-macos"
+        os.isLinux && arch == "aarch64" -> "ffsampledsp-aarch64-linux"
+        os.isLinux && arch == "amd64" -> "ffsampledsp-x86_64-linux"
+        os.isWindows && arch.contains("64") -> "ffsampledsp-x86_64-win"
+        os.isWindows -> "ffsampledsp-i386-win"
+        else -> error("Unsupported platform: $os $arch")
+    }
+    val ffsampledspType = when {
+        os.isMacOsX -> "dylib"
+        os.isLinux -> "so"
+        os.isWindows -> "dll"
+        else -> error("Unsupported OS: $os")
+    }
+    ffsampledsp("com.tagtraum:$ffsampledspArtifact:$ffsampledspVersion@$ffsampledspType")
+    implementation("com.tagtraum:ffsampledsp-java:$ffsampledspVersion")
     // music metadata reader
     implementation("net.jthink:jaudiotagger:3.0.1")
     implementation("com.github.bjoernpetersen:m3u-parser:1.4.0")
@@ -74,6 +89,37 @@ dependencies {
     testImplementation("io.kotest:kotest-runner-junit5:$kotest")
     testImplementation("io.kotest:kotest-assertions-core:$kotest")
     testImplementation("io.kotest:kotest-property:$kotest")
+}
+
+// ffsampledsp can be included in two ways:
+//  1. When a JPackage task is present, the .so is copied directly into the destinationDir; it will be loaded at runtime thanks to -Djava.library.path
+//  2. When a JPackage task is NOT present, the .so is copied into the app's resources. At runtime, it will be unpacked into /tmp
+gradle.taskGraph.whenReady {
+    val hasJpackageTask = gradle.taskGraph.allTasks.any { it is AbstractJPackageTask }
+    println("has JPackage task = $hasJpackageTask")
+    if (hasJpackageTask) {
+        tasks.withType(AbstractJPackageTask::class.java).configureEach {
+            doLast {
+                copy {
+                    from(ffsampledsp.files.single())
+                    into(destinationDir.dir("tambourine/lib/app"))
+                    rename {
+                        System.mapLibraryName("ffsampledsp")
+                    }
+                }
+            }
+        }
+    } else {
+        tasks.processResources {
+            from(ffsampledsp) {
+                // The file name as expected by FFNativeLibraryLoader doesn't have the version
+                // See https://github.com/hendriks73/ffsampledsp/blob/dev/ffsampledsp-complete/pom.xml
+                rename {
+                    it.replace("-$ffsampledspVersion", "")
+                }
+            }
+        }
+    }
 }
 
 tasks.named<KotlinCompilationTask<*>>("compileKotlin").configure {
@@ -103,6 +149,8 @@ compose.desktop {
         mainClass = "io.github.mmarco94.tambourine.MainKt"
         jvmArgs += listOf("--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED")
         jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
+        // To find ffsampledsp.so
+        jvmArgs += listOf($$"-Djava.library.path=$APPDIR")
         // These options are set to optimize the memory usage
         jvmArgs += listOf("-XX:+UseZGC") // Use Z Garbage Collector, for low latency, see https://docs.oracle.com/en/java/javase/25/gctuning/z-garbage-collector.html
         jvmArgs += listOf("-XX:SoftMaxHeapSize=256m") // Let's target a reasonable max memory of 256mb

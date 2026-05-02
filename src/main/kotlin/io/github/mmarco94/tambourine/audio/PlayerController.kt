@@ -1,6 +1,7 @@
 package io.github.mmarco94.tambourine.audio
 
 import androidx.compose.runtime.*
+import com.tagtraum.ffsampledsp.FFNativeLibraryLoader
 import io.github.mmarco94.tambourine.audio.PlayerCommand.*
 import io.github.mmarco94.tambourine.data.Library
 import io.github.mmarco94.tambourine.data.SongQueue
@@ -418,6 +419,9 @@ class PlayerController(
                         }
                 }
                 launch {
+                    check(FFNativeLibraryLoader.loadLibrary()) {
+                        "Couldn't load ffsampledsp"
+                    }
                     var state = State.initial
                     var desiredPause = ZERO
                     while (true) {
