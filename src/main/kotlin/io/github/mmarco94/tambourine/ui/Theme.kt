@@ -21,6 +21,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.StringResource
 
 private val logger = KotlinLogging.logger {}
@@ -146,11 +147,12 @@ object TambourineTheme {
 
 @Composable
 fun systemAppearanceSettings(): State<Settings.Appearance> {
-    if (GLOBAL_CONNECTION == null) {
+    val dbusCollection = runBlocking { GLOBAL_CONNECTION.await() }
+    if (dbusCollection == null) {
         return mutableStateOf(defaultSystemAppearance)
     }
     val flow = remember {
-        appearanceSettingsFlow(GLOBAL_CONNECTION)
+        appearanceSettingsFlow(dbusCollection)
             .flowOn(Dispatchers.IO)
             .catch { e ->
                 logger.error(e) { "Failed to read appearance" }
@@ -158,7 +160,7 @@ fun systemAppearanceSettings(): State<Settings.Appearance> {
     }
     return flow.collectAsState(remember {
         try {
-            readAppearanceSettings(GLOBAL_CONNECTION)
+            readAppearanceSettings(dbusCollection)
         } catch (e: Exception) {
             logger.error(e) { "Failed to read appearance" }
             defaultSystemAppearance

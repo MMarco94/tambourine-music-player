@@ -99,12 +99,13 @@ class MPRISPlayerController(
     fun start() {
         cs.launch(Dispatchers.Default) {
             try {
-                checkNotNull(GLOBAL_CONNECTION)
-                GLOBAL_CONNECTION.exportObject("/org/mpris/MediaPlayer2", this@MPRISPlayerController)
-                GLOBAL_CONNECTION.requestBusName("org.mpris.MediaPlayer2.io.github.mmarco94.tambourine")
+                val busConnection = GLOBAL_CONNECTION.await()
+                checkNotNull(busConnection) { "Global DBus connection is not available" }
+                busConnection.exportObject("/org/mpris/MediaPlayer2", this@MPRISPlayerController)
+                busConnection.requestBusName("org.mpris.MediaPlayer2.io.github.mmarco94.tambourine")
                 var prevEvent: LastSentPositionData? = null
                 for (state in latestState) {
-                    val newState = doSetState(GLOBAL_CONNECTION, prevEvent, state)
+                    val newState = doSetState(busConnection, prevEvent, state)
                     prevEvent = newState
                 }
             } catch (e: Exception) {

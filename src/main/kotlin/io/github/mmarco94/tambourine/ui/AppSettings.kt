@@ -162,7 +162,7 @@ private fun LibraryDirectorySetting(onSelectingFolder: () -> Unit = {}) {
         cs.launch {
             try {
                 val file = openFile(
-                    checkNotNull(GLOBAL_CONNECTION),
+                    checkNotNull(GLOBAL_CONNECTION.await()),
                     title = chooseLibraryStr,
                     directory = true,
                     multiple = false,

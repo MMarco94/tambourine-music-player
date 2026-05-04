@@ -16,6 +16,7 @@ import io.github.mmarco94.tambourine.data.SongQueue
 import io.github.mmarco94.tambourine.data.toLibrary
 import io.github.mmarco94.tambourine.ui.*
 import io.github.mmarco94.tambourine.utils.Preferences
+import io.github.mmarco94.tambourine.utils.loadDbusCollection
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -26,6 +27,7 @@ import org.slf4j.bridge.SLF4JBridgeHandler
 import java.awt.Toolkit
 import java.lang.reflect.Field
 import java.nio.file.Path
+import kotlin.concurrent.thread
 import kotlin.time.Clock
 
 private val firstInstruction = Clock.System.now()
@@ -37,6 +39,7 @@ private val logger = KotlinLogging.logger {}
 fun main(args: Array<String>) {
     Thread.currentThread().priority = Thread.MAX_PRIORITY
     val filesFromArgs = args.map { Path.of(it) }
+    thread(name = "DBusConnection") { runBlocking { loadDbusCollection() } }
     runBlocking {
         // Start loading ASAP
         val musicLibrary: StateFlow<Library?> = Preferences.libraryFolder.flow
