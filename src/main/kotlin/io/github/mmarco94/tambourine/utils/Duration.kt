@@ -2,7 +2,9 @@ package io.github.mmarco94.tambourine.utils
 
 import androidx.compose.runtime.Composable
 import io.github.mmarco94.tambourine.generated.resources.*
+import org.jetbrains.compose.resources.ResourceEnvironment
 import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.getSystemResourceEnvironment
 import org.jetbrains.compose.resources.stringResource
 import java.text.NumberFormat
 import kotlin.math.absoluteValue
@@ -29,8 +31,8 @@ fun Duration.format(): String {
     return formatDuration(decimalsRounded())
 }
 
-suspend fun Duration.formatSuspend(): String {
-    return formatDurationSuspend(decimalsRounded())
+suspend fun Duration.formatSuspend(env: ResourceEnvironment = getSystemResourceEnvironment()): String {
+    return formatDurationSuspend(decimalsRounded(), env)
 }
 
 @Composable
@@ -54,23 +56,27 @@ fun formatDuration(decimals: Long): String {
     }
 }
 
-suspend fun formatDurationSuspend(decimals: Long): String {
-    if (decimals < 0) return getString(Res.string.duration_negative, formatDurationSuspend(-decimals))
-    else if (decimals == Long.MAX_VALUE) return getString(Res.string.duration_infinite)
+private suspend fun formatDurationSuspend(decimals: Long, env: ResourceEnvironment): String {
+    if (decimals < 0) {
+        val negativeFormat = formatDurationSuspend(-decimals, env)
+        return getString(env, Res.string.duration_negative, negativeFormat)
+    } else if (decimals == Long.MAX_VALUE) {
+        return getString(env, Res.string.duration_infinite)
+    }
 
     val min = decimals / 600
     val sec = decimals.mod(600) / 10
 
     return if (min == 0L && sec.absoluteValue < 60) {
         val secondsStr = secondsWithDecimalsFormatter.format(decimals / 10f)
-        getString(Res.string.duration_seconds, secondsStr)
+        getString(env, Res.string.duration_seconds, secondsStr)
     } else if (min < 60) {
-        getString(Res.string.duration_minutes, min) + " " +
-                getString(Res.string.duration_seconds, sec)
+        getString(env, Res.string.duration_minutes, min) + " " +
+                getString(env, Res.string.duration_seconds, sec)
     } else {
-        getString(Res.string.duration_hours, min / 60) + " " +
-                getString(Res.string.duration_minutes, min.mod(60)) + " " +
-                getString(Res.string.duration_seconds, sec)
+        getString(env, Res.string.duration_hours, min / 60) + " " +
+                getString(env, Res.string.duration_minutes, min.mod(60)) + " " +
+                getString(env, Res.string.duration_seconds, sec)
     }
 }
 

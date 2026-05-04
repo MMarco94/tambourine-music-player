@@ -7,6 +7,8 @@ import kotlinx.coroutines.Deferred
 import kotlinx.datetime.LocalDate
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
+import org.jetbrains.compose.resources.ResourceEnvironment
+import org.jetbrains.compose.resources.getSystemResourceEnvironment
 import java.nio.file.Path
 import kotlin.io.path.nameWithoutExtension
 import kotlin.time.Duration
@@ -33,7 +35,11 @@ data class RawMetadataSong(
 
     companion object {
 
-        suspend fun fromMusicFile(file: Path, decoder: CoversDecoder): RawMetadataSong {
+        suspend fun fromMusicFile(
+            file: Path,
+            decoder: CoversDecoder,
+            env: ResourceEnvironment = getSystemResourceEnvironment(),
+        ): RawMetadataSong {
             val f = AudioFileIO.read(file.toFile())
             val tag = f.tag
             val header = f.audioHeader
@@ -53,7 +59,7 @@ data class RawMetadataSong(
                 disk = tag.getFirst(FieldKey.DISC_NO)?.toIntOrNull(),
                 track = tag.getFirst(FieldKey.TRACK)?.toIntOrNull(),
                 length = length,
-                formattedLength = length.formatSuspend(),
+                formattedLength = length.formatSuspend(env),
                 title = tag.getFirst(FieldKey.TITLE)?.trimToNull(),
                 album = tag.getFirst(FieldKey.ALBUM)?.trimToNull(),
                 artist = tag.getFirst(FieldKey.ARTIST)?.trimToNull(),

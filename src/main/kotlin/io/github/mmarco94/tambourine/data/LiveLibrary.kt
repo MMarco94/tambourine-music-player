@@ -10,6 +10,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.bjoernpetersen.m3u.M3uParser
 import net.bjoernpetersen.m3u.model.M3uEntry
+import org.jetbrains.compose.resources.ResourceEnvironment
+import org.jetbrains.compose.resources.getSystemResourceEnvironment
 import java.nio.file.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.io.path.exists
@@ -26,7 +28,8 @@ private val LYRICS_EXTENSIONS = setOf("lrc")
 
 class LiveLibrary(
     private val scope: CoroutineScope,
-    private val roots: Set<Path>
+    private val roots: Set<Path>,
+    private val env: ResourceEnvironment = getSystemResourceEnvironment(),
 ) {
     private val creationTime = TimeSource.Monotonic.markNow()
     private val watchService: WatchService = FileSystems.getDefault().newWatchService()
@@ -173,7 +176,7 @@ class LiveLibrary(
 
     private suspend fun onNewSong(file: Path, decoder: CoversDecoder) {
         try {
-            val songInfo = RawMetadataSong.fromMusicFile(file, decoder)
+            val songInfo = RawMetadataSong.fromMusicFile(file, decoder, env)
             eventChannel.send(InternalEvent.NewSong(file, songInfo))
         } catch (e: Exception) {
             eventChannel.send(InternalEvent.FileIgnored)
