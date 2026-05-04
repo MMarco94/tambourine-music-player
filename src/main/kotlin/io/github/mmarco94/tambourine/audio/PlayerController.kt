@@ -1,9 +1,10 @@
 package io.github.mmarco94.tambourine.audio
 
 import androidx.compose.runtime.*
-import com.tagtraum.ffsampledsp.FFNativeLibraryLoader
 import io.github.mmarco94.tambourine.audio.PlayerCommand.*
+import io.github.mmarco94.tambourine.audio.PlayerController.SongDecodingProcess
 import io.github.mmarco94.tambourine.data.Library
+import io.github.mmarco94.tambourine.data.Song
 import io.github.mmarco94.tambourine.data.SongQueue
 import io.github.mmarco94.tambourine.mpris.MPRISPlayerController
 import io.github.mmarco94.tambourine.utils.debugElapsed
@@ -45,6 +46,7 @@ private sealed interface PlayerCommand {
     data object SeekDone : PlayerCommand
     data object EnterLowLatencyMode : PlayerCommand
     data object ExitLowLatencyMode : PlayerCommand
+    data class WarmUp(val randomSong: Song) : PlayerCommand
     class SetLevel(val level: Float) : PlayerCommand
 }
 
@@ -74,6 +76,12 @@ class PlayerController(
     data class CurrentlyPlaying(
         val jobsScope: CoroutineScope,
         val queue: SongQueue,
+        val player: Player,
+        val decodedSongData: StateFlow<SongDecoder.DecodedSongData?>,
+    )
+
+    data class SongDecodingProcess(
+        val jobsScope: CoroutineScope,
         val player: Player,
         val decodedSongData: StateFlow<SongDecoder.DecodedSongData?>,
     )
@@ -195,48 +203,24 @@ class PlayerController(
             val new = queue.currentSong
 
             val newCp = if (currentlyPlaying?.queue?.currentSongKey != new.uniqueKey) {
-                val stream = logger.debugElapsed("Opening song ${new.title}") {
-                    try {
-                        new.audioStream()
-                    } catch (e: IOException) {
-                        logger.error(e) { "Cannot open audio stream for ${new.title}" }
-                        return clearQueue()
-                    }
-                }
                 currentlyPlaying?.jobsScope?.cancel()
-                val scope = CoroutineScope(Dispatchers.Default)
-                logger.debugElapsed("Preparing song ${new.title}") {
-                    val firstBufferSize = Player.optimalBufferSize(stream.format, FIRST_READ_BUFFER)
-                    val bufferSize = Player.optimalBufferSize(stream.format, BUFFER)
-                    val input = AsyncAudioInputStream(stream, 2, firstBufferSize, bufferSize)
-                    scope.launch(Dispatchers.IO) {
-                        logger.debugElapsed("Reading ${new.title}") {
-                            input.bufferAll()
-                        }
-                    }
-                    val songDecoder = SongDecoder(input.readers[1], stream.format, new)
-                    songDecoder.start(scope)
-                    val decoded = songDecoder.decodedSongData.filterNotNull().first()
-
-                    // It doesn't make sense to keep the position across songs
-                    val actualPosition = when (position) {
-                        Position.Current, Position.Beginning -> decoded.songSilenceStart()
-                        is Position.Specific -> position.time
-                    }
-                    val player = Player.create(
-                        format = stream.format,
-                        input = input.readers[0],
-                        older = currentlyPlaying?.player,
-                        bufferSize = bufferSize,
+                val preparations = logger.debugElapsed("Preparing song ${new.title}") {
+                    prepareSong(
+                        song = new,
+                        position = position,
+                        oldPlayer = currentlyPlaying?.player,
                         level = level,
-                        position = actualPosition,
                         keepBufferedContent = keepBufferedContent,
                     )
+                }
+                if (preparations == null) {
+                    return clearQueue()
+                } else {
                     CurrentlyPlaying(
-                        scope,
+                        preparations.jobsScope,
                         queue,
-                        player,
-                        songDecoder.decodedSongData,
+                        preparations.player,
+                        preparations.decodedSongData,
                     )
                 }
             } else {
@@ -370,6 +354,10 @@ class PlayerController(
         sendCommand(ExitLowLatencyMode)
     }
 
+    suspend fun warmUp(randomSong: Song) {
+        sendCommand(WarmUp(randomSong))
+    }
+
     private suspend fun sendCommand(command: PlayerCommand) {
         commandChannel.send(command)
     }
@@ -419,9 +407,6 @@ class PlayerController(
                         }
                 }
                 launch {
-                    check(FFNativeLibraryLoader.loadLibrary()) {
-                        "Couldn't load ffsampledsp"
-                    }
                     var state = State.initial
                     var desiredPause = ZERO
                     while (true) {
@@ -465,7 +450,19 @@ class PlayerController(
                                     is SeekDone -> copy(seeking = false)
                                     is EnterLowLatencyMode -> copy(lowLatencyMode = true)
                                     is ExitLowLatencyMode -> copy(lowLatencyMode = false)
-                                    is SetLevel -> state.setLevel(command.level)
+                                    is SetLevel -> setLevel(command.level)
+                                    is WarmUp -> {
+                                        logger.debug { "Warming up player controller using ${command.randomSong.title}" }
+                                        logger.debugElapsed("Warm-up") {
+                                            val decodingProcess = prepareSong(command.randomSong)
+                                            withTimeoutOrNull(100.milliseconds) {
+                                                decodingProcess?.decodedSongData?.last()
+                                            }
+                                            decodingProcess?.jobsScope?.cancel()
+                                            decodingProcess?.player?.stop()
+                                        }
+                                        this
+                                    }
                                 }
                             }
                         }
@@ -484,4 +481,53 @@ class PlayerController(
         }
         mprisPlayer?.start()
     }
+}
+
+private suspend fun prepareSong(
+    song: Song,
+    position: Position = Position.Beginning,
+    oldPlayer: Player? = null,
+    level: Float = 1f,
+    keepBufferedContent: Boolean = true,
+): SongDecodingProcess? {
+    val stream = logger.debugElapsed("Opening song ${song.title}") {
+        try {
+            song.audioStream()
+        } catch (e: IOException) {
+            logger.error(e) { "Cannot open audio stream for ${song.title}" }
+            return null
+        }
+    }
+    val scope = CoroutineScope(Dispatchers.Default)
+    val firstBufferSize = Player.optimalBufferSize(stream.format, FIRST_READ_BUFFER)
+    val bufferSize = Player.optimalBufferSize(stream.format, BUFFER)
+    val input = AsyncAudioInputStream(stream, 2, firstBufferSize, bufferSize)
+    scope.launch(Dispatchers.IO) {
+        logger.debugElapsed("Reading ${song.title}") {
+            input.bufferAll()
+        }
+    }
+    val songDecoder = SongDecoder(input.readers[1], stream.format, song)
+    songDecoder.start(scope)
+    val decoded = songDecoder.decodedSongData.filterNotNull().first()
+
+    // It doesn't make sense to keep the position across songs
+    val actualPosition = when (position) {
+        Position.Current, Position.Beginning -> decoded.songSilenceStart()
+        is Position.Specific -> position.time
+    }
+    val player = Player.create(
+        format = stream.format,
+        input = input.readers[0],
+        older = oldPlayer,
+        bufferSize = bufferSize,
+        level = level,
+        position = actualPosition,
+        keepBufferedContent = keepBufferedContent,
+    )
+    return SongDecodingProcess(
+        jobsScope = scope,
+        player = player,
+        decodedSongData = songDecoder.decodedSongData,
+    )
 }

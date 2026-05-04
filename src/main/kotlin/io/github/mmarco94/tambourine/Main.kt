@@ -58,6 +58,7 @@ fun main(args: Array<String>) {
         // This saves ~200ms of time of application setup, see `configureSwingGlobalsForCompose`
         System.setProperty("skiko.rendering.laf.global", "false")
         application {
+            Thread.currentThread().priority = Thread.MAX_PRIORITY
 
             remember {
                 // Changing the WM class so the icon for the window is properly set.
@@ -72,9 +73,6 @@ fun main(args: Array<String>) {
                 }
             }
 
-
-
-            Thread.currentThread().priority = Thread.MAX_PRIORITY
             val cs = rememberCoroutineScope()
             // Using `alwaysOnTop` is the most reliable method. awt.Window.toFront() doesn't work :(
             var bringToTop by remember { mutableStateOf(false) }
@@ -100,14 +98,16 @@ fun main(args: Array<String>) {
                         cs.launch(start = CoroutineStart.UNDISPATCHED) {
                             musicLibrary
                                 .onEach {
-                                    if (it != null && !done && filesFromArgs.isNotEmpty()) {
+                                    if (it != null && !done) {
                                         done = true
-                                        cs.launch {
+                                        if (filesFromArgs.isNotEmpty()) {
                                             val queue = createQueue(it, filesFromArgs)
                                             if (queue != null) {
                                                 player.transformQueue { queue to Position.Current }
                                                 player.play()
                                             }
+                                        } else if (it.songs.isNotEmpty()) {
+                                            player.warmUp(it.songs.random())
                                         }
                                     }
                                 }
