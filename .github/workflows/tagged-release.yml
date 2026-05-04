@@ -31,7 +31,7 @@ jobs:
         run: |
           tar -czf build/tmp/tambourine-${{ matrix.arch }}.tar.gz \
             -C build/compose/binaries/main-release/app tambourine
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: tambourine-${{ matrix.arch }}
           path: build/tmp/tambourine-${{ matrix.arch }}.tar.gz
@@ -41,7 +41,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
       - uses: marvinpinto/action-automatic-releases@latest
