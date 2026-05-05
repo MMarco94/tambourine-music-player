@@ -158,57 +158,52 @@ private fun BaseSongRow(
                     )
                 }
                 if (showAlbumCover) {
-                    Box {
-                        AlbumCover(
-                            song.cover,
-                            Modifier.size(48.dp),
-                            MaterialTheme.shapes.small,
-                            elevation = 4.dp,
-                            overlay = {
-                                if (isCurrentSong) {
-                                    Box(
-                                        Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        SmallFakeSpectrometers(
-                                            Modifier.fillMaxSize().padding(10.dp),
-                                            player,
-                                            color = MaterialTheme.colorScheme.onPrimary,
-                                        )
-                                    }
-                                }
+                    AlbumCover(
+                        song.cover,
+                        Modifier.size(48.dp),
+                        MaterialTheme.shapes.small,
+                        elevation = 4.dp,
+                        overlay = {
+                            if (isCurrentSong) {
+                                SmallFakeSpectrometers(
+                                    Modifier.fillMaxSize()
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
+                                        .padding(10.dp),
+                                    player,
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                )
                             }
-                        )
-                    }
+                        }
+                    )
                 }
                 Box(Modifier.height(24.dp).animateContentSize()) {
                     if (isCurrentSong && !showAlbumCover) {
-                        Row {
-                            SmallFakeSpectrometers(
-                                Modifier.size(24.dp),
-                                player,
-                                color = LocalContentColor.current,
-                            )
-                        }
+                        SmallFakeSpectrometers(
+                            Modifier.size(24.dp),
+                            player,
+                            color = LocalContentColor.current,
+                        )
                     }
                 }
-                Column(Modifier.weight(1f)) {
-                    Text(song.title, style = MaterialTheme.typography.titleSmall)
-                    if (showAlbumInfo || showArtistInfo) {
+                if (showAlbumInfo || showArtistInfo) {
+                    Column(Modifier.weight(1f)) {
+                        Text(song.title, style = MaterialTheme.typography.titleSmall)
                         Spacer(Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            val style = MaterialTheme.typography.titleSmall
+                            if (showAlbumInfo) {
+                                SingleLineText(song.album.title, style = style)
+                            }
+                            if (showAlbumInfo && showArtistInfo) {
+                                SingleLineText("•", Modifier.padding(horizontal = 8.dp), style = style)
+                            }
+                            if (showArtistInfo) {
+                                SingleLineText(song.artist.name, style = style)
+                            }
+                        }
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        val style = MaterialTheme.typography.titleSmall
-                        if (showAlbumInfo) {
-                            SingleLineText(song.album.title, style = style)
-                        }
-                        if (showAlbumInfo && showArtistInfo) {
-                            SingleLineText("•", Modifier.padding(horizontal = 8.dp), style = style)
-                        }
-                        if (showArtistInfo) {
-                            SingleLineText(song.artist.name, style = style)
-                        }
-                    }
+                } else {
+                    Text(song.title, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                 }
                 SingleLineText(
                     song.formattedLength,
