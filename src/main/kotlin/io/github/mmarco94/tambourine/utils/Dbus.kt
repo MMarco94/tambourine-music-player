@@ -2,8 +2,6 @@ package io.github.mmarco94.tambourine.utils
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.freedesktop.dbus.connections.impl.DBusConnection
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder
 import org.freedesktop.dbus.types.DBusListType
@@ -14,24 +12,22 @@ private val logger = KotlinLogging.logger {}
 
 val GLOBAL_CONNECTION = CompletableDeferred<DBusConnection?>()
 
-suspend fun loadDbusCollection() {
-    withContext(Dispatchers.Default) {
-        val dbus = try {
-            DBusConnectionBuilder.forSessionBus().apply {
-                withShared(false)
-                receivingThreadConfig().apply {
-                    this.withSignalThreadCount(1)
-                    this.withErrorHandlerThreadCount(1)
-                    this.withMethodCallThreadCount(1)
-                    this.withMethodReturnThreadCount(1)
-                }
-            }.build()
-        } catch (e: Exception) {
-            logger.error { "Error starting MPRIS: ${e.message}" }
-            null
-        }
-        GLOBAL_CONNECTION.complete(dbus)
+fun loadDbusCollection() {
+    val dbus = try {
+        DBusConnectionBuilder.forSessionBus().apply {
+            withShared(false)
+            receivingThreadConfig().apply {
+                this.withSignalThreadCount(1)
+                this.withErrorHandlerThreadCount(1)
+                this.withMethodCallThreadCount(1)
+                this.withMethodReturnThreadCount(1)
+            }
+        }.build()
+    } catch (e: Exception) {
+        logger.error { "Error starting MPRIS: ${e.message}" }
+        null
     }
+    GLOBAL_CONNECTION.complete(dbus)
 }
 
 fun String.variant(): Variant<*> {

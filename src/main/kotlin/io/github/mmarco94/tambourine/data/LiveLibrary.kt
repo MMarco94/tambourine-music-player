@@ -10,7 +10,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.bjoernpetersen.m3u.M3uParser
 import net.bjoernpetersen.m3u.model.M3uEntry
-import org.jetbrains.compose.resources.ResourceEnvironment
 import org.jetbrains.compose.resources.getSystemResourceEnvironment
 import java.nio.file.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -29,7 +28,6 @@ private val LYRICS_EXTENSIONS = setOf("lrc")
 class LiveLibrary(
     private val scope: CoroutineScope,
     private val roots: Set<Path>,
-    private val env: ResourceEnvironment = getSystemResourceEnvironment(),
 ) {
     private val creationTime = TimeSource.Monotonic.markNow()
     private val watchService: WatchService = FileSystems.getDefault().newWatchService()
@@ -38,6 +36,8 @@ class LiveLibrary(
     private val pendingEvents = AtomicInteger(0)
 
     private var eventChannel = Channel<InternalEvent>()
+
+    private val env = scope.async { getSystemResourceEnvironment() }
 
     private class MetadataCollection<T> {
         val data = mutableMapOf<Path, T>()
