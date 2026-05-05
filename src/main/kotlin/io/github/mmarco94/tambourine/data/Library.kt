@@ -128,7 +128,20 @@ data class Library(
     val stats = SongCollectionStats.of(songs)
     val songsByKey: Map<SongKey, Song> = songs.associateBy { it.uniqueKey }
 
+    private val hashCode = super.hashCode()
+
+    override fun hashCode(): Int {
+        return hashCode
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return other is Library && other.hashCode == hashCode && super.equals(other)
+    }
+
     fun filter(artist: ArtistKey?, album: AlbumKey?, playlist: PlaylistKey?, query: String): Library {
+        if (artist == null && album == null && playlist == null && query.isEmpty()) {
+            return this
+        }
         val playlist = playlists.singleOrNull { it.uniqueKey == playlist }
         val queryFilter = query.split(queryStringDelimiters)
         val songs = songs.filter { it.matches(artist, album, playlist, queryFilter) }
