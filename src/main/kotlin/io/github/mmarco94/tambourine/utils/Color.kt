@@ -79,7 +79,7 @@ fun Color.hsb(): HSLColor {
     val g = (this.green * 255).roundToInt()
     val b = (this.blue * 255).roundToInt()
     val hsb = java.awt.Color.RGBtoHSB(r, g, b, null)
-    val lightness = arrayOf(r, g, b).apply {
+    val lightness = intArrayOf(r, g, b).apply {
         sort()
     }[1]
     return HSLColor(hsb[0] * 360, hsb[1], lightness / 255f)
