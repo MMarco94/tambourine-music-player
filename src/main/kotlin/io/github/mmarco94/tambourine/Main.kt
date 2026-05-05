@@ -1,9 +1,7 @@
 package io.github.mmarco94.tambourine
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.application
@@ -30,7 +28,8 @@ import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.time.Clock
 
-private val firstInstruction = Clock.System.now()
+// This is the first instruction of the file by design
+val APP_EXECUTION_START = Clock.System.now()
 val playerController = staticCompositionLocalOf<PlayerController> { throw IllegalStateException() }
 val mainWindowScope = staticCompositionLocalOf<WindowScope> { throw IllegalStateException() }
 val LocalAppearanceSettings = compositionLocalOf<Settings.Appearance> { throw IllegalStateException() }
@@ -131,13 +130,7 @@ fun main(args: Array<String>) {
                         alwaysOnTop = bringToTop.also { bringToTop = false },
                     ) {
                         CompositionLocalProvider(mainWindowScope provides this@MainWindow) {
-                            var firstDraw by remember { mutableStateOf(true) }
-                            Canvas(Modifier) {
-                                if (firstDraw) {
-                                    firstDraw = false
-                                    logger.debug { "First draw took: ${Clock.System.now() - firstInstruction}" }
-                                }
-                            }
+                            LogFirstDraw("Main Window (${if (library == null) "loading" else "loaded"})")
                             App(
                                 library = library,
                                 selectedPanel = selectedPanel,
