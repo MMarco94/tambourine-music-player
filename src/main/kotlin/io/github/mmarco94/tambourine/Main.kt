@@ -51,7 +51,10 @@ fun main(args: Array<String>) {
             UIManager.getDefaults()
         }
 
-        launch(Dispatchers.Default) { loadDbusCollection() }
+        launch(Dispatchers.Default) {
+            loadDbusCollection()
+            loadInitialSystemTheme()
+        }
 
         // Start loading ASAP
         val musicLibrary: StateFlow<Library?> = Preferences.libraryFolder.flow
@@ -93,38 +96,38 @@ fun main(args: Array<String>) {
                     musicLibrary = musicLibrary,
                 )
             }
+            var selectedPanel by remember { mutableStateOf(Panel.LIBRARY) }
+            var libraryTab: LibraryHeaderTab? by remember { mutableStateOf(null) }
+            val library by remember {
+                val ms = mutableStateOf<Library?>(null)
+                var done = false
+                cs.launch(start = CoroutineStart.UNDISPATCHED) {
+                    musicLibrary
+                        .onEach {
+                            if (it != null && !done) {
+                                done = true
+                                if (filesFromArgs.isNotEmpty()) {
+                                    val queue = createQueue(it, filesFromArgs)
+                                    if (queue != null) {
+                                        player.transformQueue { queue to Position.Current }
+                                        player.play()
+                                    }
+                                } else if (it.songs.isNotEmpty()) {
+                                    player.warmUp(it.songs.random())
+                                }
+                            }
+                        }
+                        .collect { ms.value = it }
+                }
+                ms
+            }
+            var openSettings by remember { mutableStateOf(false) }
             val systemAppearance by systemAppearanceSettings()
             CompositionLocalProvider(
                 playerController provides player,
                 LocalAppearanceSettings provides systemAppearance,
             ) {
                 MaterialTheme(TambourineTheme.getDefaultScheme()) {
-                    var selectedPanel by remember { mutableStateOf(Panel.LIBRARY) }
-                    var libraryTab: LibraryHeaderTab? by remember { mutableStateOf(null) }
-                    val library by remember {
-                        val ms = mutableStateOf<Library?>(null)
-                        var done = false
-                        cs.launch(start = CoroutineStart.UNDISPATCHED) {
-                            musicLibrary
-                                .onEach {
-                                    if (it != null && !done) {
-                                        done = true
-                                        if (filesFromArgs.isNotEmpty()) {
-                                            val queue = createQueue(it, filesFromArgs)
-                                            if (queue != null) {
-                                                player.transformQueue { queue to Position.Current }
-                                                player.play()
-                                            }
-                                        } else if (it.songs.isNotEmpty()) {
-                                            player.warmUp(it.songs.random())
-                                        }
-                                    }
-                                }
-                                .collect { ms.value = it }
-                        }
-                        ms
-                    }
-                    var openSettings by remember { mutableStateOf(false) }
                     MainWindow(
                         title = "Tambourine",
                         onCloseRequest = ::exitApplication,
