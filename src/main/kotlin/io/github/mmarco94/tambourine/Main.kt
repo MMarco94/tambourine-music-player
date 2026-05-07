@@ -6,7 +6,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.configureSwingGlobalsForCompose
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.window.WindowScope
-import androidx.compose.ui.window.application
+import androidx.compose.ui.window.awaitApplication
 import io.github.mmarco94.klibportal.portals.Settings
 import io.github.mmarco94.tambourine.audio.PlayerController
 import io.github.mmarco94.tambourine.audio.Position
@@ -26,6 +26,7 @@ import java.awt.Toolkit
 import java.lang.reflect.Field
 import java.nio.file.Path
 import javax.swing.UIManager
+import kotlin.system.exitProcess
 import kotlin.time.Clock
 
 // This is the first instruction of the file by design
@@ -65,7 +66,7 @@ fun main(args: Array<String>) {
         SLF4JBridgeHandler.removeHandlersForRootLogger()
         SLF4JBridgeHandler.install()
 
-        application {
+        awaitApplication {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
 
             remember {
@@ -157,6 +158,7 @@ fun main(args: Array<String>) {
                 }
             }
         }
+        exitProcess(0)
     }
 }
 
