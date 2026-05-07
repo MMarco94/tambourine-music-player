@@ -69,7 +69,7 @@ fun AppSettingsButton(
                 text = { SingleLineText(stringResource(Res.string.reload_library), style = LocalTextStyle.current) },
                 leadingIcon = { Icon(Icons.Default.Refresh, null) },
                 onClick = {
-                    Preferences.libraryFolder.reload()
+                    Preferences.libraryFolder.sendSignal()
                     showMenu = false
                 },
             )
