@@ -18,18 +18,14 @@ import io.github.mmarco94.tambourine.ui.*
 import io.github.mmarco94.tambourine.utils.Preferences
 import io.github.mmarco94.tambourine.utils.loadDbusCollection
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.slf4j.bridge.SLF4JBridgeHandler
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
 import java.lang.reflect.Field
 import java.nio.file.Path
 import javax.swing.UIManager
-import kotlin.concurrent.thread
 import kotlin.time.Clock
 
 // This is the first instruction of the file by design
@@ -42,21 +38,20 @@ private val logger = KotlinLogging.logger {}
 fun main(args: Array<String>) {
     Thread.currentThread().priority = Thread.MAX_PRIORITY
     val filesFromArgs = args.map { Path.of(it) }
-
-    // Since this app includes no Swing component, we can avoid overriding its look and feel.
-    // This saves ~200ms of time of application setup, see `configureSwingGlobalsForCompose`
-    System.setProperty("skiko.rendering.laf.global", "false")
-    System.setProperty("compose.application.configure.swing.globals", "false")
-    @OptIn(ExperimentalComposeUiApi::class)
-    configureSwingGlobalsForCompose()
-    thread(name = "GraphicsEnvironmentInit") {
-        GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration
-        UIManager.getDefaults()
-    }
-
-    thread(name = "DBusConnection") { loadDbusCollection() }
-
     runBlocking {
+        // Since this app includes no Swing component, we can avoid overriding its look and feel.
+        // This saves ~200ms of time of application setup, see `configureSwingGlobalsForCompose`
+        System.setProperty("skiko.rendering.laf.global", "false")
+        System.setProperty("compose.application.configure.swing.globals", "false")
+        @OptIn(ExperimentalComposeUiApi::class)
+        configureSwingGlobalsForCompose()
+        launch(Dispatchers.Default) {
+            GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration
+            UIManager.getDefaults()
+        }
+
+        launch(Dispatchers.Default) { loadDbusCollection() }
+
         // Start loading ASAP
         val musicLibrary: StateFlow<Library?> = Preferences.libraryFolder.flow
             .map { lib -> setOf(lib) + filesFromArgs }
