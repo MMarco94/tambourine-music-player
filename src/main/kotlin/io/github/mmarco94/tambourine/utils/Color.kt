@@ -3,9 +3,7 @@ package io.github.mmarco94.tambourine.utils
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import io.github.mmarco94.tambourine.color.MMCQ
-import kotlin.math.absoluteValue
-import kotlin.math.pow
-import kotlin.math.roundToInt
+import kotlin.math.*
 
 fun ImageBitmap.palette(maxColors: Int, reduction: Int = 8): List<Color> {
     return MMCQ.quantize(this, maxColors, reduction).palette()
@@ -79,8 +77,7 @@ fun Color.hsb(): HSLColor {
     val g = (this.green * 255).roundToInt()
     val b = (this.blue * 255).roundToInt()
     val hsb = java.awt.Color.RGBtoHSB(r, g, b, null)
-    val lightness = intArrayOf(r, g, b).apply {
-        sort()
-    }[1]
+    // https://stackoverflow.com/questions/1582356/fastest-way-of-finding-the-middle-value-of-a-triple
+    val lightness = max(min(r, g), min(max(r, g), b))
     return HSLColor(hsb[0] * 360, hsb[1], lightness / 255f)
 }
