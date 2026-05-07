@@ -1,3 +1,6 @@
+// It turns our it's faster to just use Dispatchers.Default rather than creating 64 threads
+@file:Suppress("BlockingMethodInNonBlockingContext")
+
 package io.github.mmarco94.tambourine.data
 
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -61,7 +64,7 @@ class LiveLibrary(
                     onNew(root, decoder = CoversDecoder(scope))
                 }
                 while (true) {
-                    val monitorKey = runInterruptible(Dispatchers.IO) {
+                    val monitorKey = runInterruptible(Dispatchers.Default) {
                         watchService.take()
                     }
                     val dirPath = monitorKey.watchable() as Path
@@ -142,11 +145,9 @@ class LiveLibrary(
 
     /** Warning: increment pendingEvents before calling this! */
     private suspend fun onNewFolder(folder: Path, decoder: CoversDecoder) {
-        withContext(Dispatchers.IO) {
-            Files.newDirectoryStream(folder).use { stream ->
-                stream.forEach { file ->
-                    onNew(file, decoder)
-                }
+        Files.newDirectoryStream(folder).use { stream ->
+            stream.forEach { file ->
+                onNew(file, decoder)
             }
         }
         watchServiceMutex.withLock {

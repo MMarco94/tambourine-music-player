@@ -502,7 +502,7 @@ private suspend fun prepareSong(
     val firstBufferSize = Player.optimalBufferSize(stream.format, FIRST_READ_BUFFER)
     val bufferSize = Player.optimalBufferSize(stream.format, BUFFER)
     val input = AsyncAudioInputStream(stream, 2, firstBufferSize, bufferSize)
-    scope.launch(Dispatchers.IO) {
+    scope.launch {
         logger.debugElapsed("Reading ${song.title}") {
             input.bufferAll()
         }

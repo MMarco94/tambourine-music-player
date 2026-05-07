@@ -56,7 +56,7 @@ fun systemAppearanceSettings(): State<Settings.Appearance> {
             }
         }
             .catch { e -> logger.error(e) { "Failed to read appearance" } }
-            .flowOn(Dispatchers.IO)
+            .flowOn(Dispatchers.Default)
     }
     return flow.collectAsState(remember {
         runBlocking { INITIAL_SYSTEM_THEME.await() }
