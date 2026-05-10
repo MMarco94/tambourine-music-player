@@ -5,6 +5,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.configureSwingGlobalsForCompose
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontSynthesis
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.awaitApplication
 import io.github.mmarco94.klibportal.portals.Settings
@@ -40,21 +45,8 @@ fun main(args: Array<String>) {
     Thread.currentThread().priority = Thread.MAX_PRIORITY
     val filesFromArgs = args.map { Path.of(it) }
     runBlocking {
-        // Since this app includes no Swing component, we can avoid overriding its look and feel.
-        // This saves ~200ms of time of application setup, see `configureSwingGlobalsForCompose`
-        System.setProperty("skiko.rendering.laf.global", "false")
-        System.setProperty("compose.application.configure.swing.globals", "false")
-        @OptIn(ExperimentalComposeUiApi::class)
-        configureSwingGlobalsForCompose()
-        launch(Dispatchers.Default) {
-            GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration
-            UIManager.getDefaults()
-        }
-
-        launch(Dispatchers.Default) {
-            loadDbusCollection()
-            loadInitialSystemTheme()
-        }
+        preloadUiEnvironment()
+        preloadDbus()
 
         // Start loading ASAP
         val musicLibrary: StateFlow<Library?> = Preferences.libraryFolder.flow
@@ -142,6 +134,8 @@ fun main(args: Array<String>) {
                         },
                         alwaysOnTop = bringToTop.also { bringToTop = false },
                     ) {
+                        val fontResolver = LocalFontFamilyResolver.current
+                        LaunchedEffect(fontResolver) { preloadFonts(fontResolver) }
                         CompositionLocalProvider(mainWindowScope provides this@MainWindow) {
                             LogFirstDraw("Main Window (${if (library == null) "loading" else "loaded"})")
                             App(
@@ -162,6 +156,46 @@ fun main(args: Array<String>) {
             }
         }
         exitProcess(0)
+    }
+}
+
+private fun CoroutineScope.preloadFonts(fontResolver: FontFamily.Resolver) {
+    val fonts = with(TambourineTheme.typography) {
+        listOf(
+            bodySmall, bodyMedium, bodyLarge,
+            labelSmall, labelMedium, labelLarge,
+            titleSmall, titleMedium, titleLarge,
+        )
+    }
+    for (font in fonts) {
+        launch(Dispatchers.Default) {
+            fontResolver.resolve(
+                fontFamily = font.fontFamily,
+                fontWeight = font.fontWeight ?: FontWeight.Normal,
+                fontStyle = font.fontStyle ?: FontStyle.Normal,
+                fontSynthesis = font.fontSynthesis ?: FontSynthesis.All,
+            )
+        }
+    }
+}
+
+private fun CoroutineScope.preloadDbus() {
+    launch(Dispatchers.Default) {
+        loadDbusCollection()
+        loadInitialSystemTheme()
+    }
+}
+
+private fun CoroutineScope.preloadUiEnvironment() {
+    // Since this app includes no Swing component, we can avoid overriding its look and feel.
+    // This saves ~200ms of time of application setup, see `configureSwingGlobalsForCompose`
+    System.setProperty("skiko.rendering.laf.global", "false")
+    System.setProperty("compose.application.configure.swing.globals", "false")
+    @OptIn(ExperimentalComposeUiApi::class)
+    configureSwingGlobalsForCompose()
+    launch(Dispatchers.Default) {
+        GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration
+        UIManager.getDefaults()
     }
 }
 

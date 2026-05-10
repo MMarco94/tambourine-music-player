@@ -374,8 +374,9 @@ private fun LoadingLibraryComposable(openSettings: () -> Unit, closeApp: () -> U
             BigMessage(
                 Modifier.fillMaxSize(),
                 Icons.Default.LibraryMusic,
-                stringResource(Res.string.loading___),
-            ) {}
+            ) {
+                CircularProgressIndicator()
+            }
         }
     }
 }

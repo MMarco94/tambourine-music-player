@@ -15,15 +15,17 @@ import androidx.compose.ui.unit.dp
 fun BigMessage(
     modifier: Modifier,
     icon: ImageVector,
-    title: String,
+    title: String? = null,
     message: String? = null,
 ) {
     BigMessage(
         modifier = modifier,
-        icon = { Icon(icon, null, Modifier.matchParentSize()) },
-        title = { Text(title, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge) },
-        message = message?.let {
-            { Text(message, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium) }
+        icon = icon,
+        title = title,
+        messageComposable = message?.let {
+            {
+                Text(message, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
+            }
         }
     )
 }
@@ -32,14 +34,16 @@ fun BigMessage(
 fun BigMessage(
     modifier: Modifier,
     icon: ImageVector,
-    title: String,
-    message: @Composable () -> Unit,
+    title: String? = null,
+    messageComposable: (@Composable () -> Unit)?,
 ) {
     BigMessage(
         modifier = modifier,
         icon = { Icon(icon, null, Modifier.matchParentSize()) },
-        title = { Text(title, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge) },
-        message = message
+        title = title?.let {
+            { Text(title, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge) }
+        },
+        message = messageComposable,
     )
 }
 
@@ -47,7 +51,7 @@ fun BigMessage(
 fun BigMessage(
     modifier: Modifier,
     icon: @Composable BoxScope.() -> Unit,
-    title: @Composable () -> Unit,
+    title: (@Composable () -> Unit)?,
     message: (@Composable () -> Unit)? = null,
 ) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -55,8 +59,10 @@ fun BigMessage(
         Box(Modifier.size(96.dp)) {
             icon()
         }
-        Spacer(Modifier.height(16.dp))
-        title()
+        if (title != null) {
+            Spacer(Modifier.height(16.dp))
+            title()
+        }
         if (message != null) {
             Spacer(Modifier.height(16.dp))
             message()
