@@ -59,18 +59,18 @@
     <string name="album_sorter_title">Naslov</string>
     <string name="album_sorter_title_description">Po naslovu</string>
     <string name="album_sorter_title_inverse_description">Po naslovu (obrnuto)</string>
-    <string name="album_sorter_year">Godina</string>
-    <string name="album_sorter_year_description">Po godini (najprije najnovije)</string>
-    <string name="album_sorter_year_inverse_description">Po godini (najstarije prvo)</string>
+    <string name="album_sorter_date">Datum</string>
+    <string name="album_sorter_date_description">Po datumu (najprije najnovije)</string>
+    <string name="album_sorter_date_inverse_description">Po datumu (najstarije prvo)</string>
     <string name="song_sorter_track">Pjesma</string>
     <string name="song_sorter_track_description">Po mjestu u albumu</string>
     <string name="song_sorter_track_inverse_description">Po mjestu u albumu (obrnuto)</string>
     <string name="song_sorter_title">Naslov</string>
     <string name="song_sorter_title_description">Po naslovu</string>
     <string name="song_sorter_title_inverse_description">Po naslovu (obrnuto)</string>
-    <string name="song_sorter_year">Godina</string>
-    <string name="song_sorter_year_description">Po godini (najprije najnovije)</string>
-    <string name="song_sorter_year_inverse_description">Po godini (najprije najstarije)</string>
+    <string name="song_sorter_date">Datum</string>
+    <string name="song_sorter_date_description">Po datumu (najprije najnovije)</string>
+    <string name="song_sorter_date_inverse_description">Po datumu (najprije najstarije)</string>
 
     <string name="loading___">Učitava se …</string>
     <string name="yes">Da</string>

@@ -48,16 +48,19 @@ enum class AlbumSorter(
         true,
         compareByDescending { it.title }
     ),
-    YEAR(
-        Res.string.album_sorter_year,
-        Res.string.album_sorter_year_description,
+    DATE(
+        Res.string.album_sorter_date,
+        Res.string.album_sorter_date_description,
         false,
-        compareByDescending { it.stats.year?.last ?: Int.MIN_VALUE }),
-    YEAR_DESC(
-        Res.string.album_sorter_year,
-        Res.string.album_sorter_year_inverse_description,
+        compareBy<Album, PartialDate?>(COMPARE_NEWEST) { it.stats.dateRange?.newest }
+            .thenBy(COMPARE_NEWEST) { it.stats.dateRange?.oldest },
+    ),
+    DATE_DESC(
+        Res.string.album_sorter_date,
+        Res.string.album_sorter_date_inverse_description,
         true,
-        compareBy { it.stats.year?.first ?: Int.MAX_VALUE }
+        compareBy<Album, PartialDate?>(COMPARE_OLDEST) { it.stats.dateRange?.oldest }
+            .thenBy(COMPARE_OLDEST) { it.stats.dateRange?.newest },
     ),
 }
 
@@ -93,15 +96,18 @@ enum class SongSorter(
         Res.string.song_sorter_title_inverse_description,
         false,
         compareByDescending { it.title }),
-    YEAR(
-        Res.string.song_sorter_year,
-        Res.string.song_sorter_year_description,
+    DATE(
+        Res.string.song_sorter_date,
+        Res.string.song_sorter_date_description,
         true,
-        compareByDescending<Song> { it.year ?: Int.MIN_VALUE }.thenByDescending { it.disk }
+        compareBy<Song, PartialDate?>(COMPARE_NEWEST) { it.date }
+            .thenByDescending { it.disk }
             .thenByDescending { it.track }),
-    YEAR_DESC(
-        Res.string.song_sorter_year,
-        Res.string.song_sorter_year_inverse_description,
+    DATE_DESC(
+        Res.string.song_sorter_date,
+        Res.string.song_sorter_date_inverse_description,
         false,
-        compareBy<Song> { it.year ?: Int.MAX_VALUE }.thenBy { it.disk }.thenBy { it.track }), ;
+        compareBy<Song, PartialDate?>(COMPARE_OLDEST) { it.date }
+            .thenBy { it.disk }
+            .thenBy { it.track }),
 }

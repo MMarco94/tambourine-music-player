@@ -2,7 +2,7 @@ package io.github.mmarco94.tambourine.data
 
 data class SongListOptions(
     val artistSorter: ArtistSorter = ArtistSorter.ALPHABETICAL,
-    val albumSorter: AlbumSorter = AlbumSorter.YEAR,
+    val albumSorter: AlbumSorter = AlbumSorter.DATE,
     val songSorter: SongSorter = SongSorter.ALPHABETICAL,
     val songSorterInAlbum: SongSorter = SongSorter.TRACK,
     val queryFilter: String = "",

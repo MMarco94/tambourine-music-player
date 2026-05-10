@@ -4,7 +4,6 @@ import io.github.mmarco94.tambourine.utils.formatSuspend
 import io.github.mmarco94.tambourine.utils.trimToNull
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
-import kotlinx.datetime.LocalDate
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
 import org.jetbrains.compose.resources.ResourceEnvironment
@@ -23,7 +22,7 @@ data class RawMetadataSong(
     val album: String?,
     val artist: String?,
     val albumArtist: String?,
-    override val year: Int?,
+    override val date: PartialDate?,
     val cover: Deferred<AlbumCover?>,
     val lyrics: Lyrics?,
 ) : BaseSong {
@@ -43,14 +42,15 @@ data class RawMetadataSong(
             val tag = f.tag
             val header = f.audioHeader
 
-            val yearStr = tag.getFirst(FieldKey.YEAR)
-            val year = if (yearStr.isNotBlank()) {
-                yearStr.toIntOrNull() ?: try {
-                    LocalDate.parse(yearStr)
-                } catch (_: IllegalArgumentException) {
-                    null
-                }?.year
-            } else null
+            val dateStr = tag.getFirst(FieldKey.YEAR)
+            val date = PartialDate.parse(dateStr)?.let { date ->
+                // Unfortunately, a lot of songs say 1st of January to mean the year.
+                if (date is PartialDate.Date && date.date.dayOfYear == 1) {
+                    PartialDate.Year(date.yearInt)
+                } else {
+                    date
+                }
+            }
 
             val length = header.preciseTrackLength.seconds
             val cover = tag.firstArtwork?.binaryData?.let { decoder.decode(it) } ?: CompletableDeferred(value = null)
@@ -65,7 +65,7 @@ data class RawMetadataSong(
                 album = tag.getFirst(FieldKey.ALBUM)?.trimToNull(),
                 artist = tag.getFirst(FieldKey.ARTIST)?.trimToNull(),
                 albumArtist = tag.getFirst(FieldKey.ALBUM_ARTIST)?.trimToNull(),
-                year = year,
+                date = date,
                 cover = cover,
                 lyrics = Lyrics.of(tag.getFirst(FieldKey.LYRICS)),
             )

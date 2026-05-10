@@ -56,18 +56,18 @@
     <string name="album_sorter_title">Title</string>
     <string name="album_sorter_title_description">By title</string>
     <string name="album_sorter_title_inverse_description">By title (inverse)</string>
-    <string name="album_sorter_year">Year</string>
-    <string name="album_sorter_year_description">By year (newest first)</string>
-    <string name="album_sorter_year_inverse_description">By year (oldest first)</string>
+    <string name="album_sorter_date">Date</string>
+    <string name="album_sorter_date_description">By date (newest first)</string>
+    <string name="album_sorter_date_inverse_description">By date (oldest first)</string>
     <string name="song_sorter_track">Track</string>
     <string name="song_sorter_track_description">By position in album</string>
     <string name="song_sorter_track_inverse_description">By position in album (inverse)</string>
     <string name="song_sorter_title">Title</string>
     <string name="song_sorter_title_description">By title</string>
     <string name="song_sorter_title_inverse_description">By title (inverse)</string>
-    <string name="song_sorter_year">Year</string>
-    <string name="song_sorter_year_description">By year (newest first)</string>
-    <string name="song_sorter_year_inverse_description">By year (oldest first)</string>
+    <string name="song_sorter_date">Date</string>
+    <string name="song_sorter_date_description">By date (newest first)</string>
+    <string name="song_sorter_date_inverse_description">By date (oldest first)</string>
 
     <string name="loading___">Loading...</string>
     <string name="yes">Yes</string>

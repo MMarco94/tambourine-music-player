@@ -11,22 +11,18 @@ import io.github.mmarco94.tambourine.utils.format
 import org.jetbrains.compose.resources.pluralStringResource
 
 @Composable
-fun SongCollectionStatsComposable(stats: SongCollectionStats, yearOnly: Boolean = false) {
+fun SongCollectionStatsComposable(stats: SongCollectionStats, dateOnly: Boolean = false) {
     val style = MaterialTheme.typography.labelMedium.merge(
         TextStyle(
             color = MaterialTheme.colorScheme.onPrimaryContainer,
             textAlign = TextAlign.Center,
         )
     )
-    if (!yearOnly) {
+    if (!dateOnly) {
         SingleLineText(pluralStringResource(Res.plurals.n_songs, stats.songsCount, stats.songsCount), style = style)
         SingleLineText(stats.totalLength.format(), style = style)
     }
-    if (stats.year != null) {
-        if (stats.year.first == stats.year.last) {
-            SingleLineText(stats.year.first.toString(), style = style)
-        } else {
-            SingleLineText("${stats.year.first}-${stats.year.last}", style = style)
-        }
+    if (stats.dateRange != null) {
+        SingleLineText(stats.dateRange.toString(), style = style)
     }
 }

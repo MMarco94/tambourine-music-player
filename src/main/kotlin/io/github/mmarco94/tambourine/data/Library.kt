@@ -75,7 +75,7 @@ data class Song(
     val cover: AlbumCover?,
     val lyrics: Lyrics?,
     override val length: Duration,
-    override val year: Int?,
+    override val date: PartialDate?,
     val formattedLength: String,
 ) : BaseSong, Unique {
 
@@ -243,7 +243,7 @@ data class Library(
                     cover = coverForSong.getValue(song.file),
                     length = song.length,
                     formattedLength = song.formattedLength,
-                    year = song.year,
+                    date = song.date,
                     lyrics = lyrics,
                 )
             }

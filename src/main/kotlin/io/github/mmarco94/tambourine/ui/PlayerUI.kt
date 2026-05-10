@@ -105,6 +105,10 @@ fun PlayerUI(
                 SingleLineText(song.album.title, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(4.dp))
                 SingleLineText(song.album.artist.name, style = MaterialTheme.typography.titleMedium)
+                if (song.date != null) {
+                    Spacer(Modifier.height(4.dp))
+                    SingleLineText(song.date.toString(), style = MaterialTheme.typography.titleSmall)
+                }
                 Spacer(Modifier.height(24.dp))
 
                 Column(Modifier.widthIn(max = 480.dp)) {

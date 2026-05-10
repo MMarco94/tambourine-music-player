@@ -1,12 +1,11 @@
 package io.github.mmarco94.tambourine.data
 
-import io.github.mmarco94.tambourine.utils.rangeOfOrNull
 import kotlin.time.Duration
 
 data class SongCollectionStats(
     val songsCount: Int,
     val totalLength: Duration,
-    val year: IntRange?,
+    val dateRange: PartialDateRange?,
     val maxTrackNumber: Int?,
 ) {
     companion object {
@@ -14,7 +13,7 @@ data class SongCollectionStats(
             return SongCollectionStats(
                 songsCount = songs.size,
                 totalLength = songs.fold(Duration.ZERO) { a, b -> a + b.length },
-                year = songs.rangeOfOrNull { it.year },
+                dateRange = PartialDateRange.of(songs) { it.date },
                 maxTrackNumber = songs.mapNotNull { it.track }.maxOrNull(),
             )
         }

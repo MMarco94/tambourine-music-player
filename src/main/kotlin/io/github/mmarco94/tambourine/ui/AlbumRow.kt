@@ -82,7 +82,7 @@ fun AlbumRow(
             Spacer(Modifier.height(8.dp))
             SongCollectionStatsComposable(album.stats)
         } else if (showAlbumInfo) {
-            SongCollectionStatsComposable(album.stats, yearOnly = true)
+            SongCollectionStatsComposable(album.stats, dateOnly = true)
         }
     }
 }

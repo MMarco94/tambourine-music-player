@@ -56,18 +56,18 @@
     <string name="album_sorter_title">Título</string>
     <string name="album_sorter_title_description">Por título</string>
     <string name="album_sorter_title_inverse_description">Por título (invertido)</string>
-    <string name="album_sorter_year">Ano</string>
-    <string name="album_sorter_year_description">Por ano (mais novo primeiro)</string>
-    <string name="album_sorter_year_inverse_description">Por ano (mais velho primeiro)</string>
+    <string name="album_sorter_date">Data</string>
+    <string name="album_sorter_date_description">Por data (mais recente primeiro)</string>
+    <string name="album_sorter_date_inverse_description">Por data (mais antiga primeiro)</string>
     <string name="song_sorter_track">Faixa</string>
     <string name="song_sorter_track_description">Por posição no álbum</string>
     <string name="song_sorter_track_inverse_description">Por posição no álbum (invertido)</string>
     <string name="song_sorter_title">Título</string>
     <string name="song_sorter_title_description">Por título</string>
     <string name="song_sorter_title_inverse_description">Por título (invertido)</string>
-    <string name="song_sorter_year">Ano</string>
-    <string name="song_sorter_year_description">Por ano (mais novo primeiro)</string>
-    <string name="song_sorter_year_inverse_description">Por ano (mais velho primeiro)</string>
+    <string name="song_sorter_date">Data</string>
+    <string name="song_sorter_date_description">Por data (mais recente primeiro)</string>
+    <string name="song_sorter_date_inverse_description">Por data (mais antiga primeiro)</string>
 
     <string name="loading___">Carregando...</string>
     <string name="yes">Sim</string>
