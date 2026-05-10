@@ -190,10 +190,11 @@ private fun MainContent(
     // This is done like this to avoid recompositions when the song changes
     val libraryScrollState = remember { mutableStateOf<LazyListState?>(null) }
     rememberInjectedLazySongListState(
-        height,
-        libraryExtended?.listItems.orEmpty(),
+        height = height,
+        items = libraryExtended?.listItems.orEmpty(),
         tryNotToScroll = true,
-        libraryScrollState
+        sortOrder = listOptions.sortKey(),
+        state = libraryScrollState
     )
 
     var showLyrics by remember { mutableStateOf(true) }

@@ -94,6 +94,15 @@ fun Library.sort(options: SongListOptions): Library {
     )
 }
 
+fun SongListOptions.sortKey(): Any {
+    return listOf(
+        songSorterInAlbum,
+        songSorter,
+        artistSorter,
+        albumSorter,
+    )
+}
+
 fun Library.toListItems(
     options: SongListOptions,
 ): List<SongListItem> {

@@ -209,13 +209,15 @@ fun rememberLazySongListState(
     height: Dp,
     items: List<SongListItem>,
     tryNotToScroll: Boolean,
+    sortOrder: Any?,
 ): LazyListState {
     val ret = remember { mutableStateOf<LazyListState?>(null) }
     rememberInjectedLazySongListState(
         height = height,
         items = items,
         tryNotToScroll = tryNotToScroll,
-        state = ret
+        state = ret,
+        sortOrder = sortOrder,
     )
     return checkNotNull(ret.value)
 }
@@ -230,6 +232,7 @@ fun rememberInjectedLazySongListState(
     height: Dp,
     items: List<SongListItem>,
     tryNotToScroll: Boolean,
+    sortOrder: Any?,
     state: MutableState<in LazyListState>,
 ) {
     val density = LocalDensity.current
@@ -294,8 +297,9 @@ fun rememberInjectedLazySongListState(
     state.value = listState
     val animationState = remember { mutableStateOf(AnimationState(0f)) }
     var pendingScroll by remember { mutableStateOf(false) }
+    var sorter by remember { mutableStateOf(sortOrder) }
 
-    LaunchedEffect(pos, positionInItem, height) {
+    LaunchedEffect(pos, positionInItem, height, sortOrder) {
         val nearPositionRange = pos - 1..pos + 1
         val isVisible = listState.layoutInfo.visibleItemsInfo.any { it.index in nearPositionRange }
         val isMovingToFirst =
@@ -308,9 +312,10 @@ fun rememberInjectedLazySongListState(
             pos in (height * TARGET_POSITION_ON_SCREEN..height * (1 - TARGET_POSITION_ON_SCREEN))
         } ?: false
         val shouldTriggerScroll =
-            !(insideTheScreen && tryNotToScroll) && (isVisible || isMovingToFirst || isMovingToLast)
+            !(insideTheScreen && tryNotToScroll) && (isVisible || isMovingToFirst || isMovingToLast || sortOrder != sorter)
         if (pendingScroll || shouldTriggerScroll) {
             pendingScroll = true
+            sorter = sortOrder
             resumableScroll(listState, pos, offset, animationState, density)
             pendingScroll = false
         }
