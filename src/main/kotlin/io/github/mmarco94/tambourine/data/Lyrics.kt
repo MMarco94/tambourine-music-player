@@ -1,12 +1,12 @@
 package io.github.mmarco94.tambourine.data
 
+import io.github.mmarco94.tambourine.utils.forAllLines
+import io.github.mmarco94.tambourine.utils.substringTrimmed
 import io.github.mmarco94.tambourine.utils.trimToNull
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.text.ParseException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.logger {}
 
@@ -67,21 +67,21 @@ private data class LrcFile(
     )
 
     fun toSynchronized(): Lyrics.Synchronized {
-        val offset = entries
+        val offsetMs = entries
             .filter { it.tagKey.equals("offset", ignoreCase = true) }
             .mapNotNull { it.tagValue.toIntOrNull() }
             .sum()
-            .milliseconds
         val lines = entries
             .mapNotNull {
                 val mm = it.tagKey.toIntOrNull()
-                val ssXX = ssXXRegex.matchEntire(it.tagValue)?.groupValues
-                if (mm == null || ssXX == null || it.content == null) {
+                if (mm == null || it.content == null) {
                     null
                 } else {
-                    val start = mm.minutes + ssXX[1].toInt().seconds + (ssXX[2].toInt() * 10).milliseconds - offset
+                    val ss = it.tagValue.substringBefore('.').toIntOrNull() ?: return@mapNotNull null
+                    val xx = it.tagValue.substringAfter('.', missingDelimiterValue = "").toIntOrNull() ?: 0
+                    val startMs = mm * 60 * 1000 + ss * 1000 + (xx * 10) - offsetMs
                     Lyrics.Synchronized.Line(
-                        start,
+                        startMs.milliseconds,
                         it.content,
                     )
                 }
@@ -94,22 +94,38 @@ private data class LrcFile(
 
     companion object {
 
-        private val ssXXRegex = "(\\d+)\\.(\\d+)".toRegex()
-        private val entryRegex = "[\\s\uFEFF]*\\[([^:]*):([^]]*)](.*)".toRegex()
-        private fun parseEntry(line: String): Entry {
-            val match = entryRegex.matchEntire(line) ?: throw ParseException("Line '$line' doesn't match", 0)
+        private const val BOM = '\uFEFF'
+
+        private fun parseEntry(lyrics: String, start: Int, end: Int): Entry? {
+            var tagStart = start
+            while (tagStart < end && (lyrics[tagStart].isWhitespace() || lyrics[tagStart] == BOM)) {
+                tagStart++
+            }
+            if (tagStart == end) return null
+
+            if (lyrics[tagStart] != '[') {
+                throw ParseException("Line '${lyrics.subSequence(start, end)}' doesn't match", 0)
+            }
+
+            val colon = lyrics.indexOf(':', tagStart + 1)
+            val tagEnd = lyrics.indexOf(']', colon + 1)
+
+            if (colon < 0 || tagEnd < 0) {
+                throw ParseException("Line '${lyrics.subSequence(start, end)}' doesn't match", 0)
+            }
+
             return Entry(
-                match.groupValues[1].trim(),
-                match.groupValues[2].trim(),
-                match.groupValues[3].trimToNull(),
+                lyrics.substringTrimmed(start + 1, colon),
+                lyrics.substringTrimmed(colon + 1, tagEnd),
+                lyrics.substringTrimmed(tagEnd + 1, end).ifEmpty { null },
             )
         }
 
         fun of(lyrics: String): LrcFile {
-            val entries = lyrics
-                .lines()
-                .mapNotNull { it.trimToNull() }
-                .map { parseEntry(it) }
+            val entries = mutableListOf<Entry>()
+            lyrics.forAllLines { start, end ->
+                parseEntry(lyrics, start, end)?.let { entries += it }
+            }
             if (entries.isEmpty()) {
                 throw ParseException("Empty Lrc", 0)
             }
