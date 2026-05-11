@@ -135,7 +135,7 @@ fun main(args: Array<String>) {
                         alwaysOnTop = bringToTop.also { bringToTop = false },
                     ) {
                         val fontResolver = LocalFontFamilyResolver.current
-                        LaunchedEffect(fontResolver) { preloadFonts(fontResolver) }
+                        remember { cs.launch(Dispatchers.Default) { preloadFonts(fontResolver) } }
                         CompositionLocalProvider(mainWindowScope provides this@MainWindow) {
                             LogFirstDraw("Main Window (${if (library == null) "loading" else "loaded"})")
                             App(
@@ -159,22 +159,24 @@ fun main(args: Array<String>) {
     }
 }
 
-private fun CoroutineScope.preloadFonts(fontResolver: FontFamily.Resolver) {
-    val fonts = with(TambourineTheme.typography) {
-        listOf(
-            bodySmall, bodyMedium, bodyLarge,
-            labelSmall, labelMedium, labelLarge,
-            titleSmall, titleMedium, titleLarge,
-        )
-    }
-    for (font in fonts) {
-        launch(Dispatchers.Default) {
-            fontResolver.resolve(
-                fontFamily = font.fontFamily,
-                fontWeight = font.fontWeight ?: FontWeight.Normal,
-                fontStyle = font.fontStyle ?: FontStyle.Normal,
-                fontSynthesis = font.fontSynthesis ?: FontSynthesis.All,
+private suspend fun preloadFonts(fontResolver: FontFamily.Resolver) {
+    coroutineScope {
+        val fonts = with(TambourineTheme.typography) {
+            listOf(
+                bodySmall, bodyMedium, bodyLarge,
+                labelSmall, labelMedium, labelLarge,
+                titleSmall, titleMedium, titleLarge,
             )
+        }
+        for (font in fonts) {
+            launch(Dispatchers.Default) {
+                fontResolver.resolve(
+                    fontFamily = font.fontFamily,
+                    fontWeight = font.fontWeight ?: FontWeight.Normal,
+                    fontStyle = font.fontStyle ?: FontStyle.Normal,
+                    fontSynthesis = font.fontSynthesis ?: FontSynthesis.All,
+                )
+            }
         }
     }
 }
