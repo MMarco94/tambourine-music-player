@@ -80,31 +80,6 @@ private sealed interface SortFilterOption {
     }
 }
 
-@Composable
-private fun TagForOptions(
-    active: Boolean,
-    enabled: Boolean,
-    selected: SortFilterOption?,
-    icon: ImageVector,
-    description: String,
-    reset: SongListOptions?,
-    onClick: () -> Unit,
-    close: () -> Unit,
-    setOptions: (SongListOptions) -> Unit,
-) {
-    Tag(
-        active = active,
-        enabled = enabled,
-        showAsSubtitle = selected == null || selected is SortFilterOption.Sort,
-        icon = icon,
-        description = description,
-        selectedLabel = selected?.name(),
-        selectedIcon = (selected as? SortFilterOption.Sort)?.icon,
-        reset = reset?.let { { setOptions(it); close() } },
-        onClick = onClick,
-    )
-}
-
 private class FilterSortPopupRenderer(
     val listOptions: SongListOptions,
     val selected: SortFilterOption?,
@@ -400,16 +375,22 @@ private interface OptionsRenderer : TabRenderer {
 
     @Composable
     fun Tag(currentTab: LibraryHeaderTab?, setTab: (LibraryHeaderTab?) -> Unit) {
-        TagForOptions(
+        Tag(
             active = currentTab == null || tab == currentTab,
-            selected = selectedOption,
             enabled = activeFilter != null,
+            showAsSubtitle = selectedOption == null || selectedOption is SortFilterOption.Sort,
             description = description(),
             icon = icon,
-            reset = if (activeFilter != null) withoutFilter else null,
-            setOptions = setOptions,
-            onClick = { setTab(if (tab == currentTab) null else tab) },
-            close = { setTab(null) },
+            selectedLabel = selectedOption?.name(),
+            selectedIcon = (selectedOption as? SortFilterOption.Sort)?.icon,
+            reset = if (activeFilter != null) {
+                { setOptions(withoutFilter); setTab(null) }
+            } else {
+                null
+            },
+            onClick = {
+                setTab(if (tab == currentTab) null else tab)
+            },
         )
     }
 

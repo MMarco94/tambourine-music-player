@@ -24,6 +24,7 @@ fun BaseTag(
     active: Boolean,
     enabled: Boolean,
     content: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     val bg by animateColorAsState(
@@ -42,7 +43,7 @@ fun BaseTag(
     )
     val alpha by animateFloatAsState(if (active) 1f else INACTIVE_ALPHA)
     Card(
-        Modifier.alpha(alpha),
+        modifier.alpha(alpha),
         colors = CardDefaults.cardColors(bg, contentColor),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
@@ -64,47 +65,46 @@ fun Tag(
     reset: (() -> Unit)?,
     onClick: () -> Unit,
 ) {
-    Box(Modifier.padding(2.dp)) {
-        BaseTag(
-            active = active,
-            enabled = enabled,
-            onClick = onClick,
-            content = {
-                Row(
-                    Modifier.height(IntrinsicSize.Max).heightIn(min = 52.dp).animateContentSize(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(icon, description)
-                        Spacer(Modifier.width(8.dp))
-                        if (showAsSubtitle) {
-                            Column {
-                                SingleLineText(description, style = MaterialTheme.typography.labelLarge)
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                                ) {
-                                    if (selectedLabel != null) {
-                                        SingleLineText(selectedLabel, style = MaterialTheme.typography.labelMedium)
-                                    }
-                                    if (selectedIcon != null) {
-                                        Icon(selectedIcon, null, Modifier.size(16.dp))
-                                    }
+    BaseTag(
+        active = active,
+        enabled = enabled,
+        onClick = onClick,
+        modifier = Modifier.padding(2.dp),
+        content = {
+            Row(
+                Modifier.height(IntrinsicSize.Max).heightIn(min = 52.dp).animateContentSize(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(icon, description)
+                    Spacer(Modifier.width(8.dp))
+                    if (showAsSubtitle) {
+                        Column {
+                            SingleLineText(description, style = MaterialTheme.typography.labelLarge)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            ) {
+                                if (selectedLabel != null) {
+                                    SingleLineText(selectedLabel, style = MaterialTheme.typography.labelMedium)
+                                }
+                                if (selectedIcon != null) {
+                                    Icon(selectedIcon, null, Modifier.size(16.dp))
                                 }
                             }
-                        } else if (selectedLabel != null) {
-                            SingleLineText(selectedLabel, style = MaterialTheme.typography.labelLarge)
                         }
-                    }
-                    if (reset != null) {
-                        IconButton({
-                            reset()
-                        }, Modifier.width(40.dp).fillMaxHeight()) {
-                            Icon(Icons.Filled.Close, stringResource(Res.string.action_reset), Modifier.padding(8.dp))
-                        }
+                    } else if (selectedLabel != null) {
+                        SingleLineText(selectedLabel, style = MaterialTheme.typography.labelLarge)
                     }
                 }
-            },
-        )
-    }
+                if (reset != null) {
+                    IconButton({
+                        reset()
+                    }, Modifier.width(40.dp).fillMaxHeight()) {
+                        Icon(Icons.Filled.Close, stringResource(Res.string.action_reset), Modifier.padding(8.dp))
+                    }
+                }
+            }
+        },
+    )
 }
