@@ -199,26 +199,39 @@ fun <T> FadeIn(
         visibilityMap = visibilityMap.toMutableList().apply { removeAt(toRemove) }
     }
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            var prevNano = 0L
+    LaunchedEffect(targetKey) {
+        var prevNano = 0L
+        while (visibilityMap.singleOrNull()?.second != 1f) {
             withFrameNanos { nano ->
-                // Time delta, at most 16 ms
-                val timeDelta = (nano - prevNano).coerceAtMost(16_000_000)
-                val alphaDelta = (timeDelta.nanoseconds / duration).toFloat()
-                prevNano = nano
+                if (prevNano == 0L) {
+                    prevNano = nano
+                } else {
+                    val timeDelta = nano - prevNano
+                    val alphaDelta = (timeDelta.nanoseconds / duration).toFloat()
+                    prevNano = nano
 
-                var afterTarget = false
-                visibilityMap = visibilityMap.map { (k, v) ->
-                    if (k.key == targetKey) {
-                        afterTarget = true
-                        k to (v + alphaDelta).coerceAtMost(1f)
-                    } else if (afterTarget) {
-                        k to (v - alphaDelta).coerceAtLeast(0f)
-                    } else {
-                        k to (v + alphaDelta).coerceAtMost(1f)
+                    var afterTarget = false
+                    visibilityMap = buildList(visibilityMap.size) {
+                        for ((k, v) in visibilityMap) {
+                            val alpha = if (k.key == targetKey) {
+                                afterTarget = true
+                                (v + alphaDelta).coerceAtMost(1f)
+                            } else if (afterTarget) {
+                                (v - alphaDelta).coerceAtLeast(0f)
+                            } else {
+                                (v + alphaDelta).coerceAtMost(1f)
+                            }
+
+                            if (alpha >= 1f) {
+                                clear()
+                            }
+                            if (alpha > 0) {
+                                add(k to alpha)
+                            }
+                        }
                     }
-                }.removeInvisible()
+                    check(afterTarget) { "Target not found" }
+                }
             }
         }
     }
@@ -229,20 +242,6 @@ fun <T> FadeIn(
                 Box(Modifier.alpha(visibility)) {
                     content(target.state)
                 }
-            }
-        }
-    }
-}
-
-fun <T> List<Pair<T, Float>>.removeInvisible(): List<Pair<T, Float>> {
-    val orig = this
-    return buildList(size) {
-        for (item in orig) {
-            if (item.second >= 1f) {
-                clear()
-            }
-            if (item.second > 0) {
-                add(item)
             }
         }
     }
