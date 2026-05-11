@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.configureSwingGlobalsForCompose
+import androidx.compose.ui.graphics.colorspace.ColorSpaces
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.text.font.FontFamily
@@ -25,6 +26,7 @@ import io.github.mmarco94.tambourine.utils.loadDbusCollection
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import org.jetbrains.skia.FontMgr
 import org.slf4j.bridge.SLF4JBridgeHandler
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
@@ -198,6 +200,9 @@ private fun CoroutineScope.preloadUiEnvironment() {
     launch(Dispatchers.Default) {
         GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration
         UIManager.getDefaults()
+        // Loading some classes with heavy static fields
+        FontMgr.default
+        ColorSpaces.Srgb
     }
 }
 
