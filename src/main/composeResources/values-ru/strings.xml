@@ -1,0 +1,100 @@
+<resources>
+    <string name="main_menu_library">Библиотека</string>
+    <string name="main_menu_queue">Очередь</string>
+    <string name="main_menu_player">Плеер</string>
+
+    <string name="action_play">Играть</string>
+    <string name="action_pause">Пауза</string>
+    <string name="action_shuffle_from_here">Перемешать дальше</string>
+    <string name="action_enable_shuffle">Перемешивать</string>
+    <string name="action_disable_shuffle">Не перемешивать</string>
+    <string name="action_repeat_song">Повтор трека</string>
+    <string name="action_repeat_queue">Повтор очереди</string>
+    <string name="action_repeat_none">Не повторять</string>
+    <string name="action_mute_volume">Без звука</string>
+    <string name="action_max_volume">Максимальная громкость</string>
+    <string name="action_play_next">Играть следующим</string>
+    <string name="action_add_to_queue">Добавить в очередь</string>
+    <string name="action_play_album">Играть альбом</string>
+    <string name="action_play_artist">Играть треки исполнителя</string>
+    <string name="action_go_to_previous_song">Играть предыдущий трек</string>
+    <string name="action_go_to_next_song">Играть следующий трек</string>
+    <string name="action_show_lyrics">Показать текст</string>
+    <string name="action_hide_lyrics">Скрыть текст</string>
+    <string name="action_search">Поиск</string>
+    <string name="action_close">Закрыть</string>
+    <string name="action_reset">Перезагрузить</string>
+    <string name="action_close_app">Закрыть приложение</string>
+    <string name="action_open_menu">Открыть меню</string>
+    <string name="action_choose_library">Выбрать музыкальную библиотеку</string>
+    <string name="action_open_settings">Открыть настройки</string>
+    <string name="action_remove_filter">Удалить фильтр</string>
+
+    <string name="sort">Сортировать</string>
+    <string name="do_not_sort">Не сортировать</string>
+    <string name="choose">Выбрать</string>
+    <string name="artists">Исполнители</string>
+    <string name="albums">Альбомы</string>
+    <string name="songs">Треки</string>
+    <plurals name="n_songs">
+        <item quantity="one">%1$d трек</item>
+        <item quantity="few">%1$d трека</item>
+        <item quantity="other">%1$d треков</item>
+    </plurals>
+    <plurals name="n_songs_in_queue">
+        <item quantity="one">%1$d трек в очереди</item>
+        <item quantity="few">%1$d трека в очереди</item>
+        <item quantity="other">%1$d треков в очереди</item>
+    </plurals>
+    <plurals name="n_songs_remaining">
+        <item quantity="one">%1$d трек остался</item>
+        <item quantity="few">%1$d трека осталось</item>
+        <item quantity="other">%1$d треков осталось</item>
+    </plurals>
+    <string name="playlists">Плейлисты</string>
+
+    <string name="artist_sorter_name">Имя</string>
+    <string name="artist_sorter_name_description">По имени</string>
+    <string name="artist_sorter_name_inverse_description">По имени (обратный)</string>
+    <string name="album_sorter_title">Название</string>
+    <string name="album_sorter_title_description">По названию</string>
+    <string name="album_sorter_title_inverse_description">По названию (обратный)</string>
+    <string name="album_sorter_date">Дата</string>
+    <string name="album_sorter_date_description">По дате (сначала новые)</string>
+    <string name="album_sorter_date_inverse_description">По дате (сначала старые)</string>
+    <string name="song_sorter_track">Трек</string>
+    <string name="song_sorter_track_description">По позиции в альбоме</string>
+    <string name="song_sorter_track_inverse_description">По позиции в альбоме (обратный)</string>
+    <string name="song_sorter_title">Название</string>
+    <string name="song_sorter_title_description">По названию</string>
+    <string name="song_sorter_title_inverse_description">По названию (обратный)</string>
+    <string name="song_sorter_date">Дата</string>
+    <string name="song_sorter_date_description">По дате (сначала новые)</string>
+    <string name="song_sorter_date_inverse_description">По дате (сначала старые)</string>
+
+    <string name="loading___">Загрузка...</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
+    <string name="settings">Настройки</string>
+    <string name="reload_library">Обновить библиотеку</string>
+    <string name="use_system_decorations">Использовать системные оконные рамки</string>
+    <string name="music_library_folder">Папка музыкальной библиотеки</string>
+    <string name="font_size">Размер шрифта</string>
+    <string name="empty_queue">Очередь пуста</string>
+    <string name="empty_library">Библиотека пуста</string>
+    <string name="no_search_results">Ничего не нашлось</string>
+
+    <string name="theme">Тема</string>
+    <string name="theme_auto">Автоматически</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="theme_light">Светлая</string>
+
+    <string name="help_play_a_song_title">Играть трек</string>
+    <string name="help_play_a_song_message">Чтобы начать, выберите трек из вашей библиотеки</string>
+
+    <string name="duration_negative">-%1$s</string>
+    <string name="duration_infinite">Беск.</string>
+    <string name="duration_hours">%1$dч</string>
+    <string name="duration_minutes">%1$dмин</string>
+    <string name="duration_seconds">%1$sс</string>
+</resources>
