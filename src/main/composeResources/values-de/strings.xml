@@ -1,0 +1,97 @@
+<resources>
+    <string name="main_menu_library">Bibliothek</string>
+    <string name="main_menu_queue">Warteschlange</string>
+    <string name="main_menu_player">Musikplayer</string>
+
+    <string name="action_play">Abspielen</string>
+    <string name="action_pause">Pausieren</string>
+    <string name="action_shuffle_from_here">Ab hier shuffeln</string>
+    <string name="action_enable_shuffle">Shuffle aktivieren</string>
+    <string name="action_disable_shuffle">Shuffle deaktivieren</string>
+    <string name="action_repeat_song">Song wiederholen</string>
+    <string name="action_repeat_queue">Warteschlange wiederholen</string>
+    <string name="action_repeat_none">Nicht wiederholen</string>
+    <string name="action_mute_volume">Audio stummschalten</string>
+    <string name="action_max_volume">Maximale Lautstärke</string>
+    <string name="action_play_next">Als nächstes abspielen</string>
+    <string name="action_add_to_queue">Zur Warteschlange hinzufügen</string>
+    <string name="action_play_album">Album abspielen</string>
+    <string name="action_play_artist">Künstler abspielen</string>
+    <string name="action_go_to_previous_song">Vorherigen Song abspielen</string>
+    <string name="action_go_to_next_song">Nächsten Song abspielen</string>
+    <string name="action_show_lyrics">Lyrics anzeigen</string>
+    <string name="action_hide_lyrics">Lyrics ausblenden</string>
+    <string name="action_search">Suche</string>
+    <string name="action_close">Schließen</string>
+    <string name="action_reset">Zurücksetzen</string>
+    <string name="action_close_app">App schließen</string>
+    <string name="action_open_menu">Menü öffnen</string>
+    <string name="action_choose_library">Musikbibliothek auswählen</string>
+    <string name="action_open_settings">Einstellungen öffnen</string>
+    <string name="action_remove_filter">Filter löschen</string>
+
+    <string name="sort">Sortieren</string>
+    <string name="do_not_sort">Nicht sortieren</string>
+    <string name="choose">Auswählen</string>
+    <string name="artists">Künstler</string>
+    <string name="albums">Alben</string>
+    <string name="songs">Songs</string>>
+    <plurals name="n_songs">
+        <item quantity="one">%1$d Song</item>
+        <item quantity="other">%1$d Songs</item>
+    </plurals>
+    <plurals name="n_songs_in_queue">
+        <item quantity="one">%1$d Song in der Warteschlange</item>
+        <item quantity="other">%1$d Songs in der Warteschlange</item>
+    </plurals>
+    <plurals name="n_songs_remaining">
+        <item quantity="one">%1$d Song übrig</item>
+        <item quantity="other">%1$d Songs übrig</item>
+    </plurals>
+    <string name="playlists">Playlists</string>
+
+    <string name="artist_sorter_name">Name</string>
+    <string name="artist_sorter_name_description">Nach Namen</string>
+    <string name="artist_sorter_name_inverse_description">Nach Namen (rückwärts)</string>
+    <string name="album_sorter_title">Titel</string>
+    <string name="album_sorter_title_description">Nach Titel</string>
+    <string name="album_sorter_title_inverse_description">Nach Titel (rückwärts)</string>
+    <string name="album_sorter_date">Datum</string>
+    <string name="album_sorter_date_description">Nach Datum (neuestes zu erst)</string>
+    <string name="album_sorter_date_inverse_description">Nach Datum (ältestes zu erst)</string>
+    <string name="song_sorter_track">Tracknummer</string>
+    <string name="song_sorter_track_description">Nach der Position im Album</string>
+    <string name="song_sorter_track_inverse_description">Nach der Position im Album (rückwärts)</string>
+    <string name="song_sorter_title">Titel</string>
+    <string name="song_sorter_title_description">Nach Titel</string>
+    <string name="song_sorter_title_inverse_description">Nach Titel (rückwärts)</string>
+    <string name="song_sorter_date">Datum</string>
+    <string name="song_sorter_date_description">Nach Datum (neuestes zu erst)</string>
+    <string name="song_sorter_date_inverse_description">Nach Datum (ältestes zu erst)</string>
+
+    <string name="loading___">Lädt...</string>
+    <string name="yes">Ja</string>
+    <string name="no">Nein</string>
+    <string name="settings">Einstellungen</string>
+    <string name="reload_library">Bibliothek neuladen</string>
+    <string name="use_system_decorations">Systemdarstellung verwenden</string>
+    <string name="music_library_folder">Musikbibliothek Ordner</string>
+    <string name="font_size">Schriftgröße</string>
+    <string name="empty_queue">Leere Warteschlange</string>
+    <string name="empty_library">Leere Bibliothek</string>
+    <string name="no_search_results">Keine Suchergebnisse</string>
+
+    <string name="theme">Theme</string>
+    <string name="theme_auto">Automatisch</string>
+    <string name="theme_dark">Dunkel</string>
+    <string name="theme_light">Hell</string>
+
+    <string name="help_play_a_song_title">Spiel einen Song ab</string>
+    <string name="help_play_a_song_message">Spiel einen Song aus deiner Bibliothek ab, um zu beginnen.</string>
+
+    <string name="duration_negative">-%1$s</string>
+    <string name="duration_infinite">Inf</string>
+    <string name="duration_hours">%1$dh</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ss</string>
+</resources>
