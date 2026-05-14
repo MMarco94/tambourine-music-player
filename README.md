@@ -38,6 +38,7 @@ The app is translated in:
 - English
 - Brazilian
 - Croatian
+- German
 - Italian
 
 To add a translation, add a `string.xml` file in the appropriate folder
