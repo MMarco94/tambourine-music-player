@@ -35,18 +35,21 @@
     <string name="choose">Выбрать</string>
     <string name="artists">Исполнители</string>
     <string name="albums">Альбомы</string>
-    <string name="songs">Песни</string>
+    <string name="songs">Треки</string>
     <plurals name="n_songs">
-        <item quantity="one">%1$d песня</item>
-        <item quantity="other">%1$d песни(ен)</item>
+        <item quantity="one">%1$d трек</item>
+        <item quantity="few">%1$d трека</item>
+        <item quantity="other">%1$d треков</item>
     </plurals>
     <plurals name="n_songs_in_queue">
-        <item quantity="one">%1$d песня в очереди</item>
-        <item quantity="other">%1$d песни(ен) в очереди</item>
+        <item quantity="one">%1$d трек в очереди</item>
+        <item quantity="few">%1$d трека в очереди</item>
+        <item quantity="other">%1$d треков в очереди</item>
     </plurals>
     <plurals name="n_songs_remaining">
-        <item quantity="one">%1$d песня осталась</item>
-        <item quantity="other">%1$d песни(ен) осталось</item>
+        <item quantity="one">%1$d трек осталась</item>
+        <item quantity="few">%1$d трека осталось</item>
+        <item quantity="other">%1$d треков осталось</item>
     </plurals>
     <string name="playlists">Плейлисты</string>
 
@@ -63,7 +66,7 @@
     <string name="song_sorter_track_description">По позиции в альбоме</string>
     <string name="song_sorter_track_inverse_description">По позиции в альбоме (обратный)</string>
     <string name="song_sorter_title">Название</string>
-    <string name="song_sorter_title_description">По наванию</string>
+    <string name="song_sorter_title_description">По названию</string>
     <string name="song_sorter_title_inverse_description">По названию (обратный)</string>
     <string name="song_sorter_date">Дата</string>
     <string name="song_sorter_date_description">По дате (сначала новые)</string>
@@ -90,7 +93,7 @@
     <string name="help_play_a_song_message">Чтобы начать, выберите трек из вашей библиотеки</string>
 
     <string name="duration_negative">-%1$s</string>
-    <string name="duration_infinite">Бескон</string>
+    <string name="duration_infinite">Беск.</string>
     <string name="duration_hours">%1$dч</string>
     <string name="duration_minutes">%1$dм</string>
     <string name="duration_seconds">%1$sс</string>
