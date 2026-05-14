@@ -47,7 +47,7 @@
         <item quantity="other">%1$d треков в очереди</item>
     </plurals>
     <plurals name="n_songs_remaining">
-        <item quantity="one">%1$d трек осталась</item>
+        <item quantity="one">%1$d трек остался</item>
         <item quantity="few">%1$d трека осталось</item>
         <item quantity="other">%1$d треков осталось</item>
     </plurals>
@@ -95,6 +95,6 @@
     <string name="duration_negative">-%1$s</string>
     <string name="duration_infinite">Беск.</string>
     <string name="duration_hours">%1$dч</string>
-    <string name="duration_minutes">%1$dм</string>
+    <string name="duration_minutes">%1$dмин</string>
     <string name="duration_seconds">%1$sс</string>
 </resources>
