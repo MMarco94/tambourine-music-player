@@ -5,11 +5,11 @@ import androidx.compose.ui.graphics.asSkiaBitmap
 
 @PublishedApi
 internal const val BITS_PER_COLOR = 5
+private val colorRange = 0 until (1 shl BITS_PER_COLOR)
 
 class ColorHistogram(
     val histogram: IntArray
 ) {
-    private val colorRange = 0 until (1 shl BITS_PER_COLOR)
     private val partialSums: IntArray = run {
         val ret = IntArray(histogram.size)
         for (r in colorRange) {

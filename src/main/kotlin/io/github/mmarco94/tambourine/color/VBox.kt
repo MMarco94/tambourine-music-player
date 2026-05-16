@@ -2,7 +2,6 @@ package io.github.mmarco94.tambourine.color
 
 import androidx.compose.ui.graphics.Color
 import kotlin.math.abs
-import kotlin.math.pow
 
 data class VBox(
     val redStart: Int,
@@ -26,7 +25,6 @@ data class VBox(
     val greenWidth = greenEnd - greenStart + 1
     val blueWidth = blueEnd - blueStart + 1
     val volume = redWidth * greenWidth * blueWidth
-    val length get() = volume.toDouble().pow(1.0 / 3.0)
     val count: Int = histogram.getOccurrences(
         redStart, greenStart, blueStart,
         redEnd, greenEnd, blueEnd,
