@@ -44,7 +44,13 @@ enum class Panel(
     LIBRARY(Icons.Filled.Home, Res.string.main_menu_library),
     QUEUE(Icons.AutoMirrored.Default.QueueMusic, Res.string.main_menu_queue),
     PLAYER(Icons.Filled.PlayCircleFilled, Res.string.main_menu_player),
+    ;
+
+    companion object {
+        val entriesSet = Panel.entries.toSet()
+    }
 }
+
 
 @Composable
 fun App(
@@ -198,7 +204,7 @@ private fun MainContent(
     )
 
     var showLyrics by remember { mutableStateOf(true) }
-    PanelContainer(modifier, Panel.entries.toSet(), visiblePanels) { panel ->
+    PanelContainer(modifier, Panel.entriesSet, visiblePanels) { panel ->
         val showToolbar = !large || panel == PLAYER
         when (panel) {
             LIBRARY -> LibraryContainer(
