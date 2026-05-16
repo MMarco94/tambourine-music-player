@@ -1,8 +1,6 @@
 package io.github.mmarco94.tambourine.data
 
-import io.github.mmarco94.tambourine.utils.forAllLines
-import io.github.mmarco94.tambourine.utils.substringTrimmed
-import io.github.mmarco94.tambourine.utils.trimToNull
+import io.github.mmarco94.tambourine.utils.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.text.ParseException
 import kotlin.time.Duration
@@ -56,7 +54,7 @@ sealed interface Lyrics {
     }
 }
 
-private data class LrcFile(
+data class LrcFile(
     val rawString: String,
     val entries: List<Entry>,
 ) {
@@ -64,28 +62,35 @@ private data class LrcFile(
         val tagKey: String,
         val tagValue: String,
         val content: String?,
-    )
+    ) {
+        fun toSynchronizedLine(offsetMs: Int): Lyrics.Synchronized.Line? {
+            val mm = if (tagKey.isEmpty()) 0 else tagKey.toPositiveIntOrMinusOne()
+            return if (mm < 0 || content == null) {
+                null
+            } else {
+                val ios = tagValue.indexOf('.')
+                val startMs = if (ios >= 0) {
+                    val ss = tagValue.toPositiveIntOrMinusOne(end = ios).takeIfPositive { return null }
+                    val xx = tagValue.toPositiveIntOrMinusOne(start = ios + 1).takeIfPositive { 0 }
+                    mm * 60 * 1000 + ss * 1000 + (xx * 10) - offsetMs
+                } else {
+                    val ss = tagValue.toPositiveIntOrMinusOne().takeIfPositive { return null }
+                    mm * 60 * 1000 + ss * 1000 - offsetMs
+                }
+                Lyrics.Synchronized.Line(
+                    startMs.milliseconds,
+                    content,
+                )
+            }
+        }
+    }
 
     fun toSynchronized(): Lyrics.Synchronized {
         val offsetMs = entries
             .filter { it.tagKey.equals("offset", ignoreCase = true) }
             .mapNotNull { it.tagValue.toIntOrNull() }
             .sum()
-        val lines = entries
-            .mapNotNull {
-                val mm = it.tagKey.toIntOrNull()
-                if (mm == null || it.content == null) {
-                    null
-                } else {
-                    val ss = it.tagValue.substringBefore('.').toIntOrNull() ?: return@mapNotNull null
-                    val xx = it.tagValue.substringAfter('.', missingDelimiterValue = "").toIntOrNull() ?: 0
-                    val startMs = mm * 60 * 1000 + ss * 1000 + (xx * 10) - offsetMs
-                    Lyrics.Synchronized.Line(
-                        startMs.milliseconds,
-                        it.content,
-                    )
-                }
-            }
+        val lines = entries.mapNotNull { it.toSynchronizedLine(offsetMs) }
         if (lines.isEmpty()) {
             throw ParseException("Empty lines in Lrc", 0)
         }
@@ -122,7 +127,7 @@ private data class LrcFile(
         }
 
         fun of(lyrics: String): LrcFile {
-            val entries = mutableListOf<Entry>()
+            val entries = ArrayList<Entry>(lyrics.countAllLines())
             lyrics.forAllLines { start, end ->
                 parseEntry(lyrics, start, end)?.let { entries += it }
             }

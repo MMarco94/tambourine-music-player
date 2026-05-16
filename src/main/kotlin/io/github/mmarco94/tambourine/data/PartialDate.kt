@@ -1,5 +1,8 @@
 package io.github.mmarco94.tambourine.data
 
+import io.github.mmarco94.tambourine.utils.letIfPositive
+import io.github.mmarco94.tambourine.utils.takeIfPositive
+import io.github.mmarco94.tambourine.utils.toPositiveIntOrMinusOne
 import kotlinx.datetime.*
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -117,20 +120,30 @@ sealed interface PartialDate {
 
     companion object {
         fun parse(string: String): PartialDate? {
-            // Starting with year, the most common use-case
-            string.toIntOrNull()?.let { return Year(it) }
-
-            try {
-                return Date(LocalDate.parse(string))
-            } catch (_: IllegalArgumentException) {
+            val ios = string.indexOf('-')
+            if (ios < 0) {
+                // Year
+                return string.toPositiveIntOrMinusOne().letIfPositive { Year(it) }
             }
 
-            try {
-                return Month(YearMonth.parse(string))
-            } catch (_: IllegalArgumentException) {
+            val ios2 = string.indexOf('-', startIndex = ios + 1)
+            if (ios2 < 0) {
+                // Year-Month
+                val year = string.toPositiveIntOrMinusOne(start = 0, end = ios).takeIfPositive { return null }
+                val month = string.toPositiveIntOrMinusOne(start = ios + 1).takeIfPositive { return null }
+                return if (month in 1..12) Month(YearMonth(year, month))
+                else null
             }
 
-            return null
+            val year = string.toPositiveIntOrMinusOne(start = 0, end = ios).takeIfPositive { return null }
+            val month = string.toPositiveIntOrMinusOne(start = ios + 1, end = ios2).takeIfPositive { return null }
+            val date = string.toPositiveIntOrMinusOne(start = ios2 + 1).takeIfPositive { return null }
+
+            return try {
+                Date(LocalDate(year, month, date))
+            } catch (_: IllegalArgumentException) {
+                null
+            }
         }
     }
 }

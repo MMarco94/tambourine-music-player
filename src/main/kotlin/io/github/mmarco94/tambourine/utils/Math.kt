@@ -32,3 +32,7 @@ fun DoubleArray.sumInRange(fromIndex: Double, toIndex: Double): Double {
 fun DoubleArray.avgInRange(fromIndex: Double, toIndex: Double): Double {
     return sumInRange(fromIndex, toIndex) / (toIndex - fromIndex)
 }
+
+inline fun Int.takeIfPositive(f: (Int) -> Int): Int = if (this >= 0) this else f(this)
+
+inline fun <T> Int.letIfPositive(f: (Int) -> T): T? = if (this >= 0) f(this) else null

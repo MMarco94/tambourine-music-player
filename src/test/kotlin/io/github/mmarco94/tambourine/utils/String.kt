@@ -55,4 +55,20 @@ class String : FunSpec({
             lines shouldBe expected
         }
     }
+    context("toPositiveIntOrMinusOne") {
+        withData(
+            tuple("", 0, 0, -1),
+            tuple("1", 0, 0, -1),
+            tuple("1", 0, 1, 1),
+            tuple("19", 0, 1, 1),
+            tuple("19", 0, 2, 19),
+            tuple("-1", 0, 2, -1),
+            tuple("a", 0, 1, -1),
+            tuple("a", 0, 0, -1),
+            tuple("accio123", 5, 8, 123),
+            tuple("asdasd", 2, 3, -1),
+        ) { (str, start, end, expected) ->
+            str.toPositiveIntOrMinusOne(start, end) shouldBe expected
+        }
+    }
 })
