@@ -40,6 +40,7 @@ The app is translated in:
 - Croatian
 - German
 - Italian
+- Russian
 
 To add a translation, add a `string.xml` file in the appropriate folder
 inside [the app's resources](https://github.com/MMarco94/tambourine-music-player/tree/main/src/main/composeResources).
