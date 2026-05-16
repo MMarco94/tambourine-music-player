@@ -49,6 +49,8 @@ class AsyncAudioInputStream(
             } while (read >= 0)
         } catch (e: IOException) {
             logger.error(e) { "Couldn't read the whole song" }
+        } finally {
+            input.close()
         }
         val state = BufferState(chunks, true)
         readers.forEach {
