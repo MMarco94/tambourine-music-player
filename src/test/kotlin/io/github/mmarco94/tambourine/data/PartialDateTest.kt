@@ -30,11 +30,28 @@ class PartialDateTest : FunSpec({
                 LocalDate(2020, Month.JANUARY, 2),
                 PartialDate.Month(YearMonth(2020, Month.JANUARY), PartialDate.Year(2020))
             ),
+            "2020-12-00" to null,
             "2020-12-02" to PartialDate.Date(
                 LocalDate(2020, Month.DECEMBER, 2),
                 PartialDate.Month(YearMonth(2020, Month.DECEMBER), PartialDate.Year(2020))
             ),
-            "2020-12-00" to null,
+            // Time is ignored
+            "2020-12-02T" to PartialDate.Date(
+                LocalDate(2020, Month.DECEMBER, 2),
+                PartialDate.Month(YearMonth(2020, Month.DECEMBER), PartialDate.Year(2020))
+            ),
+            "2020-12-02T08" to PartialDate.Date(
+                LocalDate(2020, Month.DECEMBER, 2),
+                PartialDate.Month(YearMonth(2020, Month.DECEMBER), PartialDate.Year(2020))
+            ),
+            "2020-12-02T08:10" to PartialDate.Date(
+                LocalDate(2020, Month.DECEMBER, 2),
+                PartialDate.Month(YearMonth(2020, Month.DECEMBER), PartialDate.Year(2020))
+            ),
+            "2020-12-02T08:10:30" to PartialDate.Date(
+                LocalDate(2020, Month.DECEMBER, 2),
+                PartialDate.Month(YearMonth(2020, Month.DECEMBER), PartialDate.Year(2020))
+            ),
         ) { (str, expected) ->
             PartialDate.parse(str, PartialDateParserCache()) shouldBe expected
         }

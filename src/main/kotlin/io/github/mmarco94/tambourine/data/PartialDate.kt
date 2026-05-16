@@ -139,10 +139,13 @@ sealed interface PartialDate {
                     return@use cache.month(year, month)
                 }
 
+                val timeStart = string.indexOf('T', startIndex = ios2 + 1).takeIfPositive { string.length }
+
                 val year = string.toPositiveIntOrMinusOne(start = 0, end = ios).takeIfPositive { return@use null }
                 val month =
                     string.toPositiveIntOrMinusOne(start = ios + 1, end = ios2).takeIfPositive { return@use null }
-                val day = string.toPositiveIntOrMinusOne(start = ios2 + 1).takeIfPositive { return@use null }
+                val day =
+                    string.toPositiveIntOrMinusOne(start = ios2 + 1, end = timeStart).takeIfPositive { return@use null }
 
                 cache.date(year, month, day)
             }
