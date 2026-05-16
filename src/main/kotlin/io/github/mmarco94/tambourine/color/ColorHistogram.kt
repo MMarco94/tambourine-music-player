@@ -8,28 +8,8 @@ internal const val BITS_PER_COLOR = 5
 private val colorRange = 0 until (1 shl BITS_PER_COLOR)
 
 class ColorHistogram(
-    val histogram: IntArray
+    val partialSums: IntArray
 ) {
-    private val partialSums: IntArray = run {
-        val ret = IntArray(histogram.size)
-        for (r in colorRange) {
-            for (g in colorRange) {
-                for (b in colorRange) {
-                    var sum = getOccurrences(r, g, b)
-                    if (r > 0) sum += ret[idx(r - 1, g, b)]
-                    if (g > 0) sum += ret[idx(r, g - 1, b)]
-                    if (b > 0) sum += ret[idx(r, g, b - 1)]
-                    if (r > 0 && g > 0) sum -= ret[idx(r - 1, g - 1, b)]
-                    if (r > 0 && b > 0) sum -= ret[idx(r - 1, g, b - 1)]
-                    if (g > 0 && b > 0) sum -= ret[idx(r, g - 1, b - 1)]
-                    if (r > 0 && g > 0 && b > 0) sum += ret[idx(r - 1, g - 1, b - 1)]
-                    ret[idx(r, g, b)] = sum
-                }
-            }
-        }
-        ret
-    }
-
 
     @Suppress("NOTHING_TO_INLINE")
     private inline fun ps(r: Int, g: Int, b: Int): Int {
@@ -47,15 +27,12 @@ class ColorHistogram(
                 ps(r1 - 1, g1 - 1, b1 - 1)
     }
 
-    @Suppress("NOTHING_TO_INLINE")
-    inline fun getOccurrences(red: Int, green: Int, blue: Int): Int {
-        val index = idx(red, green, blue)
-        return histogram[index]
+    fun getOccurrences(red: Int, green: Int, blue: Int): Int {
+        return getOccurrences(red, green, blue, red, green, blue)
     }
 
     @Suppress("NOTHING_TO_INLINE")
-    @PublishedApi
-    internal inline fun idx(r: Int, g: Int, b: Int): Int {
+    private inline fun idx(r: Int, g: Int, b: Int): Int {
         return (r shl BITS_PER_COLOR shl BITS_PER_COLOR) + (g shl BITS_PER_COLOR) + b
     }
 
@@ -80,6 +57,22 @@ class ColorHistogram(
                 val index = idx(r, g, b)
                 histogram[index]++
             }
+            // Transforming histogram to a tensor of partial sums
+            for (r in colorRange) {
+                for (g in colorRange) {
+                    for (b in colorRange) {
+                        var sum = histogram[idx(r, g, b)]
+                        if (r > 0) sum += histogram[idx(r - 1, g, b)]
+                        if (g > 0) sum += histogram[idx(r, g - 1, b)]
+                        if (b > 0) sum += histogram[idx(r, g, b - 1)]
+                        if (r > 0 && g > 0) sum -= histogram[idx(r - 1, g - 1, b)]
+                        if (r > 0 && b > 0) sum -= histogram[idx(r - 1, g, b - 1)]
+                        if (g > 0 && b > 0) sum -= histogram[idx(r, g - 1, b - 1)]
+                        if (r > 0 && g > 0 && b > 0) sum += histogram[idx(r - 1, g - 1, b - 1)]
+                        histogram[idx(r, g, b)] = sum
+                    }
+                }
+            }
             return VBox(
                 0,
                 maxColorValue,
@@ -87,7 +80,7 @@ class ColorHistogram(
                 maxColorValue,
                 0,
                 maxColorValue,
-                ColorHistogram(histogram = histogram),
+                ColorHistogram(partialSums = histogram),
             ).trim()
         }
     }
