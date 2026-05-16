@@ -2,10 +2,11 @@ package io.github.mmarco94.tambourine.color
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
+import io.github.mmarco94.tambourine.color.ColorHistogram.Companion.idx
 
 @PublishedApi
 internal const val BITS_PER_COLOR = 5
-private val colorRange = 0 until (1 shl BITS_PER_COLOR)
+private const val COLOR_RANGE_SIZE = 1 shl BITS_PER_COLOR
 
 class ColorHistogram(
     val partialSums: IntArray
@@ -38,6 +39,14 @@ class ColorHistogram(
 
     companion object {
 
+        private const val R_IDX_INCREMENTS = 1 shl (2 * BITS_PER_COLOR)
+        private const val G_IDX_INCREMENTS = 1 shl BITS_PER_COLOR
+        private const val B_IDX_INCREMENTS = 1
+        private const val RG_IDX_INCREMENTS = R_IDX_INCREMENTS + G_IDX_INCREMENTS
+        private const val RB_IDX_INCREMENTS = R_IDX_INCREMENTS + B_IDX_INCREMENTS
+        private const val GB_IDX_INCREMENTS = G_IDX_INCREMENTS + B_IDX_INCREMENTS
+        private const val RGB_IDX_INCREMENTS = R_IDX_INCREMENTS + G_IDX_INCREMENTS + B_IDX_INCREMENTS
+
         @Suppress("NOTHING_TO_INLINE")
         private inline fun idx(r: Int, g: Int, b: Int): Int {
             return (r shl (2 * BITS_PER_COLOR)) + (g shl BITS_PER_COLOR) + b
@@ -57,22 +66,6 @@ class ColorHistogram(
                 val index = idx(r, g, b)
                 histogram[index]++
             }
-            // Transforming histogram to a tensor of partial sums
-            for (r in colorRange) {
-                for (g in colorRange) {
-                    for (b in colorRange) {
-                        var sum = histogram[idx(r, g, b)]
-                        if (r > 0) sum += histogram[idx(r - 1, g, b)]
-                        if (g > 0) sum += histogram[idx(r, g - 1, b)]
-                        if (b > 0) sum += histogram[idx(r, g, b - 1)]
-                        if (r > 0 && g > 0) sum -= histogram[idx(r - 1, g - 1, b)]
-                        if (r > 0 && b > 0) sum -= histogram[idx(r - 1, g, b - 1)]
-                        if (g > 0 && b > 0) sum -= histogram[idx(r, g - 1, b - 1)]
-                        if (r > 0 && g > 0 && b > 0) sum += histogram[idx(r - 1, g - 1, b - 1)]
-                        histogram[idx(r, g, b)] = sum
-                    }
-                }
-            }
             return VBox(
                 0,
                 maxColorValue,
@@ -80,8 +73,81 @@ class ColorHistogram(
                 maxColorValue,
                 0,
                 maxColorValue,
-                ColorHistogram(partialSums = histogram),
+                ColorHistogram(partialSums = histogram.apply { toPartialSum(this) }),
             ).trim()
+        }
+
+        /**
+         * Transforming histogram in-place to a tensor of partial sums.
+         * This is a bit mad, but it's a hotspot, and writing without ifs is a big speed-up.
+         *
+         * This is rughly equivalent to, but unrolled so the first iteration of the loop is separate:
+         *             var idx = 0
+         *             for (r in colorRange) {
+         *                 for (g in colorRange) {
+         *                     for (b in colorRange) {
+         *                         var sum = 0
+         *                         if (r > 0) {
+         *                             sum += histogram[idx - R_IDX_INCREMENTS]
+         *                             if (g > 0) sum -= histogram[idx - RG_IDX_INCREMENTS]
+         *                             if (b > 0) {
+         *                                 sum -= histogram[idx - RB_IDX_INCREMENTS]
+         *                                 if (g > 0) sum += histogram[idx - RGB_IDX_INCREMENTS]
+         *                             }
+         *                         }
+         *                         if (g > 0) sum += histogram[idx - G_IDX_INCREMENTS]
+         *                         if (b > 0) {
+         *                             sum += histogram[idx - B_IDX_INCREMENTS]
+         *                             if (g > 0) sum -= histogram[idx - GB_IDX_INCREMENTS]
+         *                         }
+         *                         histogram[idx] += sum
+         *                         idx += 1
+         *                     }
+         *                 }
+         *             }
+         */
+        private fun toPartialSum(histogram: IntArray) {
+            var idx = 1
+            repeat(COLOR_RANGE_SIZE - 1) {
+                histogram[idx] += histogram[idx - B_IDX_INCREMENTS]
+                idx++
+            }
+            repeat(COLOR_RANGE_SIZE - 1) {
+                histogram[idx] += histogram[idx - G_IDX_INCREMENTS]
+                idx++
+                repeat(COLOR_RANGE_SIZE - 1) {
+                    histogram[idx] += histogram[idx - G_IDX_INCREMENTS] +
+                            histogram[idx - B_IDX_INCREMENTS] -
+                            histogram[idx - GB_IDX_INCREMENTS]
+                    idx++
+                }
+            }
+            repeat(COLOR_RANGE_SIZE - 1) {
+                histogram[idx] += histogram[idx - R_IDX_INCREMENTS]
+                idx++
+                repeat(COLOR_RANGE_SIZE - 1) {
+                    histogram[idx] += histogram[idx - R_IDX_INCREMENTS] -
+                            histogram[idx - RB_IDX_INCREMENTS] +
+                            histogram[idx - B_IDX_INCREMENTS]
+                    idx++
+                }
+                repeat(COLOR_RANGE_SIZE - 1) {
+                    histogram[idx] += histogram[idx - R_IDX_INCREMENTS] -
+                            histogram[idx - RG_IDX_INCREMENTS] +
+                            histogram[idx - G_IDX_INCREMENTS]
+                    idx++
+                    repeat(COLOR_RANGE_SIZE - 1) {
+                        histogram[idx] += histogram[idx - R_IDX_INCREMENTS] -
+                                histogram[idx - RG_IDX_INCREMENTS] -
+                                histogram[idx - RB_IDX_INCREMENTS] +
+                                histogram[idx - RGB_IDX_INCREMENTS] +
+                                histogram[idx - G_IDX_INCREMENTS] +
+                                histogram[idx - B_IDX_INCREMENTS] -
+                                histogram[idx - GB_IDX_INCREMENTS]
+                        idx++
+                    }
+                }
+            }
         }
     }
 }
