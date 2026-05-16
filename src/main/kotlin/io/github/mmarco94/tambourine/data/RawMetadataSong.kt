@@ -37,16 +37,17 @@ data class RawMetadataSong(
             file: Path,
             decoder: CoversDecoder,
             env: Deferred<ResourceEnvironment>,
+            partialDateParserCache: PartialDateParserCache,
         ): RawMetadataSong {
             val f = AudioFileIO.read(file.toFile())
             val tag = f.tag
             val header = f.audioHeader
 
             val dateStr = tag.getFirst(FieldKey.YEAR)
-            val date = PartialDate.parse(dateStr)?.let { date ->
+            val date = PartialDate.parse(dateStr, partialDateParserCache)?.let { date ->
                 // Unfortunately, a lot of songs say 1st of January to mean the year.
                 if (date is PartialDate.Date && date.date.dayOfYear == 1) {
-                    PartialDate.Year(date.yearInt)
+                    date.year
                 } else {
                     date
                 }

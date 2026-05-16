@@ -3,7 +3,12 @@ package io.github.mmarco94.tambourine.data
 import io.github.mmarco94.tambourine.utils.letIfPositive
 import io.github.mmarco94.tambourine.utils.takeIfPositive
 import io.github.mmarco94.tambourine.utils.toPositiveIntOrMinusOne
-import kotlinx.datetime.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.toJavaLocalDate
+import kotlinx.datetime.toJavaYearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
@@ -48,10 +53,10 @@ sealed interface PartialDate {
         override fun toString() = formatted
     }
 
-    data class Month(override val yearMonth: YearMonth) : PartialDate, WithMonth {
+    data class Month(override val yearMonth: YearMonth, override val year: Year) : PartialDate, WithMonth {
         private val javaYearMonth = yearMonth.toJavaYearMonth()
-        override val yearInt = yearMonth.year
-        override val year = Year(yearInt)
+
+        override val yearInt = year.yearInt
         override val month = this
 
         private val formatted: String = yearMonthFormatter.format(javaYearMonth)
@@ -81,12 +86,11 @@ sealed interface PartialDate {
         override fun toString() = formatted
     }
 
-    data class Date(val date: LocalDate) : PartialDate, WithMonth {
+    data class Date(val date: LocalDate, override val month: Month) : PartialDate, WithMonth {
         private val javaDate = date.toJavaLocalDate()
 
-        override val yearInt = date.year
-        override val yearMonth = date.yearMonth
-        override val month = Month(yearMonth)
+        override val yearInt = month.yearInt
+        override val yearMonth = month.yearMonth
         override val year = month.year
 
         private val formatted: String = dateFormatter.format(javaDate)
@@ -119,30 +123,65 @@ sealed interface PartialDate {
     }
 
     companion object {
-        fun parse(string: String): PartialDate? {
-            val ios = string.indexOf('-')
-            if (ios < 0) {
-                // Year
-                return string.toPositiveIntOrMinusOne().letIfPositive { Year(it) }
+        suspend fun parse(string: String, cache: PartialDateParserCache): PartialDate? {
+            return cache.use { cache ->
+                val ios = string.indexOf('-')
+                if (ios < 0) {
+                    // Year
+                    return@use string.toPositiveIntOrMinusOne().letIfPositive { cache.year(it) }
+                }
+
+                val ios2 = string.indexOf('-', startIndex = ios + 1)
+                if (ios2 < 0) {
+                    // Year-Month
+                    val year = string.toPositiveIntOrMinusOne(start = 0, end = ios).takeIfPositive { return@use null }
+                    val month = string.toPositiveIntOrMinusOne(start = ios + 1).takeIfPositive { return@use null }
+                    return@use cache.month(year, month)
+                }
+
+                val year = string.toPositiveIntOrMinusOne(start = 0, end = ios).takeIfPositive { return@use null }
+                val month =
+                    string.toPositiveIntOrMinusOne(start = ios + 1, end = ios2).takeIfPositive { return@use null }
+                val day = string.toPositiveIntOrMinusOne(start = ios2 + 1).takeIfPositive { return@use null }
+
+                cache.date(year, month, day)
             }
+        }
+    }
+}
 
-            val ios2 = string.indexOf('-', startIndex = ios + 1)
-            if (ios2 < 0) {
-                // Year-Month
-                val year = string.toPositiveIntOrMinusOne(start = 0, end = ios).takeIfPositive { return null }
-                val month = string.toPositiveIntOrMinusOne(start = ios + 1).takeIfPositive { return null }
-                return if (month in 1..12) Month(YearMonth(year, month))
-                else null
+class PartialDateParserCache {
+    private val mutex = Mutex()
+    private val cache = Cache()
+
+    suspend fun <T> use(block: (Cache) -> T): T {
+        return mutex.withLock {
+            block(cache)
+        }
+    }
+
+    class Cache {
+        private val yearCache = mutableMapOf<Int, PartialDate.Year>()
+        private val monthCache = mutableMapOf<Int, PartialDate.Month>()
+        private val dateCache = mutableMapOf<Int, PartialDate.Date>()
+        fun year(year: Int): PartialDate.Year {
+            return yearCache.getOrPut(year) { PartialDate.Year(year) }
+        }
+
+        fun month(year: Int, month: Int): PartialDate.Month? {
+            if (month !in 1..12) return null
+            val key = year * 12 + month
+            return monthCache.getOrPut(key) {
+                PartialDate.Month(YearMonth(year, month), year(year))
             }
+        }
 
-            val year = string.toPositiveIntOrMinusOne(start = 0, end = ios).takeIfPositive { return null }
-            val month = string.toPositiveIntOrMinusOne(start = ios + 1, end = ios2).takeIfPositive { return null }
-            val date = string.toPositiveIntOrMinusOne(start = ios2 + 1).takeIfPositive { return null }
-
-            return try {
-                Date(LocalDate(year, month, date))
-            } catch (_: IllegalArgumentException) {
-                null
+        fun date(year: Int, month: Int, day: Int): PartialDate.Date? {
+            val partialDateMonth = month(year, month) ?: return null
+            if (day !in 1..partialDateMonth.yearMonth.numberOfDays) return null
+            val key = year * 12 * 40 + month * 40 + day
+            return dateCache.getOrPut(key) {
+                PartialDate.Date(LocalDate(year, month, day), partialDateMonth)
             }
         }
     }

@@ -22,15 +22,21 @@ class PartialDateTest : FunSpec({
             "2020-asd-1" to null,
             "2020-0" to null,
             "2020-13" to null,
-            "2020-01" to PartialDate.Month(YearMonth(2020, Month.JANUARY)),
-            "2020-12" to PartialDate.Month(YearMonth(2020, Month.DECEMBER)),
+            "2020-01" to PartialDate.Month(YearMonth(2020, Month.JANUARY), PartialDate.Year(2020)),
+            "2020-12" to PartialDate.Month(YearMonth(2020, Month.DECEMBER), PartialDate.Year(2020)),
             "2020-00-02" to null,
             "2020-13-02" to null,
-            "2020-01-02" to PartialDate.Date(LocalDate(2020, Month.JANUARY, 2)),
-            "2020-12-02" to PartialDate.Date(LocalDate(2020, Month.DECEMBER, 2)),
+            "2020-01-02" to PartialDate.Date(
+                LocalDate(2020, Month.JANUARY, 2),
+                PartialDate.Month(YearMonth(2020, Month.JANUARY), PartialDate.Year(2020))
+            ),
+            "2020-12-02" to PartialDate.Date(
+                LocalDate(2020, Month.DECEMBER, 2),
+                PartialDate.Month(YearMonth(2020, Month.DECEMBER), PartialDate.Year(2020))
+            ),
             "2020-12-00" to null,
         ) { (str, expected) ->
-            PartialDate.parse(str) shouldBe expected
+            PartialDate.parse(str, PartialDateParserCache()) shouldBe expected
         }
     }
 })

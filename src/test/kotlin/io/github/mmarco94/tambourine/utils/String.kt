@@ -59,6 +59,7 @@ class String : FunSpec({
         withData(
             tuple("", 0, 0, -1),
             tuple("1", 0, 0, -1),
+            tuple("0", 0, 1, 0),
             tuple("1", 0, 1, 1),
             tuple("19", 0, 1, 1),
             tuple("19", 0, 2, 19),

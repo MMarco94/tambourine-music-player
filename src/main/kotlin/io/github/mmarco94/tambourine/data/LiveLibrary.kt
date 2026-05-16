@@ -41,6 +41,7 @@ class LiveLibrary(
     private var eventChannel = Channel<InternalEvent>()
 
     private val env = scope.async { getSystemResourceEnvironment() }
+    private val partialDateParserCache = PartialDateParserCache()
 
     private class MetadataCollection<T> {
         val data = mutableMapOf<Path, T>()
@@ -177,7 +178,7 @@ class LiveLibrary(
 
     private suspend fun onNewSong(file: Path, decoder: CoversDecoder) {
         try {
-            val songInfo = RawMetadataSong.fromMusicFile(file, decoder, env)
+            val songInfo = RawMetadataSong.fromMusicFile(file, decoder, env, partialDateParserCache)
             eventChannel.send(InternalEvent.NewSong(file, songInfo))
         } catch (e: Exception) {
             eventChannel.send(InternalEvent.FileIgnored)
