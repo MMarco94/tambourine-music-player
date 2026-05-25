@@ -2,7 +2,12 @@ package io.github.mmarco94.tambourine.data
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.datatest.withData
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.string
+import io.kotest.property.checkAll
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -25,6 +30,16 @@ class LyricsTest : FunSpec({
             if (expected != null) {
                 entry.toSynchronizedLine(100)?.start shouldBe expected - 100.milliseconds
                 entry.toSynchronizedLine(-300)?.start shouldBe expected + 300.milliseconds
+            }
+        }
+    }
+    context("fuzzy") {
+        checkAll(iterations = 10_000, Arb.string(1..20, "[]:\n1.a ")) {
+            val lyrics = Lyrics.of(it)
+            if (it.isBlank()) {
+                lyrics.shouldBeNull()
+            } else {
+                lyrics.shouldNotBeNull()
             }
         }
     }
