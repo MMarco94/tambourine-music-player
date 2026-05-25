@@ -115,7 +115,7 @@ data class LrcFile(
             val colon = lyrics.indexOf(':', tagStart + 1)
             val tagEnd = lyrics.indexOf(']', colon + 1)
 
-            if (colon < 0 || tagEnd < 0) {
+            if (colon !in 0..<end || tagEnd !in 0..<end) {
                 throw ParseException("Line '${lyrics.subSequence(start, end)}' doesn't match", 0)
             }
 
