@@ -26,9 +26,9 @@
     <string name="action_reset">Réinitialiser</string>
     <string name="action_close_app">Fermer l'application</string>
     <string name="action_open_menu">Ouvrir le menu</string>
-    <string name="action_choose_library">Choose music library</string>
-    <string name="action_open_settings">Open settings</string>
-    <string name="action_remove_filter">Remove filter</string>
+    <string name="action_choose_library">Choisir la bibliothèque</string>
+    <string name="action_open_settings">Ouvrir les paramètres</string>
+    <string name="action_remove_filter">Supprimer le filtre</string>
 
     <string name="sort">Trier</string>
     <string name="do_not_sort">Ne pas trier</string>
