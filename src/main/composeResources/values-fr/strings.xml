@@ -17,10 +17,10 @@
     <string name="action_add_to_queue">Ajouter à la file</string>
     <string name="action_play_album">Jouer l'album</string>
     <string name="action_play_artist">Jouer l'artiste</string>
-    <string name="action_go_to_previous_song">Jouer morceau suivante</string>
-    <string name="action_go_to_next_song">Jouer morceau précédente</string>
-    <string name="action_show_lyrics">Montrer lyrics</string>
-    <string name="action_hide_lyrics">Cacher lyrics</string>
+    <string name="action_go_to_previous_song">Jouer le morceau suivant</string>
+    <string name="action_go_to_next_song">Jouer le morceau précédent</string>
+    <string name="action_show_lyrics">Montrer les lyrics</string>
+    <string name="action_hide_lyrics">Cacher les lyrics</string>
     <string name="action_search">Recherche</string>
     <string name="action_close">Fermer</string>
     <string name="action_reset">Réinitialiser</string>
